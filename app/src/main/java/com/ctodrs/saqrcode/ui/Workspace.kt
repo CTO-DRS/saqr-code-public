@@ -1,0 +1,72 @@
+package com.ctodrs.saqrcode.ui
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.TextFieldValue
+import com.ctodrs.saqrcode.SaqrApp
+import com.ctodrs.saqrcode.agent.AgentSession
+import com.ctodrs.saqrcode.terminal.ShellSession
+import java.io.File
+
+class OpenFile(val path: String, initial: String) {
+    var value by mutableStateOf(TextFieldValue(initial))
+    var saved by mutableStateOf(initial)
+    val dirty get() = value.text != saved
+}
+
+/** Per-project state that survives navigation (chat, shell, open editor tabs). */
+class Workspace(val name: String, val dir: File) {
+    private val app = SaqrApp.instance
+    val agent = AgentSession(name, dir, File(app.filesDir, "snapshots"), app.settings, app.linux)
+    val shell by lazy { ShellSession(app.linux, dir) }
+    val tabs = mutableStateListOf<OpenFile>()
+    var activeTab by mutableIntStateOf(-1)
+    var fsVersion by mutableIntStateOf(0)
+    var tab by mutableIntStateOf(0)
+
+    fun open(rel: String) {
+        val idx = tabs.indexOfFirst { it.path == rel }
+        if (idx >= 0) { activeTab = idx; return }
+        val f = File(dir, rel)
+        val text = runCatching { if (f.length() > 1_500_000) "(file too large to edit)" else f.readText() }.getOrDefault("")
+        tabs += OpenFile(rel, text)
+        activeTab = tabs.lastIndex
+    }
+
+    fun close(i: Int) {
+        tabs.removeAt(i)
+        activeTab = if (tabs.isEmpty()) -1 else minOf(activeTab, tabs.lastIndex).coerceAtLeast(0)
+    }
+
+    fun save(f: OpenFile) {
+        File(dir, f.path).apply { parentFile?.mkdirs(); writeText(f.value.text) }
+        f.saved = f.value.text
+        fsVersion++
+    }
+
+    /** Reload clean tabs whose file changed on disk (e.g. edited by the agent). */
+    fun syncFromDisk() {
+        val it = tabs.listIterator()
+        while (it.hasNext()) {
+            val t = it.next()
+            val file = File(dir, t.path)
+            if (!file.exists()) continue
+            if (!t.dirty) {
+                val disk = runCatching { file.readText() }.getOrNull() ?: continue
+                if (disk != t.saved) { t.saved = disk; t.value = TextFieldValue(disk) }
+            }
+        }
+    }
+
+    companion object {
+        private val map = HashMap<String, Workspace>()
+        fun get(name: String): Workspace? {
+            map[name]?.let { if (it.dir.isDirectory) return it }
+            val p = SaqrApp.instance.projects.get(name) ?: return null
+            return Workspace(name, p.dir).also { map[name] = it }
+        }
+    }
+}
