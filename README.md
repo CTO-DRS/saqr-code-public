@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.1.0 (MVP)** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.2.0 ("Falcon" UI)** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 
 ---
 
@@ -26,8 +26,11 @@
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
 
+### الجديد في 0.2
+واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
+
 ### البدء السريع
-1. ثبّت ملف `dist/SaqrCode-v0.1.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `dist/SaqrCode-v0.2.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -52,12 +55,16 @@
 - **Safety:** command blocklist (recursive deletes outside the project, `curl|sh`, `eval`, `$IFS` tricks, `sudo/su`, `mkfs`, raw `dd`, fork bombs, cloud-metadata SSRF, reverse shells…). Paths are confined to the project root.
 - **GitHub:** real git via JGit 5.13 — init, add (incl. deletions), commit, push over HTTPS with a fine-grained token; optional creation of a private repo via the REST API.
 
+### Screenshots
+`dist/screens/*.png` are rendered on the JVM (Robolectric native graphics, Arabic, dark + light):
+`SAQR_SCREENS=1 ./gradlew testDebugUnitTest --tests '*ScreenshotTest*'`.
+
 ### Build
 Requirements: JDK 17+ (tested with JDK 21), Android SDK platform 35 + build-tools 35.0.0, Gradle wrapper (8.11.1), AGP 8.7.3, Kotlin 2.0.21.
 
 ```bash
 # On a normal x86_64 machine remove the aapt2 override line from gradle.properties first.
-./gradlew testDebugUnitTest      # 20 JVM unit tests
+./gradlew testDebugUnitTest      # 23 JVM unit tests (+13 opt-in screenshot renders)
 ./gradlew lintDebug              # 0 errors
 ./gradlew assembleRelease        # signed with keystore.properties if present, otherwise debug key
 ```
@@ -68,7 +75,10 @@ Optional integration test (downloads Alpine and checks our tar extractor against
 
 ### Architecture
 ```
-ui/        Compose screens: Home, Settings, IDE (Agent · Files · Terminal · Git), theme
+ui/        Compose screens: Onboarding, Home, Settings, IDE (Agent · Files · Terminal · Git · Preview)
+ui/theme   "Falcon" design system (colors, type, spacing, radius, motion; dark + light)
+ui/icons   Lucide-style icon set, file-type glyphs, provider monograms
+ui/chat    Agent chat: tool rows, approval/notice cards, composer, Markdown
 agent/     Providers, LlmClient (OpenAI-compatible + Anthropic SSE streaming), Tools,
            AgentSession (loop, approvals, restore points), SafetyPolicy, Diff, Snapshots
 terminal/  LinuxEnv (Alpine install + proot command line), ShellSession, TarExtractor

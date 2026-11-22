@@ -26,6 +26,18 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("active_provider", Providers.all.first().id)!!
         set(v) { prefs.edit().putString("active_provider", v).apply(); bump() }
 
+    /** "dark" (default) | "light" | "system" */
+    var themeMode: String
+        get() = prefs.getString("theme_mode", "dark") ?: "dark"
+        set(v) { prefs.edit().putString("theme_mode", v).apply(); bump() }
+
+    /** First-run welcome has been seen. */
+    var onboarded: Boolean
+        get() = prefs.getBoolean("onboarded", false)
+        set(v) { prefs.edit().putBoolean("onboarded", v).apply(); bump() }
+
+    fun setModel(id: String, model: String) { prefs.edit().putString("model_$id", model.trim()).apply(); bump() }
+
     var approveAll: Boolean
         get() = prefs.getBoolean("approve_all", false)
         set(v) { prefs.edit().putBoolean("approve_all", v).apply(); bump() }

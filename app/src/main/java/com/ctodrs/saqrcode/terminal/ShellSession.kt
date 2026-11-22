@@ -47,6 +47,10 @@ class ShellSession(private val env: LinuxEnv, private val projectDir: File) {
             .onFailure { append("write failed: ${it.message}\n") }
     }
 
+    /** Clears the visible scrollback (the shell keeps running). */
+    @Synchronized
+    fun clear() { buffer.setLength(0); _output.value = "" }
+
     fun interrupt() {
         // Without a PTY we cannot send SIGINT to the foreground job; restart instead.
         restart()

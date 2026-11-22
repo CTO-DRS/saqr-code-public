@@ -13,6 +13,7 @@ object Tools {
     const val DELETE = "delete_file"
     const val RUN = "run_command"
     const val SEARCH = "search"
+    const val PLAN = "update_plan"
 
     val MUTATING = setOf(WRITE, EDIT, DELETE)
 
@@ -52,6 +53,13 @@ object Tools {
                 .put("query", p("string", "Text or regex to search for"))
                 .put("regex", p("boolean", "Treat query as a regular expression"))
                 .put("path", p("string", "Folder to search, default '.'")), listOf("query"))),
+        ToolSpec(PLAN, "Create or replace your step-by-step plan for the current task. The user sees it as a progress pill. Send the full list every time.",
+            schema(JSONObject().put("items", JSONObject().put("type", "array").put("description", "Ordered steps")
+                .put("items", JSONObject().put("type", "object")
+                    .put("properties", JSONObject()
+                        .put("title", p("string", "Short step title in the user's language"))
+                        .put("status", JSONObject().put("type", "string").put("enum", JSONArray(listOf("pending", "in_progress", "done")))))
+                    .put("required", JSONArray(listOf("title", "status"))))), listOf("items"))),
     )
 
     private val IGNORED_DIRS = setOf(".git", "node_modules", "build", ".gradle", "__pycache__", ".venv", "dist", ".saqr")

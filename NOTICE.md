@@ -15,3 +15,13 @@ Saqr Code's own source is © 2026 ctodrs. It bundles or downloads the following:
 | Kotlin, kotlinx.coroutines | Apache-2.0 | Language/runtime | https://kotlinlang.org |
 
 The proot binaries were taken unmodified from the Termux apt repository (aarch64), except that `patchelf` was used to rename the `libtalloc.so.2` dependency to `libtalloc.so` and drop the Termux RUNPATH so Android's package installer extracts them. Per GPL-2.0 §3, the corresponding source is available at the URL above (tag matching 5.1.107).
+
+### Added in v0.2.0
+| Component | License | How it is used | Source |
+|---|---|---|---|
+| JetBrains Mono 2.304 (NL variant: Regular/Medium/Bold) | SIL OFL 1.1 | Bundled font for code, paths and numbers | https://github.com/JetBrains/JetBrainsMono |
+| IBM Plex Sans Arabic SemiBold | SIL OFL 1.1 | Bundled font weight | https://github.com/IBM/plex |
+| Lucide icons 0.460 (path data, converted to Compose `ImageVector`s in `ui/icons/Lucide.kt`) | ISC | UI icon set | https://lucide.dev |
+| Robolectric 4.18 + Compose UI test | MIT / Apache-2.0 | Test-only (JVM screenshot rendering), not shipped | https://robolectric.org |
+
+File-type glyphs, provider monograms, the falcon app icon and all illustrations are original artwork for Saqr Code. No PolyDev assets or code are used.

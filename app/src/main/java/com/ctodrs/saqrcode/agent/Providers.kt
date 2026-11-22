@@ -16,6 +16,8 @@ data class ProviderDef(
     val keyOptional: Boolean = false,
     val baseUrlEditable: Boolean = false,
     val keyUrl: String = "",
+    /** Context window in tokens, used for the context meter. */
+    val contextWindow: Int = 128_000,
 )
 
 object Providers {
@@ -24,19 +26,19 @@ object Providers {
             "anthropic", "Anthropic (Claude)", ProviderKind.ANTHROPIC,
             "https://api.anthropic.com", "claude-sonnet-4-5",
             listOf("claude-sonnet-4-5", "claude-opus-4-1", "claude-haiku-4-5"),
-            keyUrl = "https://console.anthropic.com/settings/keys",
+            keyUrl = "https://console.anthropic.com/settings/keys", contextWindow = 200_000,
         ),
         ProviderDef(
             "openai", "OpenAI", ProviderKind.OPENAI_COMPAT,
             "https://api.openai.com/v1", "gpt-4.1-mini",
             listOf("gpt-4.1-mini", "gpt-4.1", "gpt-4o", "o4-mini"),
-            keyUrl = "https://platform.openai.com/api-keys",
+            keyUrl = "https://platform.openai.com/api-keys", contextWindow = 1_000_000,
         ),
         ProviderDef(
             "gemini", "Google Gemini", ProviderKind.OPENAI_COMPAT,
             "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-2.5-flash",
             listOf("gemini-2.5-flash", "gemini-2.5-pro"),
-            keyUrl = "https://aistudio.google.com/apikey",
+            keyUrl = "https://aistudio.google.com/apikey", contextWindow = 1_000_000,
         ),
         ProviderDef(
             "openrouter", "OpenRouter", ProviderKind.OPENAI_COMPAT,

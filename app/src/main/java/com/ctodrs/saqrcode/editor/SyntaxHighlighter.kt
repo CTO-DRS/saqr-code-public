@@ -8,14 +8,24 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 
-/** Lightweight regex highlighter (v0.1). Sora/TextMate grammars planned for v0.2. */
+/** Token colours. Dark = "Falcon Night", Light = "Falcon Day". */
+data class CodePalette(
+    val keyword: Color, val string: Color, val comment: Color, val number: Color, val tag: Color, val type: Color,
+) {
+    companion object {
+        val Dark = CodePalette(
+            keyword = Color(0xFFF0B85A), string = Color(0xFF9BD08F), comment = Color(0xFF6B7380),
+            number = Color(0xFF7CC4F2), tag = Color(0xFFF08A73), type = Color(0xFF6CCBB6),
+        )
+        val Light = CodePalette(
+            keyword = Color(0xFF9A5B00), string = Color(0xFF2F7D32), comment = Color(0xFF8A8F97),
+            number = Color(0xFF1F6FB2), tag = Color(0xFFB23A24), type = Color(0xFF137A68),
+        )
+    }
+}
+
+/** Lightweight regex highlighter. */
 object SyntaxHighlighter {
-    private val keywordColor = Color(0xFFD9A441)
-    private val stringColor = Color(0xFF8BC48A)
-    private val commentColor = Color(0xFF6B7380)
-    private val numberColor = Color(0xFF6FB7E9)
-    private val tagColor = Color(0xFFE07B6A)
-    private val typeColor = Color(0xFF5FB3A1)
 
     private val kw = mapOf(
         "kt" to "package import class interface object fun val var if else when for while do return break continue try catch finally throw is as in null true false this super data sealed enum override private public internal protected open abstract suspend companion lateinit const init by typealias",
@@ -39,7 +49,11 @@ object SyntaxHighlighter {
         return when {
             ext in setOf("html", "htm", "xml", "svg", "vue") -> "html"
             ext in setOf("css", "scss") -> "css"
-            ext in setOf("md", "txt", "") -> "plain"
+            ext in setOf("md", "txt", "", "text", "plain") -> "plain"
+            ext in setOf("python") -> "py"
+            ext in setOf("kotlin") -> "kt"
+            ext in setOf("javascript", "typescript") -> "js"
+            ext in setOf("shell", "console") -> "sh"
             else -> alias[ext] ?: ext
         }
     }
@@ -49,7 +63,9 @@ object SyntaxHighlighter {
     )
     private val htmlRe = Regex("""(?<comment><!--[\s\S]*?-->)|(?<str>"[^"\n]*"|'[^'\n]*')|(?<tag></?[A-Za-z][A-Za-z0-9-]*|/?>)""")
 
-    fun highlight(text: String, lang: String): AnnotatedString {
+    fun highlight(text: String, lang: String, p: CodePalette = CodePalette.Dark): AnnotatedString {
+        val keywordColor = p.keyword; val stringColor = p.string; val commentColor = p.comment
+        val numberColor = p.number; val tagColor = p.tag; val typeColor = p.type
         if (text.length > 80_000 || lang == "plain") return AnnotatedString(text)
         val b = AnnotatedString.Builder(text)
         if (lang == "html" || lang == "css") {
@@ -88,7 +104,7 @@ object SyntaxHighlighter {
     }
 }
 
-class HighlightTransformation(private val lang: String) : VisualTransformation {
+class HighlightTransformation(private val lang: String, private val palette: CodePalette = CodePalette.Dark) : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText =
-        TransformedText(SyntaxHighlighter.highlight(text.text, lang), OffsetMapping.Identity)
+        TransformedText(SyntaxHighlighter.highlight(text.text, lang, palette), OffsetMapping.Identity)
 }

@@ -1,34 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Saqr (peregrine falcon) head + code chevron. Original artwork for Saqr Code. -->
+<!-- Saqr Code v0.2 mark: peregrine falcon head in gold, the malar stripe drawn as a code slash. Original artwork. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <!-- code chevron -->
-    <path android:fillColor="#00000000" android:strokeColor="#5FB3A1" android:strokeWidth="3.2"
-        android:strokeLineCap="round" android:strokeLineJoin="round"
-        android:pathData="M31,45 L23,54 L31,63" />
-    <group android:translateX="-4" android:translateY="-1">
-    <!-- face / throat (cream) -->
-    <path android:fillColor="#F1E3C6"
-        android:pathData="M39,86 C37,68 41,51 53,43 C61,38 71,38 77,43 L80,46 C79,52 77,58 73,64 C69,71 66,78 65,86 Z" />
-    <!-- hood (gold) incl. malar stripe -->
-    <path android:fillColor="#D9A441"
-        android:pathData="M39,86 C37,68 41,51 53,43 C61,38 71,38 77,43 L79.5,45.5 C75,45.5 71,47 68.5,50.5 C66.5,56 65.5,62 61.5,68.5 C57.5,74 54,80 52.5,86 Z" />
-    <!-- hood shading -->
-    <path android:fillColor="#B9842C"
-        android:pathData="M53,43 C61,38 71,38 77,43 C69,41.5 59,44 53,50 C47,56 45,66 46,78 C41,66 43,51 53,43 Z" />
-    <!-- cere -->
-    <path android:fillColor="#F2C14E"
-        android:pathData="M77,43.5 C79.5,43 81.5,43.6 82.5,45 L80.5,52 C79,52.5 77.5,52.5 76.5,52 Z" />
-    <!-- hooked beak -->
-    <path android:fillColor="#2B2F36"
-        android:pathData="M81.5,44.2 C86.5,44.5 90.5,47.8 91,52.5 C91.3,55.5 89.8,58.6 87.4,60 C87.6,57.2 86.4,54.6 83.6,53.6 L79.8,53.2 Z" />
-    <!-- eye ring + eye -->
-    <path android:fillColor="#F2C14E"
-        android:pathData="M71.5,47.5 m-4.8,0 a4.8,4.8 0 1,0 9.6,0 a4.8,4.8 0 1,0 -9.6,0" />
-    <path android:fillColor="#10151C"
-        android:pathData="M71.5,47.5 m-3.3,0 a3.3,3.3 0 1,0 6.6,0 a3.3,3.3 0 1,0 -6.6,0" />
-    <path android:fillColor="#FFFFFF"
-        android:pathData="M72.6,46.4 m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0" />
+    <group android:pivotX="59" android:pivotY="58" android:scaleX="0.9" android:scaleY="0.9" android:translateX="-5" android:translateY="-2">
+    <group android:translateX="-2" android:translateY="2">
+        <!-- face / throat -->
+        <path android:pathData="M30,82 C28,64 33,49 44,40 C53,33 64,31 73,33.5 C78,35 81.5,38 83.5,41.5 L82,50.5 C78,53 75.4,57.5 73.8,63 C72.6,67.5 72.2,72 72.4,76 L63,71.5 L52,80 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="56" android:startY="33" android:endX="56" android:endY="82">
+                    <item android:offset="0" android:color="#FFFFF6E3"/>
+                    <item android:offset="1" android:color="#FFE6CC9C"/>
+                </gradient>
+            </aapt:attr>
+        </path>
+        <!-- hood -->
+        <path android:pathData="M30,82 C28,64 33,49 44,40 C53,33 64,31 73,33.5 C78,35 81.5,38 83.5,41.5 C79.5,41 75.5,42 72.6,44.4 L69.4,47 L64.6,48.6 L60.8,64 C59.4,69.5 56.2,73.6 51.5,76 L52,80 L41,76.5 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="38" android:startY="35" android:endX="70" android:endY="82">
+                    <item android:offset="0" android:color="#FFFCE6A6"/>
+                    <item android:offset="0.42" android:color="#FFECB650"/>
+                    <item android:offset="1" android:color="#FFA86F1C"/>
+                </gradient>
+            </aapt:attr>
+        </path>
+        <!-- malar stripe as a code slash -->
+        <path android:pathData="M65.2,48.2 L71.4,46.6 L63.4,70.2 C62.6,72.6 60.8,73.9 58.6,73.8 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="65" android:startY="47" android:endX="65" android:endY="74">
+                    <item android:offset="0" android:color="#FFB67A22"/>
+                    <item android:offset="1" android:color="#FF7C4F12"/>
+                </gradient>
+            </aapt:attr>
+        </path>
+        <!-- brow -->
+        <path android:fillColor="#FF7C4F12" android:pathData="M68.6,40.6 C72.8,38.6 78.6,38.8 83.2,41.4 C79,41.2 75.2,42 72.2,43.9 Z"/>
+        <!-- crown highlight -->
+        <path android:strokeColor="#8CFFF1C9" android:strokeWidth="1.1" android:strokeLineCap="round" android:fillColor="#00000000"
+            android:pathData="M38.5,48.5 C44,40.5 53,35.8 63.5,35.2"/>
+        <!-- cere -->
+        <path android:fillColor="#FFF5C452" android:pathData="M83.2,41.3 C85.2,41.1 86.8,41.8 87.8,43 L85.9,49.8 C84.6,50.2 83.4,50.2 82.4,49.8 Z"/>
+        <!-- beak -->
+        <path android:fillColor="#FF1C2026" android:pathData="M87,42.4 C92.2,42.8 96,46.4 96.4,51.4 C96.6,54.6 95,57.8 92.4,59.2 C92.6,56.2 91.4,53.4 88.4,52.3 L84.5,51.8 Z"/>
+        <path android:fillColor="#FF3B414B" android:pathData="M87,42.4 C91.2,42.8 94.2,45.2 95.2,48.6 C93,46.8 90.2,46.1 87.5,46.2 Z"/>
+        <!-- eye -->
+        <path android:fillColor="#FFF5C452" android:pathData="M71.8,45.6a4.4,4.4 0 1,0 8.8,0a4.4,4.4 0 1,0 -8.8,0"/>
+        <path android:fillColor="#FF0C0E11" android:pathData="M73.15,45.6a3.05,3.05 0 1,0 6.1,0a3.05,3.05 0 1,0 -6.1,0"/>
+        <path android:fillColor="#FFFFFFFF" android:pathData="M76.25,44.55a1,1 0 1,0 2,0a1,1 0 1,0 -2,0"/>
+    </group>
     </group>
 </vector>
