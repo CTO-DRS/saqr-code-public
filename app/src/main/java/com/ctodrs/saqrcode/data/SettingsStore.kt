@@ -77,6 +77,31 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("agent_mode", "single") ?: "single"
         set(v) { prefs.edit().putString("agent_mode", v).apply(); bump() }
 
+    /** v0.6: keep agent turns running in a foreground service when the app is in the background. */
+    var keepInBackground: Boolean
+        get() = prefs.getBoolean("keep_background", true)
+        set(v) { prefs.edit().putBoolean("keep_background", v).apply(); bump() }
+
+    /** The one-time battery-optimization explanation was shown. */
+    var batteryTipShown: Boolean
+        get() = prefs.getBoolean("battery_tip_shown", false)
+        set(v) { prefs.edit().putBoolean("battery_tip_shown", v).apply() }
+
+    /** POST_NOTIFICATIONS was requested once (Android 13+). */
+    var notificationsAsked: Boolean
+        get() = prefs.getBoolean("notif_asked", false)
+        set(v) { prefs.edit().putBoolean("notif_asked", v).apply() }
+
+    /** v0.6 voice: send the message as soon as dictation ends. */
+    var voiceAutoSend: Boolean
+        get() = prefs.getBoolean("voice_auto_send", false)
+        set(v) { prefs.edit().putBoolean("voice_auto_send", v).apply(); bump() }
+
+    /** Dictation language: "" follows the app language, else "ar-SA" / "en-US" (long-press on the mic toggles). */
+    var voiceLang: String
+        get() = prefs.getString("voice_lang", "") ?: ""
+        set(v) { prefs.edit().putString("voice_lang", v).apply(); bump() }
+
     /** Terminal font size in sp. */
     var terminalFontSize: Int
         get() = prefs.getInt("term_font", 12)

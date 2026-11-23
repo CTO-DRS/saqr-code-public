@@ -40,7 +40,9 @@ class OpenFile(val path: String, initial: String) {
 class Workspace(val name: String, val dir: File) {
     private val app = SaqrApp.instance
     val agent = AgentSession(name, dir, File(app.filesDir, "checkpoints"), app.settings, app.linux,
-        com.ctodrs.saqrcode.git.GitService(app.filesDir, app.settings.accounts))
+        com.ctodrs.saqrcode.git.GitService(app.filesDir, app.settings.accounts),
+        store = com.ctodrs.saqrcode.agent.SessionStore(File(File(app.filesDir, "chats"), File(name).name)),
+        hooks = com.ctodrs.saqrcode.service.AgentRuntime)
     val terminals by lazy { TerminalManager(app.linux, dir) }
     val git by lazy { GitController(dir, app.settings, app.filesDir) }
     var gitTab by mutableIntStateOf(0)
@@ -90,5 +92,11 @@ class Workspace(val name: String, val dir: File) {
             val p = SaqrApp.instance.projects.get(name) ?: return null
             return Workspace(name, p.dir).also { map[name] = it }
         }
+
+        /** An already-open workspace, without creating one. */
+        fun peek(name: String): Workspace? = map[name]
+
+        /** Write every open chat to disk now (onPause / task removed). */
+        fun saveAll() { map.values.forEach { runCatching { it.agent.saveNow(blocking = true) } } }
     }
 }

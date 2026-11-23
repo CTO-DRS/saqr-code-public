@@ -199,6 +199,75 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
         if (!settings.supportsVision(model)) visionPending = text else sendWithImages(text)
     }
 
+    // ---- v0.6: sessions, voice, background
+    var showSessions by remember { mutableStateOf(false) }
+    var batteryDialog by remember { mutableStateOf(false) }
+    var micRationale by remember { mutableStateOf(false) }
+    var micDenied by remember { mutableStateOf(false) }
+    val voice = remember { com.ctodrs.saqrcode.ui.chat.VoiceInput(ctx) }
+    val speaker = remember { com.ctodrs.saqrcode.ui.chat.Speaker(ctx) }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        speaker.onFail = { p ->
+            val msg = when (p) {
+                com.ctodrs.saqrcode.ui.chat.Speaker.Problem.NO_ENGINE -> R.string.tts_unavailable
+                com.ctodrs.saqrcode.ui.chat.Speaker.Problem.NO_ARABIC_VOICE -> R.string.tts_no_arabic
+                com.ctodrs.saqrcode.ui.chat.Speaker.Problem.NOTHING_TO_READ -> R.string.tts_nothing
+            }
+            android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
+        }
+        onDispose { voice.release(); speaker.release() }
+    }
+    val appLang = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language
+    val voiceLang = com.ctodrs.saqrcode.agent.VoiceLocale.pick(appLang, settings.voiceLang.also { version })
+    val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    val sendRef = remember { arrayOfNulls<(String) -> Unit>(1) }
+    fun startVoice() {
+        voice.start(voiceLang, input, onText = { input = it }, onFinal = { text ->
+            input = text
+            if (settings.voiceAutoSend && text.isNotBlank() && !ws.agent.running) sendRef[0]?.invoke(text)
+        }, onError = { code ->
+            val msg = when (code) {
+                -1 -> R.string.voice_no_service
+                android.speech.SpeechRecognizer.ERROR_NO_MATCH, android.speech.SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> R.string.voice_no_match
+                android.speech.SpeechRecognizer.ERROR_NETWORK, android.speech.SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> R.string.voice_network
+                android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> R.string.voice_permission_denied
+                else -> R.string.voice_error
+            }
+            android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
+        })
+    }
+    val activity = ctx as? android.app.Activity
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) startVoice()
+        else if (activity != null && !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, android.Manifest.permission.RECORD_AUDIO)) micDenied = true
+    }
+    fun onMic() {
+        if (voice.listening) { voice.stop(); return }
+        if (!voice.available) { android.widget.Toast.makeText(ctx, R.string.voice_no_service, android.widget.Toast.LENGTH_LONG).show(); return }
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (granted) startVoice() else micRationale = true
+    }
+    fun onMicLongPress() {
+        val next = com.ctodrs.saqrcode.agent.VoiceLocale.toggle(voiceLang)
+        settings.voiceLang = next
+        android.widget.Toast.makeText(ctx, if (next.startsWith("ar")) R.string.voice_lang_ar else R.string.voice_lang_en, android.widget.Toast.LENGTH_SHORT).show()
+        if (voice.listening) { voice.cancel(); voice.start(next, input, { input = it }, { input = it }, { }) }
+    }
+    /** First turn that may run in the background: explain battery killers once, ask for notifications. */
+    fun beforeFirstBackgroundRun() {
+        if (!settings.keepInBackground) return
+        if (android.os.Build.VERSION.SDK_INT >= 33 && !settings.notificationsAsked &&
+            androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            settings.notificationsAsked = true
+            notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        } else if (!settings.batteryTipShown) {
+            val pm = ctx.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+            settings.batteryTipShown = true
+            if (!pm.isIgnoringBatteryOptimizations(ctx.packageName)) batteryDialog = true
+        }
+    }
+
     // "Image → Code" on a web project: show the result in the preview when the turn ends.
     LaunchedEffect(ws.agent.running) { if (!ws.agent.running && previewWhenDone) { previewWhenDone = false; ws.tab = Pane.PREVIEW } }
 
@@ -206,7 +275,8 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     LaunchedEffect(ws.agent.items.size, ws.agent.running) { ws.fsVersion++; ws.syncFromDisk() }
 
     val chatOverflow: @Composable () -> Unit = {
-        ChatOverflow(onCheckpoints = { showCheckpoints = true }, onUsage = { showUsage = true }, onNewChat = { ws.agent.clear() })
+        ChatOverflow(onCheckpoints = { showCheckpoints = true }, onUsage = { showUsage = true }, onNewChat = { ws.agent.clear() },
+            onSessions = { showSessions = true })
     }
 
     ModalNavigationDrawer(
@@ -217,6 +287,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                 onPane = { ws.tab = it; scope.launch { drawer.close() } },
                 onNewChat = { ws.agent.clear(); ws.tab = Pane.AGENT; scope.launch { drawer.close() } },
                 onRestore = { showCheckpoints = true; scope.launch { drawer.close() } },
+                onSessions = { showSessions = true; ws.tab = Pane.AGENT; scope.launch { drawer.close() } },
                 onSettings = { scope.launch { drawer.close() }; onSettings() },
                 onProjects = { scope.launch { drawer.close() }; onBack() },
             )
@@ -259,16 +330,20 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                             usageEstimated = sessionTotal.estimated, budget = settings.monthlyBudget,
                             monthSpent = com.ctodrs.saqrcode.agent.PriceTable.cost(month, prices) ?: 0.0,
                             pendingImages = pendingImages.toList(), imageToCode = imageToCode,
+                            voice = com.ctodrs.saqrcode.ui.chat.VoiceUi(voice.available, voice.listening, voiceLang, voice.level),
+                            speakingKey = speaker.speakingKey,
                         )
+                        sendRef[0] = { text ->
+                            if (voice.listening) voice.cancel()
+                            val local = SlashCommands.parse(text, state.customCommands)?.command?.action == SlashCommand.Action.CLEAR
+                            if (!local && Budget.needsConfirmation(state.monthSpent, state.budget)) budgetPending = text
+                            else { if (!local) beforeFirstBackgroundRun(); submit(text) }
+                            input = ""
+                        }
                         Box(Modifier.imePadding()) {
                             ChatContent(
                                 state, input, { input = it },
-                                onSend = {
-                                    val text = input
-                                    val local = SlashCommands.parse(text, state.customCommands)?.command?.action == SlashCommand.Action.CLEAR
-                                    if (!local && Budget.needsConfirmation(state.monthSpent, state.budget)) budgetPending = text else submit(text)
-                                    input = ""
-                                },
+                                onSend = { sendRef[0]?.invoke(input) },
                                 onStop = { ws.agent.stop() },
                                 onDecide = { a, ok -> ws.agent.decide(a, ok) },
                                 onPickModel = { settings.setModel(def.id, it) }, onManageProviders = onSettings, topInset = top,
@@ -277,6 +352,9 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                                 onRestore = { askRestore(it.checkpointId) },
                                 onImageAction = { onImageAction(it) },
                                 onRemoveImage = { i -> if (i in pendingImages.indices) pendingImages.removeAt(i); if (pendingImages.isEmpty()) imageToCode = false },
+                                onMic = { onMic() }, onMicLongPress = { onMicLongPress() },
+                                onSpeak = { a -> speaker.toggle(a.key, a.text) },
+                                onResumeTask = { beforeFirstBackgroundRun(); ws.agent.resumeInterrupted() },
                             )
                         }
                     }
@@ -294,6 +372,35 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
         CheckpointsSheet(points, remember(points) { ws.agent.checkpoints.sizeBytes() },
             onPick = { showCheckpoints = false; askRestore(it.id) }, onDismiss = { showCheckpoints = false })
     }
+    if (showSessions) {
+        com.ctodrs.saqrcode.ui.chat.SessionsSheet(ws.agent, onOpened = { speaker.stop(); ws.tab = Pane.AGENT }, onDismiss = { showSessions = false })
+    }
+    if (micRationale) {
+        val c = Saqr.colors
+        AlertDialog(
+            onDismissRequest = { micRationale = false }, containerColor = c.surface1,
+            icon = { SIcon(Lucide.Mic, size = 24.dp, tint = c.accentText) },
+            title = { Text(stringResource(R.string.mic_rationale_title), style = Saqr.type.title2) },
+            text = { Text(stringResource(R.string.mic_rationale_body), style = Saqr.type.body) },
+            confirmButton = { TextButton(onClick = { micRationale = false; micPermission.launch(android.Manifest.permission.RECORD_AUDIO) }) { Text(stringResource(R.string.allow), color = c.accentText) } },
+            dismissButton = { TextButton(onClick = { micRationale = false }) { Text(stringResource(R.string.not_now), color = c.text2) } },
+        )
+    }
+    if (micDenied) {
+        val c = Saqr.colors
+        AlertDialog(
+            onDismissRequest = { micDenied = false }, containerColor = c.surface1,
+            icon = { SIcon(Lucide.Mic, size = 24.dp, tint = c.danger) },
+            title = { Text(stringResource(R.string.mic_denied_title), style = Saqr.type.title2) },
+            text = { Text(stringResource(R.string.mic_denied_body), style = Saqr.type.body) },
+            confirmButton = { TextButton(onClick = {
+                micDenied = false
+                runCatching { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + ctx.packageName))) }
+            }) { Text(stringResource(R.string.open_app_settings), color = c.accentText) } },
+            dismissButton = { TextButton(onClick = { micDenied = false }) { Text(stringResource(R.string.cancel), color = c.text2) } },
+        )
+    }
+    if (batteryDialog) BatteryDialog(onDismiss = { batteryDialog = false })
     if (showUsage) {
         version
         val summary = UsageSummary(ws.agent.sessionUsage.toMap(), ws.agent.ledger.day(), ws.agent.ledger.month(), settings.prices(), settings.monthlyBudget)
@@ -329,19 +436,62 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
             icon = { SIcon(Lucide.TriangleAlert, size = 24.dp, tint = c.danger) },
             title = { Text(stringResource(R.string.budget_confirm_title), style = Saqr.type.title2) },
             text = { Text(stringResource(R.string.budget_confirm_body, com.ctodrs.saqrcode.ui.chat.ltr(formatUsd(spent)), com.ctodrs.saqrcode.ui.chat.ltr(formatUsd(budget))), style = Saqr.type.body) },
-            confirmButton = { TextButton(onClick = { budgetPending = null; submit(text) }) { Text(stringResource(R.string.send_anyway), color = c.danger) } },
+            confirmButton = { TextButton(onClick = { budgetPending = null; beforeFirstBackgroundRun(); submit(text) }) { Text(stringResource(R.string.send_anyway), color = c.danger) } },
             dismissButton = { TextButton(onClick = { budgetPending = null; input = text }) { Text(stringResource(R.string.cancel), color = c.text2) } },
         )
     }
 }
 
+/** One-time explanation of OEM battery killers (Infinix/XOS, Xiaomi…) with shortcuts to the right settings. */
 @Composable
-private fun ChatOverflow(onCheckpoints: () -> Unit, onUsage: () -> Unit, onNewChat: () -> Unit) {
+fun BatteryDialog(onDismiss: () -> Unit) {
+    val c = Saqr.colors
+    val ctx = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismiss, containerColor = c.surface1,
+        icon = { SIcon(Lucide.BatteryCharging, size = 26.dp, tint = c.accentText) },
+        title = { Text(stringResource(R.string.battery_title), style = Saqr.type.title2) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                Text(stringResource(R.string.battery_body), style = Saqr.type.body, color = c.text1)
+                Text(stringResource(R.string.battery_oem), style = Saqr.type.bodySmall, color = c.text2)
+                Row(Modifier.fillMaxWidth().padding(top = Sp.xs), horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                    com.ctodrs.saqrcode.ui.components.SecondaryButton(stringResource(R.string.battery_settings), {
+                        runCatching {
+                            ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                android.net.Uri.parse("package:" + ctx.packageName)))
+                        }
+                        onDismiss()
+                    }, Modifier.weight(1f))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                @android.annotation.SuppressLint("BatteryLife")
+                val i = android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, android.net.Uri.parse("package:" + ctx.packageName))
+                runCatching { ctx.startActivity(i) }.onFailure {
+                    runCatching { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
+                }
+                onDismiss()
+            }) { Text(stringResource(R.string.battery_allow), color = c.accentText) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.later), color = c.text2) } },
+    )
+}
+
+@Composable
+private fun ChatOverflow(onCheckpoints: () -> Unit, onUsage: () -> Unit, onNewChat: () -> Unit, onSessions: () -> Unit = {}) {
     val c = Saqr.colors
     var open by remember { mutableStateOf(false) }
     Box {
         PillIcon(Lucide.EllipsisVertical, stringResource(R.string.more), { open = true })
         androidx.compose.material3.DropdownMenu(open, { open = false }, Modifier.background(c.surface2)) {
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(stringResource(R.string.sessions), style = Saqr.type.label, color = c.text1) },
+                leadingIcon = { SIcon(Lucide.MessagesSquare, size = 16.dp, tint = c.accentText) },
+                onClick = { open = false; onSessions() },
+            )
             androidx.compose.material3.DropdownMenuItem(
                 text = { Text(stringResource(R.string.checkpoints), style = Saqr.type.label, color = c.text1) },
                 leadingIcon = { SIcon(Lucide.History, size = 16.dp, tint = c.accentText) },
@@ -422,7 +572,7 @@ fun paneMeta(pane: Int): Pair<ImageVector, Int> = when (pane) {
 @Composable
 fun IdeDrawer(
     projectName: String, current: Int, onPane: (Int) -> Unit, onNewChat: () -> Unit, onRestore: () -> Unit,
-    onSettings: () -> Unit, onProjects: () -> Unit,
+    onSettings: () -> Unit, onProjects: () -> Unit, onSessions: () -> Unit = {},
 ) {
     val c = Saqr.colors
     ModalDrawerSheet(
@@ -449,6 +599,7 @@ fun IdeDrawer(
             }
             Spacer(Modifier.height(Sp.lg))
             Text(stringResource(R.string.more), style = Saqr.type.micro, color = c.text3, modifier = Modifier.padding(horizontal = Sp.md, vertical = Sp.xs))
+            DrawerItem(Lucide.MessagesSquare, stringResource(R.string.sessions), false, onSessions)
             DrawerItem(Lucide.History, stringResource(R.string.checkpoints), false, onRestore)
             DrawerItem(Lucide.Settings, stringResource(R.string.settings), false, onSettings)
             Spacer(Modifier.weight(1f))

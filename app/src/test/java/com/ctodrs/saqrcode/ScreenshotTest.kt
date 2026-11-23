@@ -384,6 +384,57 @@ class ScreenshotTest {
 
     @Test fun chatImagesLight() = shot("chat-images-light", theme = "light") { ImageChatShot(pending = false) }
 
+    // ------------------------------------------------------------ v0.6: sessions sheet + voice
+
+    private fun sessionMetas(now: Long): List<com.ctodrs.saqrcode.agent.SessionMeta> = listOf(
+        com.ctodrs.saqrcode.agent.SessionMeta("s3", "سوّ لي مكتبة تفقيط للأرقام بالعربي", true, now - 3_600_000, now - 120_000, 14, "✅ 43/43 أخضر. الآن EmojiSense"),
+        com.ctodrs.saqrcode.agent.SessionMeta("s2", "Landing page dark mode toggle", false, now - 86_400_000, now - 7_200_000, 6, "Added the toggle and CSS variables"),
+        com.ctodrs.saqrcode.agent.SessionMeta("s1", "حوّل هذه الشاشة إلى صفحة HTML مع اتجاه RTL كامل وخط عربي واضح", true, now - 3 * 86_400_000L, now - 2 * 86_400_000L, 9, ""),
+        com.ctodrs.saqrcode.agent.SessionMeta("s0", "", true, now - 5 * 86_400_000L, now - 5 * 86_400_000L, 1, ""),
+    )
+
+    @Composable
+    private fun SessionsShot(query: String, bigStorage: Boolean) {
+        val now = 1_795_000_000_000L
+        SheetFrame {
+            com.ctodrs.saqrcode.ui.chat.SessionsSheetContent(
+                sessions = sessionMetas(now).let { l -> if (query.isBlank()) l else l.take(1) }, currentId = "s3", query = query, onQuery = {},
+                storageBytes = if (bigStorage) 61_400_000L else 2_350_000L, running = false,
+                onOpen = {}, onNew = {}, onRename = { _, _ -> }, onDelete = {}, now = now,
+            )
+        }
+    }
+
+    @Test fun sessionsSheet() = shot("sessions-sheet") { SessionsShot(query = "", bigStorage = false) }
+
+    @Test fun sessionsSheetLight() = shot("sessions-sheet-light", theme = "light") { SessionsShot(query = "تفقيط", bigStorage = true) }
+
+    @Composable
+    private fun VoiceChatShot(listening: Boolean, input: String) {
+        val list = remember {
+            mutableStateListOf<ChatItem>(
+                ChatItem.User("سوّ صفحة هبوط لمقهى سراج"),
+                assistant("جاهزة! أنشأت `index.html` و`style.css` بتصميم RTL وزر طلب ذهبي.\n\nافتح تبويب **المعاينة** لتجربتها."),
+                ChatItem.Notice("", kind = ChatItem.Notice.Kind.RESUMED),
+                assistant("أكملت بعد الانقطاع: شغّلت الاختبارات وكلها ناجحة ✅"),
+                ChatItem.Notice("", kind = ChatItem.Notice.Kind.INTERRUPTED),
+            )
+        }
+        IdeFrame(topBar = { IdeTopBar(Pane.AGENT, {}, {}, center = { PlanPillContent(emptyList(), false, {}, "siraj") }) }) { top ->
+            ChatContent(
+                ChatUiState(list, false, step = 6, maxSteps = 40, contextTokens = 12_400, contextWindow = 200_000,
+                    providerId = "anthropic", model = "claude-sonnet-4-5", models = listOf("claude-sonnet-4-5"), ready = true,
+                    voice = com.ctodrs.saqrcode.ui.chat.VoiceUi(available = true, listening = listening, lang = if (listening) "ar-SA" else "en-US", level = 0.7f),
+                    speakingKey = if (listening) -1L else list[3].key),
+                input, {}, {}, {}, { _, _ -> }, {}, {}, topInset = top, autoScroll = false, onSpeak = {},
+            )
+        }
+    }
+
+    @Test fun chatVoice() = shot("chat-voice") { VoiceChatShot(listening = true, input = "أضف زر احجز طاولة تحت") }
+
+    @Test fun chatVoiceLight() = shot("chat-voice-light", theme = "light") { VoiceChatShot(listening = false, input = "") }
+
     companion object {
         val TAFQIT = """package tafqit
 

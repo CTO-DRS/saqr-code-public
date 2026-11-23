@@ -109,6 +109,14 @@ class SettingsUi(
     val activeModel: String = "",
     val visionMode: String = com.ctodrs.saqrcode.agent.Vision.AUTO,
     val onVisionMode: (String) -> Unit = {},
+    /** v0.6 voice + background. */
+    val voiceAutoSend: Boolean = false,
+    val onVoiceAutoSend: (Boolean) -> Unit = {},
+    val voiceLang: String = "",
+    val onVoiceLang: (String) -> Unit = {},
+    val keepInBackground: Boolean = true,
+    val onKeepInBackground: (Boolean) -> Unit = {},
+    val onBatterySettings: () -> Unit = {},
 )
 
 @Composable
@@ -116,6 +124,7 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
     val settings = SaqrApp.instance.settings
     val version by settings.version.collectAsState()
     version
+    var showBattery by remember { mutableStateOf(false) }
     val ui = SettingsUi(
         themeMode = settings.themeMode,
         langTag = AppCompatDelegate.getApplicationLocales().toLanguageTags(),
@@ -147,7 +156,15 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
         activeModel = settings.config(settings.activeProvider).model,
         visionMode = settings.visionMode(settings.config(settings.activeProvider).model),
         onVisionMode = { settings.setVisionMode(settings.config(settings.activeProvider).model, it) },
+        voiceAutoSend = settings.voiceAutoSend,
+        onVoiceAutoSend = { settings.voiceAutoSend = it },
+        voiceLang = settings.voiceLang,
+        onVoiceLang = { settings.voiceLang = it },
+        keepInBackground = settings.keepInBackground,
+        onKeepInBackground = { settings.keepInBackground = it },
+        onBatterySettings = { showBattery = true },
     )
+    if (showBattery) BatteryDialog(onDismiss = { showBattery = false })
     SettingsContent(ui, onBack)
 }
 
@@ -205,6 +222,38 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 )
             }
             if (ui.activeModel.isNotBlank()) Group { VisionEditor(ui) }
+            Group {
+                Column {
+                    ListRow(
+                        title = stringResource(R.string.keep_background), subtitle = stringResource(R.string.keep_background_desc), icon = Lucide.Zap,
+                        trailing = { SaqrSwitch(ui.keepInBackground, ui.onKeepInBackground) },
+                    )
+                    RowDivider()
+                    ListRow(
+                        title = stringResource(R.string.battery_title), subtitle = stringResource(R.string.battery_row_desc), icon = Lucide.BatteryCharging,
+                        onClick = ui.onBatterySettings, trailing = { SIcon(Lucide.ChevronRight, size = 18.dp, tint = Saqr.colors.text3) },
+                    )
+                }
+            }
+
+            // ---- voice
+            SectionLabel(stringResource(R.string.voice_section), Modifier.padding(top = Sp.md))
+            Group {
+                Column {
+                    ListRow(
+                        title = stringResource(R.string.voice_auto_send), subtitle = stringResource(R.string.voice_auto_send_desc), icon = Lucide.Mic,
+                        trailing = { SaqrSwitch(ui.voiceAutoSend, ui.onVoiceAutoSend) },
+                    )
+                    RowDivider()
+                    Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+                        LabeledIcon(Lucide.Languages, stringResource(R.string.voice_language))
+                        val tags = listOf("", com.ctodrs.saqrcode.agent.VoiceLocale.AR, com.ctodrs.saqrcode.agent.VoiceLocale.EN)
+                        val cur = when { ui.voiceLang.startsWith("ar") -> 1; ui.voiceLang.startsWith("en") -> 2; else -> 0 }
+                        Segmented(listOf(stringResource(R.string.voice_follow_app), stringResource(R.string.lang_ar), stringResource(R.string.lang_en)), cur, { ui.onVoiceLang(tags[it]) })
+                        Text(stringResource(R.string.voice_language_hint), style = Saqr.type.caption, color = Saqr.colors.text3)
+                    }
+                }
+            }
 
             // ---- slash commands
             SectionLabel(stringResource(R.string.slash_section), Modifier.padding(top = Sp.md))

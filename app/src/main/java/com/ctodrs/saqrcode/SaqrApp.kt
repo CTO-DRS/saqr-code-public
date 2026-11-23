@@ -24,6 +24,17 @@ class SaqrApp : Application() {
         settings = SettingsStore(this, secure)
         projects = ProjectRepository(this)
         linux = LinuxEnv(this)
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityStarted(a: android.app.Activity) { com.ctodrs.saqrcode.service.AgentRuntime.visibleActivities++ }
+            override fun onActivityStopped(a: android.app.Activity) {
+                com.ctodrs.saqrcode.service.AgentRuntime.visibleActivities = (com.ctodrs.saqrcode.service.AgentRuntime.visibleActivities - 1).coerceAtLeast(0)
+            }
+            override fun onActivityCreated(a: android.app.Activity, b: android.os.Bundle?) {}
+            override fun onActivityResumed(a: android.app.Activity) {}
+            override fun onActivityPaused(a: android.app.Activity) {}
+            override fun onActivitySaveInstanceState(a: android.app.Activity, b: android.os.Bundle) {}
+            override fun onActivityDestroyed(a: android.app.Activity) {}
+        })
     }
 
     companion object {

@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
@@ -36,18 +37,27 @@ data class PlanItem(val title: String, val status: String) {
 
 sealed class ChatItem {
     val key: Long = nextKey++
-    val createdAt: Long = System.currentTimeMillis()
+    /** When the item was created; restored sessions keep their original time. */
+    var createdAt: Long = System.currentTimeMillis()
 
-    /** [text] is what the bubble shows (e.g. "/fix"); the model may have received an expanded prompt. */
-    class User(val text: String, val images: List<ImagePart> = emptyList()) : ChatItem() {
+    /**
+     * [text] is what the bubble shows (e.g. "/fix"); [prompt] is what the model received (the
+     * expanded command, plus any note such as a checkpoint restore).
+     */
+    class User(val text: String, val images: List<ImagePart> = emptyList(), val prompt: String = text) : ChatItem() {
         /** Checkpoint recorded before this message's turn changed files; null when none (or restored). */
         var checkpointId by mutableStateOf<String?>(null)
     }
+    /** One model turn: its text, plus the tool calls it made and their results (so history can be rebuilt from items). */
     class Assistant : ChatItem() {
         var text by mutableStateOf("")
         var streaming by mutableStateOf(true)
+        var calls: List<ToolCall> = emptyList()
+        val results = LinkedHashMap<String, String>()
+        /** Shown in the chat: blank turns that only called tools are hidden. */
+        val visible get() = streaming || text.isNotBlank()
     }
-    class Tool(val name: String, val summary: String) : ChatItem() {
+    class Tool(val name: String, val summary: String, val callId: String = "") : ChatItem() {
         var result by mutableStateOf<String?>(null)
         var ok by mutableStateOf(true)
         var durationMs by mutableLongStateOf(-1L)
@@ -59,8 +69,11 @@ sealed class ChatItem {
         var durationMs by mutableLongStateOf(-1L)
         val deferred = CompletableDeferred<Boolean>()
     }
-    /** An `ask_user` card. While [status] is PENDING the agent loop waits on [deferred]. */
-    class AskUser(val request: AskRequest, val argsJson: String, val restored: Boolean = false) : ChatItem() {
+    /**
+     * An `ask_user` card. While [status] is PENDING the agent loop waits on [deferred]. A [restored]
+     * card (from a saved session) resumes the real turn through [callId] when answered.
+     */
+    class AskUser(val request: AskRequest, val argsJson: String, val restored: Boolean = false, val callId: String? = null) : ChatItem() {
         enum class Status { PENDING, ANSWERED, SKIPPED, CANCELLED }
         var answers by mutableStateOf(AskUserTool.initialAnswers(request))
         var status by mutableStateOf(Status.PENDING)
@@ -70,7 +83,8 @@ sealed class ChatItem {
         fun update(q: AskQuestion, a: AskAnswer) { if (status == Status.PENDING) answers = answers + (q.id to a) }
     }
     class Notice(val text: String, val isError: Boolean = false, val kind: Kind = if (isError) Kind.ERROR else Kind.INFO, val count: Int = -1) : ChatItem() {
-        enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED }
+        /** INTERRUPTED: a turn was cut off (app killed / phone off) and can be resumed; RESUMED: it was. */
+        enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED, INTERRUPTED, RESUMED }
     }
 
     companion object { private var nextKey = 1L }
@@ -91,6 +105,10 @@ class AgentSession(
     private val git: GitService = GitService(null, settings.accounts),
     pendingAskFile: File = File(checkpointRoot.parentFile ?: checkpointRoot, "pending_ask/$projectName.json"),
     val ledger: UsageLedger = UsageLedger(File(checkpointRoot.parentFile ?: checkpointRoot, "usage/usage.json")),
+    /** v0.6: where this project's chat sessions are saved; null = in-memory only. */
+    val store: SessionStore? = null,
+    /** v0.6: the background runtime (foreground service, notifications). */
+    private val hooks: RunHooks = RunHooks.NONE,
 ) {
     val items = mutableStateListOf<ChatItem>()
     var running by mutableStateOf(false); private set
@@ -109,17 +127,146 @@ class AgentSession(
     /** Told to the model with the next message, e.g. that the user restored a checkpoint. */
     private var pendingNote: String? = null
 
+    // ---- v0.6 sessions
+    var sessionId by mutableStateOf(SessionStore.newId()); private set
+    var sessionTitle by mutableStateOf(""); private set
+    private var titleAuto = true
+    private var sessionCreated = System.currentTimeMillis()
+    /** The saved sessions of this project, newest first (refreshed after saves). */
+    val sessions = mutableStateListOf<SessionMeta>()
+    /** Bytes used by saved sessions + images (for the 50 MB warning). */
+    var storageBytes by mutableLongStateOf(0L); private set
+    /** The last session ended inside a turn (app killed, phone off): offer to resume it. */
+    var interrupted by mutableStateOf(false); private set
+
     private val history = ArrayList<Msg>()
     private val touched = LinkedHashSet<String>()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val io = Dispatchers.IO.limitedParallelism(1)
     private var job: Job? = null
+    private var saveJob: Job? = null
     private val pendingAsk = PendingAskStore(pendingAskFile)
 
     init {
-        // The app was killed while a question was open: show the card again. Its answers are
-        // sent as a normal message, since the loop that asked no longer exists.
-        pendingAsk.load()?.let { items += ChatItem.AskUser(it, "", restored = true) }
+        val restored = store?.let { st -> runCatching { st.last()?.let { st.load(it) } }.getOrNull() }
+        if (restored != null) applySession(restored)
+        else {
+            // v0.5 kept only an open question on disk: show it; its answer goes back as a message.
+            pendingAsk.load()?.let { items += ChatItem.AskUser(it, "", restored = true) }
+        }
+        pendingAsk.clear()
+        refreshSessions()
     }
+
+    // ------------------------------------------------------------------ sessions
+
+    private fun applySession(d: SessionData) {
+        sessionId = d.meta.id; sessionTitle = d.meta.title; titleAuto = d.meta.autoTitle; sessionCreated = d.meta.createdAt
+        items.clear(); items.addAll(d.items)
+        plan.clear(); plan.addAll(d.plan)
+        touched.clear(); touched.addAll(d.touched)
+        sessionUsage.clear(); sessionUsage.putAll(d.usage)
+        step = 0; contextTokens = 0; currentUser = null; pendingNote = null; usageVersion++
+        // checkpoints that no longer exist lose their "Restore to here"
+        val cps = runCatching { checkpoints.list().map { it.id }.toSet() }.getOrDefault(emptySet())
+        items.filterIsInstance<ChatItem.User>().forEach { if (it.checkpointId != null && it.checkpointId !in cps) it.checkpointId = null }
+        SessionRepair.repair(items, keepAskPending = true)
+        history.clear(); history.addAll(HistoryRebuilder.rebuild(items))
+        interrupted = d.active && SessionRepair.pendingAsk(items) == null
+        if (interrupted && items.lastOrNull().let { it !is ChatItem.Notice || it.kind != ChatItem.Notice.Kind.INTERRUPTED }) {
+            items += ChatItem.Notice("", kind = ChatItem.Notice.Kind.INTERRUPTED)
+        }
+    }
+
+    private fun snapshot(active: Boolean = running): SessionData {
+        val msgs = items.count { it is ChatItem.User || (it is ChatItem.Assistant && it.text.isNotBlank()) }
+        val preview = (items.lastOrNull { it is ChatItem.Assistant && it.text.isNotBlank() } as? ChatItem.Assistant)?.text
+            ?.let { SessionTitles.auto(it.lineSequence().firstOrNull { l -> l.isNotBlank() }.orEmpty()) }.orEmpty()
+        val meta = SessionMeta(sessionId, sessionTitle, titleAuto, sessionCreated, System.currentTimeMillis(), msgs, preview)
+        return SessionData(meta, items.toList(), plan.toList(), touched.toList(), sessionUsage.toMap(), active)
+    }
+
+    /** Queue a save ~1 s after the last change. */
+    fun markDirty() {
+        if (store == null) return
+        saveJob?.cancel()
+        saveJob = scope.launch { delay(SAVE_DEBOUNCE_MS); saveNow() }
+    }
+
+    /** Save now. [blocking] waits for the write (onPause, before the process may die). */
+    fun saveNow(blocking: Boolean = false) {
+        val st = store ?: return
+        saveJob?.cancel(); saveJob = null
+        if (items.isEmpty()) return
+        val json = runCatching { SessionCodec.encode(snapshot(), st.images) }.getOrNull() ?: return
+        if (blocking) runCatching { st.save(json) }
+        else scope.launch {
+            withContext(io) { runCatching { st.save(json) } }
+            refreshSessions()
+        }
+    }
+
+    fun refreshSessions() {
+        val st = store ?: return
+        scope.launch {
+            val (list, size) = withContext(io) { runCatching { st.list() to st.sizeBytes() }.getOrDefault(emptyList<SessionMeta>() to 0L) }
+            sessions.clear(); sessions.addAll(list); storageBytes = size
+        }
+    }
+
+    /** Start an empty session (the current one stays in the list). */
+    fun newSession() {
+        if (running) stop()
+        saveNow()
+        resetState()
+        sessionId = SessionStore.newId(); sessionTitle = ""; titleAuto = true; sessionCreated = System.currentTimeMillis()
+        scope.launch { withContext(io) { runCatching { store?.setLast(null) } } }
+    }
+
+    private fun resetState() {
+        pendingAsk.clear(); items.clear(); history.clear(); touched.clear(); plan.clear(); step = 0; contextTokens = 0
+        sessionUsage.clear(); currentUser = null; pendingNote = null; usageVersion++; interrupted = false
+    }
+
+    /** Switch to a saved session. Refused while a turn runs. */
+    fun openSession(id: String): Boolean {
+        val st = store ?: return false
+        if (running) return false
+        if (id == sessionId) return true
+        saveNow(blocking = true)
+        val d = st.load(id) ?: return false
+        applySession(d)
+        runCatching { st.setLast(id) }
+        refreshSessions()
+        return true
+    }
+
+    fun renameSession(id: String, title: String) {
+        val st = store ?: return
+        if (id == sessionId) {
+            sessionTitle = title.replace(Regex("\\s+"), " ").trim().take(120)
+            titleAuto = sessionTitle.isEmpty()
+            if (titleAuto) sessionTitle = items.firstOrNull { it is ChatItem.User }?.let { SessionTitles.auto((it as ChatItem.User).text) }.orEmpty()
+            saveNow()
+        } else scope.launch { withContext(io) { runCatching { st.rename(id, title) } }; refreshSessions() }
+    }
+
+    fun deleteSession(id: String) {
+        val st = store ?: return
+        if (id == sessionId) {
+            if (running) return
+            saveJob?.cancel()
+            resetState()
+            sessionId = SessionStore.newId(); sessionTitle = ""; titleAuto = true; sessionCreated = System.currentTimeMillis()
+        }
+        scope.launch { withContext(io) { runCatching { st.delete(id) } }; refreshSessions() }
+    }
+
+    /** Session search runs on disk (titles and message text). */
+    suspend fun searchSessions(query: String): List<SessionMeta> =
+        store?.let { st -> withContext(io) { runCatching { st.search(query) }.getOrDefault(emptyList()) } } ?: emptyList()
+
+    // ------------------------------------------------------------------ turns
 
     /** Send [text] to the agent; the chat bubble shows [display] (e.g. the slash command as typed). */
     fun send(text: String, display: String = text, images: List<ImagePart> = emptyList()) {
@@ -127,21 +274,51 @@ class AgentSession(
         // typing instead of answering a card restored after a restart dismisses it
         items.filterIsInstance<ChatItem.AskUser>().filter { it.restored && it.status == ChatItem.AskUser.Status.PENDING }.forEach {
             it.status = ChatItem.AskUser.Status.CANCELLED; pendingAsk.clear()
+            HistoryRebuilder.owner(items, it.callId)?.results?.set(it.callId!!, HistoryRebuilder.ASK_DISMISSED)
         }
-        val user = ChatItem.User(display.trim().ifEmpty { text.trim() }, images)
-        items += user
-        currentUser = user
+        items.filterIsInstance<ChatItem.Notice>().filter { it.kind == ChatItem.Notice.Kind.INTERRUPTED }.forEach { items.remove(it) }
+        interrupted = false
         val note = pendingNote?.let { "[$it]\n\n" }.orEmpty()
         pendingNote = null
-        history += Msg.User(note + text.trim(), images)
+        val shown = display.trim().ifEmpty { text.trim() }
+        val user = ChatItem.User(shown, images, prompt = note + text.trim())
+        if (titleAuto && sessionTitle.isBlank()) sessionTitle = SessionTitles.auto(shown.ifBlank { text })
+        // the model's view of the conversation always comes from the items (also after a restore)
+        history.clear(); history.addAll(HistoryRebuilder.rebuild(items))
+        items += user
+        currentUser = user
+        history += Msg.User(user.prompt, images)
+        startTurn()
+    }
+
+    /** Continue the turn that a restart cut off (from the saved items). */
+    fun resumeInterrupted(): Boolean {
+        if (running || !interrupted) return false
+        items.filterIsInstance<ChatItem.Notice>().filter { it.kind == ChatItem.Notice.Kind.INTERRUPTED }.forEach { items.remove(it) }
+        interrupted = false
+        items += ChatItem.Notice("", kind = ChatItem.Notice.Kind.RESUMED)
+        currentUser = items.lastOrNull { it is ChatItem.User } as ChatItem.User?
+        history.clear(); history.addAll(HistoryRebuilder.rebuild(items))
+        if (history.isEmpty()) return false
+        startTurn()
+        return true
+    }
+
+    private fun startTurn() {
         running = true
         step = 0
+        hooks.onTurnStart(projectName)
+        saveNow(blocking = true) // "active" is on disk before any network call
+        var outcome = RunOutcome(RunOutcome.Kind.DONE)
         job = scope.launch {
-            try { loop() }
-            catch (e: CancellationException) { items += ChatItem.Notice("⏹", kind = ChatItem.Notice.Kind.STOPPED) }
-            catch (e: Exception) { items += ChatItem.Notice(e.message ?: e.toString(), isError = true) }
+            try { outcome = loop() }
+            catch (e: CancellationException) { items += ChatItem.Notice("⏹", kind = ChatItem.Notice.Kind.STOPPED); outcome = RunOutcome(RunOutcome.Kind.STOPPED) }
+            catch (e: Exception) {
+                val msg = e.message ?: e.toString()
+                items += ChatItem.Notice(msg, isError = true); outcome = RunOutcome(RunOutcome.Kind.ERROR, msg)
+            }
             finally {
-                items.filterIsInstance<ChatItem.Approval>().filter { it.decision == null }.forEach { it.deferred.cancel() }
+                items.filterIsInstance<ChatItem.Approval>().filter { it.decision == null }.forEach { it.deferred.cancel(); it.decision = false }
                 items.filterIsInstance<ChatItem.AskUser>().filter { it.status == ChatItem.AskUser.Status.PENDING && !it.restored }.forEach {
                     it.status = ChatItem.AskUser.Status.CANCELLED; it.deferred.cancel(); pendingAsk.clear()
                 }
@@ -150,16 +327,16 @@ class AgentSession(
                     it.ok = false; it.result = "(stopped)"; it.durationMs = System.currentTimeMillis() - it.createdAt
                 }
                 running = false
+                saveNow()
+                hooks.onTurnEnd(projectName, outcome)
             }
         }
     }
 
     fun stop() { job?.cancel() }
 
-    fun clear() {
-        stop(); pendingAsk.clear(); items.clear(); history.clear(); touched.clear(); plan.clear(); step = 0; contextTokens = 0
-        sessionUsage.clear(); currentUser = null; pendingNote = null; usageVersion++
-    }
+    /** "/clear" and "New chat": keep the old conversation in the Sessions list and start fresh. */
+    fun clear() = newSession()
 
     /** Revert the project to just before [point]'s turn (and drop it and every newer checkpoint). */
     fun restoreCheckpoint(point: Checkpoints.Point): Checkpoints.Plan {
@@ -170,6 +347,7 @@ class AgentSession(
         val files = (plan.restored + plan.deleted).take(30).joinToString(", ")
         pendingNote = "Note: the user restored the project to the checkpoint taken before their message \"${point.prompt}\". " +
             "Files reverted: ${files.ifEmpty { "none" }}. Re-read files before editing them."
+        markDirty()
         return plan
     }
 
@@ -184,6 +362,8 @@ class AgentSession(
         if (item.decision != null) return
         item.decision = approve
         item.deferred.complete(approve)
+        hooks.onResumed(projectName)
+        markDirty()
     }
 
     /** Submit ([skip] = false) or skip an `ask_user` card. */
@@ -193,20 +373,50 @@ class AgentSession(
         item.status = if (skip) ChatItem.AskUser.Status.SKIPPED else ChatItem.AskUser.Status.ANSWERED
         item.durationMs = System.currentTimeMillis() - item.createdAt
         pendingAsk.clear()
+        val result = if (skip) AskUserTool.skipped() else AskUserTool.serialize(item.request, item.answers)
         if (item.restored) {
-            send(AskUserTool.asUserMessage(item.request, if (skip) null else item.answers))
+            val owner = HistoryRebuilder.owner(items, item.callId)
+            if (owner != null && !running) {
+                // v0.6: the conversation is on disk, so the real turn continues with the answer as the tool result
+                owner.results[item.callId!!] = result
+                currentUser = items.lastOrNull { it is ChatItem.User } as ChatItem.User?
+                interrupted = false
+                history.clear(); history.addAll(HistoryRebuilder.rebuild(items))
+                startTurn()
+            } else send(AskUserTool.asUserMessage(item.request, if (skip) null else item.answers))
         } else {
-            item.deferred.complete(if (skip) AskUserTool.skipped() else AskUserTool.serialize(item.request, item.answers))
+            item.deferred.complete(result)
+            hooks.onResumed(projectName)
+            markDirty()
         }
     }
 
-    private suspend fun askUser(a: JSONObject?): String {
+    /** Answer the open single-choice question from a notification button. */
+    fun answerFromNotification(questionId: String, optionId: String): Boolean {
+        val card = SessionRepair.pendingAsk(items) ?: return false
+        val q = card.request.questions.firstOrNull { it.id == questionId } ?: return false
+        if (q.options.none { it.id == optionId }) return false
+        card.update(q, AskUserTool.toggle(q, card.answers[q.id] ?: AskAnswer(), optionId))
+        if (!card.canSubmit) return false
+        answer(card, skip = false)
+        return true
+    }
+
+    private suspend fun askUser(a: JSONObject?, callId: String): String {
         val req = AskUserTool.parse(a)
             ?: return "Error: ask_user needs a non-empty `questions` array; each question needs `id`, `prompt` and `kind`."
-        val card = ChatItem.AskUser(req, a.toString())
+        val card = ChatItem.AskUser(req, a.toString(), callId = callId)
         items += card
-        withContext(Dispatchers.IO) { pendingAsk.save(card.argsJson) }
+        saveNow() // the open question survives the process
+        hooks.onWaiting(projectName, RunWait.forAsk(req))
         return card.deferred.await()
+    }
+
+    /** Wait on an approval card, telling the runtime (notification) while it is open. */
+    private suspend fun awaitApproval(card: ChatItem.Approval, kind: RunWait.Kind, detail: String): Boolean {
+        saveNow()
+        hooks.onWaiting(projectName, RunWait(kind, detail.take(200)))
+        return card.deferred.await().also { card.durationMs = System.currentTimeMillis() - card.createdAt }
     }
 
     private fun client(): Pair<LlmClient, String> {
@@ -217,11 +427,13 @@ class AgentSession(
         return LlmClient(def, cfg.baseUrl, cfg.model, settings.apiKey(id)) to cfg.model
     }
 
-    private suspend fun loop() {
+    private suspend fun loop(): RunOutcome {
         val (llm, model) = client()
+        var lastText = ""
         for (step in 0 until MAX_STEPS) {
             trimHistory()
             this.step = step + 1
+            hooks.onActivity(projectName, step + 1, RunActivity.THINKING)
             val bubble = ChatItem.Assistant()
             items += bubble
             val sys = withContext(Dispatchers.IO) { SystemPrompt.build(projectDir, touched, linux.ready) }
@@ -240,18 +452,24 @@ class AgentSession(
             recordUsage(model, used)
             // make sure the bubble shows the final text even if a delta launch is pending
             bubble.text = turn.text
+            bubble.calls = turn.toolCalls
             bubble.streaming = false
-            if (turn.text.isBlank()) items.remove(bubble)
+            if (turn.text.isNotBlank()) lastText = turn.text
             history += Msg.Assistant(turn.text, turn.toolCalls)
-            if (turn.toolCalls.isEmpty()) return
-            executeTools(turn.toolCalls)
+            markDirty()
+            if (turn.toolCalls.isEmpty()) return RunOutcome(RunOutcome.Kind.DONE, NotifText.summary(lastText))
+            executeTools(turn.toolCalls, bubble)
         }
         items += ChatItem.Notice("Step limit reached ($MAX_STEPS). Send a message to continue.", kind = ChatItem.Notice.Kind.STEP_LIMIT)
+        return RunOutcome(RunOutcome.Kind.STEP_LIMIT, NotifText.summary(lastText))
     }
 
-    private suspend fun executeTools(calls: List<ToolCall>) {
+    private suspend fun executeTools(calls: List<ToolCall>, bubble: ChatItem.Assistant) {
         val parsed = calls.map { c -> c to (runCatching { JSONObject(c.argsJson) }.getOrNull()) }
-        val results = HashMap<String, String>()
+        // results also land on the bubble right away, so a restart can rebuild what already ran
+        val results = object : HashMap<String, String>() {
+            override fun put(key: String, value: String): String? { bubble.results[key] = value; return super.put(key, value) }
+        }
 
         // 1) Prepare all mutating calls of this turn as one batch.
         val changes = LinkedHashMap<String, FileChange>() // path -> cumulative change
@@ -283,10 +501,13 @@ class AgentSession(
 
         if (changes.isNotEmpty()) {
             val needApproval = settings.approveAll || changes.size >= 2
+            val first = changes.values.first()
+            hooks.onActivity(projectName, step, RunActivity(when { first.isDelete -> RunActivity.Kind.DELETE; first.isNew -> RunActivity.Kind.WRITE; else -> RunActivity.Kind.EDIT },
+                first.path.substringAfterLast('/')))
             val approved = if (needApproval) {
                 val card = ChatItem.Approval(changes.values.toList())
                 items += card
-                card.deferred.await().also { card.durationMs = System.currentTimeMillis() - card.createdAt }
+                awaitApproval(card, RunWait.Kind.FILES, changes.keys.joinToString(", "))
             } else true
             if (approved) {
                 val user = currentUser
@@ -322,10 +543,11 @@ class AgentSession(
         for ((c, a) in parsed) {
             if (c.name in Tools.MUTATING) continue
             if (c.name == Tools.PLAN) { results[c.id] = updatePlan(a); continue }
-            if (c.name == Tools.ASK) { results[c.id] = askUser(a); continue }
+            if (c.name == Tools.ASK) { results[c.id] = askUser(a, c.id); continue }
             val args = a ?: JSONObject()
-            val item = ChatItem.Tool(c.name, Tools.summarizeArgs(c.name, args))
+            val item = ChatItem.Tool(c.name, Tools.summarizeArgs(c.name, args), c.id)
             items += item
+            hooks.onActivity(projectName, step, RunActivity.forTool(c.name, item.summary))
             val out = try {
                 when (c.name) {
                     Tools.GIT_PUSH -> gitPush(args)
@@ -337,6 +559,7 @@ class AgentSession(
             item.durationMs = System.currentTimeMillis() - item.createdAt
             item.result = out
             results[c.id] = out
+            markDirty()
         }
 
         for (c in calls) history += Msg.ToolResult(c.id, c.name, results[c.id] ?: "Error: not executed")
@@ -351,6 +574,7 @@ class AgentSession(
             PlanItem(title.take(160), st)
         }.take(20)
         plan.clear(); plan.addAll(next)
+        markDirty()
         return "Plan updated (${next.count { it.done }}/${next.size} done)."
     }
 
@@ -359,7 +583,7 @@ class AgentSession(
         val summary = withContext(Dispatchers.IO) { GitTools.describePush(a, projectDir, git) }
         val card = ChatItem.Approval(emptyList(), action = summary)
         items += card
-        val ok = card.deferred.await().also { card.durationMs = System.currentTimeMillis() - card.createdAt }
+        val ok = awaitApproval(card, RunWait.Kind.PUSH, summary.lineSequence().firstOrNull().orEmpty())
         if (!ok) return "The user REJECTED the push. Nothing was pushed."
         return withContext(Dispatchers.IO) { GitTools.push(a, projectDir, git) }
     }
@@ -372,7 +596,7 @@ class AgentSession(
             msg.lineSequence().drop(1).joinToString("\n").let { if (it.isBlank()) "" else "\n\n" + it.trim() },
             actionKind = ChatItem.Approval.ActionKind.COMMIT)
         items += card
-        val ok = card.deferred.await().also { card.durationMs = System.currentTimeMillis() - card.createdAt }
+        val ok = awaitApproval(card, RunWait.Kind.COMMIT, msg.lineSequence().first())
         if (!ok) return "The user REJECTED the commit. Nothing was committed. Ask what they would like to change."
         return runTool(Tools.GIT_COMMIT, a)
     }
@@ -425,6 +649,7 @@ class AgentSession(
         const val MAX_CONTEXT_CHARS = 180_000
         /** Rough context cost of one attached image (~1.5k tokens) for the meter and trimming. */
         const val IMAGE_CHARS = 5_400
+        const val SAVE_DEBOUNCE_MS = 1_000L
     }
 }
 

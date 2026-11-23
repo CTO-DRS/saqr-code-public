@@ -31,6 +31,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -63,6 +67,7 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.agent.Budget
 import com.ctodrs.saqrcode.agent.ChatItem
@@ -118,6 +123,10 @@ class ChatUiState(
     val pendingImages: List<com.ctodrs.saqrcode.agent.ImagePart> = emptyList(),
     /** The pending images go out as an "Image → Code" request. */
     val imageToCode: Boolean = false,
+    /** v0.6: dictation state for the mic button. */
+    val voice: VoiceUi = VoiceUi(),
+    /** v0.6: key of the assistant message being read aloud, or -1. */
+    val speakingKey: Long = -1L,
 ) {
     val budgetLevel get() = Budget.level(monthSpent, budget)
 }
@@ -140,17 +149,23 @@ fun ChatContent(
     onRestore: (ChatItem.User) -> Unit = {},
     onImageAction: (ImageAction) -> Unit = {},
     onRemoveImage: (Int) -> Unit = {},
+    onMic: () -> Unit = {},
+    onMicLongPress: () -> Unit = {},
+    onSpeak: ((ChatItem.Assistant) -> Unit)? = null,
+    onResumeTask: () -> Unit = {},
 ) {
     val c = Saqr.colors
     var modelMenu by remember { mutableStateOf(false) }
-    val last = state.items.lastOrNull()
+    // turns that only called tools have no text: they stay in the session but are not shown
+    val shown = state.items.filter { it !is ChatItem.Assistant || it.visible }
+    val last = shown.lastOrNull()
     val lastLen = (last as? ChatItem.Assistant)?.text?.length ?: 0
-    if (autoScroll) LaunchedEffect(state.items.size, lastLen) {
-        if (state.items.isNotEmpty()) listState.scrollToItem(state.items.size, Int.MAX_VALUE / 2)
+    if (autoScroll) LaunchedEffect(shown.size, lastLen) {
+        if (shown.isNotEmpty()) listState.scrollToItem(shown.size, Int.MAX_VALUE / 2)
     }
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            if (state.items.isEmpty()) {
+            if (shown.isEmpty()) {
                 Box(Modifier.fillMaxSize().padding(top = topInset), contentAlignment = Alignment.Center) {
                     EmptyState(
                         title = stringResource(if (state.ready) R.string.agent_empty_title else R.string.no_provider_title),
@@ -163,9 +178,15 @@ fun ChatContent(
                     Modifier.fillMaxSize(), state = listState,
                     contentPadding = PaddingValues(start = Sp.lg, end = Sp.lg, top = topInset + Sp.sm, bottom = Sp.lg),
                 ) {
-                    items(state.items, key = { it.key }) { item ->
+                    itemsIndexed(shown, key = { _, it -> it.key }) { i, item ->
                         Box(Modifier.padding(vertical = spacingFor(item))) {
-                            ChatRow(item, onDecide, onAnswer, onRestore = if (state.running) null else onRestore)
+                            // "Read aloud" sits under the reply that ends a turn
+                            val endsTurn = item is ChatItem.Assistant && !item.streaming &&
+                                shown.getOrNull(i + 1).let { it == null || it is ChatItem.User || it is ChatItem.Notice } &&
+                                !(state.running && i == shown.lastIndex)
+                            ChatRow(item, onDecide, onAnswer, onRestore = if (state.running) null else onRestore,
+                                onSpeak = if (endsTurn) onSpeak else null, speaking = item.key == state.speakingKey,
+                                onResumeTask = if (state.running) null else onResumeTask)
                         }
                     }
                     val showWorking = state.running && when (last) {
@@ -185,7 +206,8 @@ fun ChatContent(
             Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(16.dp)
                 .background(Brush.verticalGradient(listOf(Color.Transparent, c.bg))))
         }
-        if (state.items.isNotEmpty() || state.sessionTokens > 0) StepMeter(state, onMeter)
+        if (shown.isNotEmpty() || state.sessionTokens > 0) StepMeter(state, onMeter)
+        if (state.voice.listening) ListeningBar(state.voice)
         if (state.budgetLevel == Budget.Level.WARN || state.budgetLevel == Budget.Level.OVER) BudgetBanner(state, onMeter)
         val slash = remember(input, state.customCommands) { SlashCommands.suggestions(input, state.customCommands) }
         val replyText = if (!state.running) (last as? ChatItem.Assistant)?.takeIf { !it.streaming }?.text else null
@@ -198,7 +220,8 @@ fun ChatContent(
             if (SlashCommands.parse(input, state.customCommands)?.command?.action == SlashCommand.Action.MODEL) { onInput(""); modelMenu = true }
             else onSend()
         }
-        Composer(state, input, onInput, send, onStop, onPickModel, onManageProviders, modelMenu, { modelMenu = it }, onImageAction, onRemoveImage)
+        Composer(state, input, onInput, send, onStop, onPickModel, onManageProviders, modelMenu, { modelMenu = it }, onImageAction, onRemoveImage,
+            onMic, onMicLongPress)
     }
 }
 
@@ -215,6 +238,9 @@ private fun spacingFor(item: ChatItem) = when (item) {
 fun ChatRow(
     item: ChatItem, onDecide: (ChatItem.Approval, Boolean) -> Unit, onAnswer: (ChatItem.AskUser, Boolean) -> Unit = { _, _ -> },
     onRestore: ((ChatItem.User) -> Unit)? = null,
+    onSpeak: ((ChatItem.Assistant) -> Unit)? = null,
+    speaking: Boolean = false,
+    onResumeTask: (() -> Unit)? = null,
 ) {
     when (item) {
         is ChatItem.User -> Column(Modifier.fillMaxWidth()) {
@@ -222,13 +248,98 @@ fun ChatRow(
             if (item.text.isNotBlank()) UserBubble(item.text)
             if (item.checkpointId != null && onRestore != null) RestoreHere { onRestore(item) }
         }
-        is ChatItem.Assistant -> if (item.text.isBlank() && item.streaming) WorkingRow() else MarkdownText(item.text)
+        is ChatItem.Assistant -> if (item.text.isBlank() && item.streaming) WorkingRow() else Column(Modifier.fillMaxWidth()) {
+            MarkdownText(item.text)
+            if (onSpeak != null && item.text.isNotBlank()) ReadAloud(speaking) { onSpeak(item) }
+        }
         is ChatItem.Tool -> ToolRow(item)
         is ChatItem.Approval -> if (item.decision == null) ApprovalCard(item, onDecide)
             else if (item.action != null) ActionDecisionRow(item)
             else Column { item.changes.forEach { ChangeRow(it, item.decision == true, item.durationMs) } }
         is ChatItem.AskUser -> AskUserCard(item, onAnswer)
-        is ChatItem.Notice -> NoticeCard(item)
+        is ChatItem.Notice -> when (item.kind) {
+            ChatItem.Notice.Kind.INTERRUPTED -> InterruptedCard(onResumeTask)
+            ChatItem.Notice.Kind.RESUMED -> ResumedPill()
+            else -> NoticeCard(item)
+        }
+    }
+}
+
+/** Small "🔊 Read aloud" / "■ Stop reading" action under a finished reply. */
+@Composable
+private fun ReadAloud(speaking: Boolean, onClick: () -> Unit) {
+    val c = Saqr.colors
+    Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+        Row(
+            Modifier.heightIn(min = 32.dp).clip(CircleShape).clickable(onClick = onClick).padding(horizontal = Sp.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SIcon(if (speaking) Lucide.Square else Lucide.Volume2, size = 14.dp, tint = if (speaking) c.accentText else c.text3)
+            Spacer(Modifier.width(5.dp))
+            Text(stringResource(if (speaking) R.string.stop_reading else R.string.read_aloud), style = Saqr.type.caption.copy(fontWeight = FontWeight.Medium),
+                color = if (speaking) c.accentText else c.text3, maxLines = 1)
+        }
+    }
+}
+
+/** A turn cut off by a restart / phone shutdown, with a Resume button. */
+@Composable
+private fun InterruptedCard(onResume: (() -> Unit)?) {
+    val c = Saqr.colors
+    val shape = RoundedCornerShape(Radius.lg)
+    Column(Modifier.fillMaxWidth().clip(shape).background(c.warningBg).border(1.dp, c.warningBorder, shape).padding(Sp.lg)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SIcon(Lucide.TriangleAlert, size = 20.dp, tint = c.warning)
+            Spacer(Modifier.width(Sp.sm))
+            Text(stringResource(R.string.interrupted_title), style = Saqr.type.title3.copy(fontWeight = FontWeight.SemiBold), color = c.warning)
+        }
+        Spacer(Modifier.height(Sp.xs))
+        Text(stringResource(R.string.interrupted_body), style = Saqr.type.bodySmall, color = c.text1)
+        if (onResume != null) {
+            Spacer(Modifier.height(Sp.md))
+            PrimaryButton(stringResource(R.string.resume_task), onResume, icon = Lucide.RotateCcw)
+        }
+    }
+}
+
+@Composable
+private fun ResumedPill() {
+    val c = Saqr.colors
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        Row(Modifier.clip(CircleShape).background(c.accentSoft).border(1.dp, c.accent.copy(alpha = 0.35f), CircleShape).padding(horizontal = Sp.md, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            SIcon(Lucide.RotateCcw, size = 12.dp, tint = c.accentText)
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.resumed_after_interruption), style = Saqr.type.caption, color = c.accentText)
+        }
+    }
+}
+
+/** "Listening… (العربية)" with a level meter, above the composer while dictating. */
+@Composable
+private fun ListeningBar(v: VoiceUi) {
+    val c = Saqr.colors
+    val shape = RoundedCornerShape(Radius.md)
+    val pulse by animateFloatAsState(v.level, tween(120), label = "lvl")
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = Sp.md, vertical = Sp.xs).clip(shape).background(c.accentSoft)
+            .border(1.dp, c.accent.copy(alpha = 0.35f), shape).padding(horizontal = Sp.md, vertical = Sp.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(10.dp).clip(CircleShape).background(c.danger))
+        Spacer(Modifier.width(Sp.sm))
+        Text(stringResource(R.string.voice_listening), style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1)
+        Spacer(Modifier.width(6.dp))
+        Text("· " + stringResource(if (v.lang.startsWith("ar")) R.string.lang_ar else R.string.lang_en), style = Saqr.type.caption, color = c.text2, maxLines = 1)
+        Spacer(Modifier.weight(1f))
+        // five bars that follow the microphone level
+        Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
+            listOf(0.45f, 0.8f, 1f, 0.7f, 0.4f).forEach { k ->
+                Box(Modifier.width(3.dp).height((6 + 16 * (0.15f + 0.85f * pulse) * k).dp).clip(RoundedCornerShape(2.dp)).background(c.accent))
+            }
+        }
+        Spacer(Modifier.width(Sp.sm))
+        Text(stringResource(R.string.voice_tap_stop), style = Saqr.type.caption, color = c.text3, maxLines = 1)
     }
 }
 
@@ -650,6 +761,7 @@ private fun Composer(
     onPickModel: (String) -> Unit, onManageProviders: () -> Unit,
     modelMenu: Boolean, setModelMenu: (Boolean) -> Unit,
     onImageAction: (ImageAction) -> Unit = {}, onRemoveImage: (Int) -> Unit = {},
+    onMic: () -> Unit = {}, onMicLongPress: () -> Unit = {},
 ) {
     val c = Saqr.colors
     val shape = RoundedCornerShape(Radius.xxl)
@@ -742,7 +854,40 @@ private fun Composer(
                 }
             }
             Spacer(Modifier.weight(0.001f).widthIn(min = Sp.sm))
+            val showMic = !state.running && state.pendingImages.isEmpty() && (input.isEmpty() || state.voice.listening)
+            if (showMic) {
+                MicButton(state.voice, onMic, onMicLongPress)
+                Spacer(Modifier.width(Sp.sm))
+            }
             SendButton(running = state.running, enabled = (input.isNotBlank() || state.pendingImages.isNotEmpty()) && state.ready, onSend = onSend, onStop = onStop)
+        }
+    }
+}
+
+/** Mic: tap to dictate / stop, long-press to switch Arabic ↔ English. Shows the language it will use. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MicButton(v: VoiceUi, onTap: () -> Unit, onLongPress: () -> Unit) {
+    val c = Saqr.colors
+    val ring by animateFloatAsState(if (v.listening) 1f + 0.15f * v.level else 1f, tween(120), label = "ring")
+    val desc = stringResource(if (v.listening) R.string.voice_stop else R.string.voice_start)
+    Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
+        if (v.listening) Box(Modifier.size(42.dp).scale(ring).clip(CircleShape).background(c.accent.copy(alpha = 0.22f)))
+        Box(
+            Modifier.size(40.dp).clip(CircleShape)
+                .background(if (v.listening) c.accent else c.surface2)
+                .border(1.dp, if (v.listening) c.accent else c.border, CircleShape)
+                .combinedClickable(onClick = onTap, onLongClick = onLongPress, onClickLabel = desc),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (v.listening) Box(Modifier.size(12.dp).clip(RoundedCornerShape(3.dp)).background(c.onAccent))
+            else SIcon(Lucide.Mic, size = 19.dp, tint = if (v.available) c.text1 else c.text3, contentDescription = desc)
+        }
+        // tiny language badge (ع / EN) in the corner
+        Box(Modifier.align(Alignment.BottomEnd).clip(CircleShape).background(c.surface1)
+            .border(1.dp, c.accent.copy(alpha = 0.6f), CircleShape).padding(horizontal = 4.dp, vertical = 1.dp)) {
+            Text(if (v.lang.startsWith("ar")) "ع" else "EN",
+                style = Saqr.type.micro.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp, lineHeight = 11.sp), color = c.accentText, maxLines = 1)
         }
     }
 }

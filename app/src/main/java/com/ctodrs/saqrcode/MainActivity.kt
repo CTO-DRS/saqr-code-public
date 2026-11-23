@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
@@ -32,11 +33,31 @@ import com.ctodrs.saqrcode.ui.theme.Saqr
 import com.ctodrs.saqrcode.ui.theme.SaqrTheme
 
 class MainActivity : AppCompatActivity() {
+    /** A project to open (and maybe resume) from a notification: "name" or "name\u0000resume". */
+    private val openRequest = mutableStateOf<String?>(null)
+
+    private fun handle(intent: Intent?) {
+        val p = intent?.getStringExtra(EXTRA_PROJECT) ?: return
+        openRequest.value = p + if (intent.action == ACTION_RESUME) "\u0000resume" else ""
+        intent.removeExtra(EXTRA_PROJECT)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handle(intent)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        com.ctodrs.saqrcode.ui.Workspace.saveAll()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val settings = (application as SaqrApp).settings
+        if (savedInstanceState == null) handle(intent)
         setContent {
             val version by settings.version.collectAsState()
             version
@@ -52,6 +73,23 @@ class MainActivity : AppCompatActivity() {
                     var screen by rememberSaveable { mutableStateOf(if (settings.onboarded) "home" else "onboarding") }
                     var returnTo by rememberSaveable { mutableStateOf("home") }
                     var accountsReturn by rememberSaveable { mutableStateOf("settings") }
+                    val req = openRequest.value
+                    LaunchedEffect(req) {
+                        if (req != null) {
+                            val name = req.substringBefore('\u0000')
+                            val ws = com.ctodrs.saqrcode.ui.Workspace.get(name)
+                            if (ws != null) {
+                                if (!settings.onboarded) settings.onboarded = true
+                                ws.tab = com.ctodrs.saqrcode.ui.Pane.AGENT
+                                screen = "project:$name"
+                                if (req.endsWith("\u0000resume")) {
+                                    com.ctodrs.saqrcode.service.Notifs.cancelResumeOffer(this@MainActivity)
+                                    ws.agent.resumeInterrupted()
+                                }
+                            }
+                            openRequest.value = null
+                        }
+                    }
                     BackHandler(enabled = screen != "home" && screen != "onboarding") {
                         screen = when (screen) { "settings" -> returnTo; "accounts" -> accountsReturn; else -> "home" }
                     }
@@ -79,5 +117,11 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_PROJECT = "com.ctodrs.saqrcode.extra.PROJECT"
+        const val ACTION_OPEN = "com.ctodrs.saqrcode.action.OPEN_PROJECT"
+        const val ACTION_RESUME = "com.ctodrs.saqrcode.action.RESUME_PROJECT"
     }
 }
