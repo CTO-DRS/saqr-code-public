@@ -83,7 +83,7 @@ object Pane { const val AGENT = 0; const val FILES = 1; const val TERMINAL = 2; 
 val TopBarHeight: Dp = 68.dp
 
 @Composable
-fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit) {
+fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, onAccounts: () -> Unit = onSettings) {
     val ws = remember(projectName) { Workspace.get(projectName) }
     if (ws == null) { LaunchedEffect(Unit) { onBack() }; return }
     val app = SaqrApp.instance
@@ -149,7 +149,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit) {
                     }
                     Pane.FILES -> Box(Modifier.padding(top = top).imePadding()) { FilesPane(ws) }
                     Pane.TERMINAL -> Box(Modifier.padding(top = top).imePadding()) { TerminalPane(ws) }
-                    Pane.GIT -> Box(Modifier.padding(top = top).imePadding()) { GitPane(ws) }
+                    Pane.GIT -> Box(Modifier.padding(top = top).imePadding()) { GitPane(ws, onAccounts) }
                     else -> Box(Modifier.padding(top = top)) { PreviewPane(ws) }
                 }
             }

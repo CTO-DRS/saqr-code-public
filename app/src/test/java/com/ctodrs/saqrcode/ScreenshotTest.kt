@@ -29,6 +29,7 @@ import com.ctodrs.saqrcode.ui.ProjectCard
 import com.ctodrs.saqrcode.ui.SettingsContent
 import com.ctodrs.saqrcode.ui.SettingsUi
 import com.ctodrs.saqrcode.ui.TerminalContent
+import com.ctodrs.saqrcode.ui.TermTabUi
 import com.ctodrs.saqrcode.ui.buildTree
 import com.ctodrs.saqrcode.ui.chat.ChatContent
 import com.ctodrs.saqrcode.ui.chat.ChatUiState
@@ -194,7 +195,13 @@ class ScreenshotTest {
     @Test fun terminal() = shot("terminal") {
         IdeFrame(topBar = { IdeTopBar(Pane.TERMINAL, {}, {}, center = { PaneTitle(Pane.TERMINAL, "tafqit") }) }) { top ->
             Box(Modifier.padding(top = top)) {
-                TerminalContent(TERMINAL_OUT, linuxReady = true, installing = false, error = false, progress = "", {}, {}, {})
+                // TODO: feed TERMINAL_OUT through a real TerminalEmulator; for now renders the empty-screen chrome.
+                TerminalContent(
+                    emulator = null, version = 0, tabs = listOf(TermTabUi(1, "alpine 1", false)), active = 0,
+                    linuxReady = true, installing = false, error = false, progress = "", finished = false, fontSize = 13,
+                    onInstall = {}, onSize = { _, _ -> }, onWrite = {}, onPaste = {}, onCopyAll = {},
+                    onRestart = {}, onSelectTab = {}, onNewTab = {}, onCloseTab = {}, onFont = {},
+                )
             }
         }
     }

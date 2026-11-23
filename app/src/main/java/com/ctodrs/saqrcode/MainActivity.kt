@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
                                 projectName = s.removePrefix("project:"),
                                 onBack = { screen = "home" },
                                 onSettings = { returnTo = s; screen = "settings" },
+                                onAccounts = { returnTo = s; screen = "settings" }, // TODO: open accounts section directly
                             )
                             else -> HomeScreen(
                                 onOpen = { screen = "project:$it" },
