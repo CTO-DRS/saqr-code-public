@@ -39,7 +39,7 @@ sealed class ChatItem {
     val createdAt: Long = System.currentTimeMillis()
 
     /** [text] is what the bubble shows (e.g. "/fix"); the model may have received an expanded prompt. */
-    class User(val text: String) : ChatItem() {
+    class User(val text: String, val images: List<ImagePart> = emptyList()) : ChatItem() {
         /** Checkpoint recorded before this message's turn changed files; null when none (or restored). */
         var checkpointId by mutableStateOf<String?>(null)
     }
@@ -122,18 +122,18 @@ class AgentSession(
     }
 
     /** Send [text] to the agent; the chat bubble shows [display] (e.g. the slash command as typed). */
-    fun send(text: String, display: String = text) {
-        if (running || text.isBlank()) return
+    fun send(text: String, display: String = text, images: List<ImagePart> = emptyList()) {
+        if (running || (text.isBlank() && images.isEmpty())) return
         // typing instead of answering a card restored after a restart dismisses it
         items.filterIsInstance<ChatItem.AskUser>().filter { it.restored && it.status == ChatItem.AskUser.Status.PENDING }.forEach {
             it.status = ChatItem.AskUser.Status.CANCELLED; pendingAsk.clear()
         }
-        val user = ChatItem.User(display.trim().ifEmpty { text.trim() })
+        val user = ChatItem.User(display.trim().ifEmpty { text.trim() }, images)
         items += user
         currentUser = user
         val note = pendingNote?.let { "[$it]\n\n" }.orEmpty()
         pendingNote = null
-        history += Msg.User(note + text.trim())
+        history += Msg.User(note + text.trim(), images)
         running = true
         step = 0
         job = scope.launch {
@@ -228,7 +228,8 @@ class AgentSession(
             val inputChars = sys.length + history.sumOf { size(it) }
             contextTokens = (inputChars / 3.6).toInt()
             val streamed = StringBuffer()
-            val turn = llm.complete(sys, history, Tools.specs, object : StreamListener {
+            // only the newest image turns carry their pixels; older ones say "[image omitted]"
+            val turn = llm.complete(sys, ImagePruner.prune(history), Tools.specs, object : StreamListener {
                 override fun onText(delta: String) {
                     streamed.append(delta)
                     scope.launch { bubble.text = streamed.toString() }
@@ -414,7 +415,7 @@ class AgentSession(
     }
 
     private fun size(m: Msg) = when (m) {
-        is Msg.User -> m.text.length
+        is Msg.User -> m.text.length + m.images.size * IMAGE_CHARS
         is Msg.Assistant -> m.text.length + m.toolCalls.sumOf { it.argsJson.length }
         is Msg.ToolResult -> m.content.length
     }
@@ -422,6 +423,8 @@ class AgentSession(
     companion object {
         const val MAX_STEPS = 40
         const val MAX_CONTEXT_CHARS = 180_000
+        /** Rough context cost of one attached image (~1.5k tokens) for the meter and trimming. */
+        const val IMAGE_CHARS = 5_400
     }
 }
 

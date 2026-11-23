@@ -17,7 +17,8 @@ import java.util.concurrent.TimeUnit
 data class ToolCall(val id: String, val name: String, val argsJson: String)
 
 sealed class Msg {
-    data class User(val text: String) : Msg()
+    /** [images] are sent as multimodal parts (vision models only); see [ImagePruner] for old turns. */
+    data class User(val text: String, val images: List<ImagePart> = emptyList()) : Msg()
     data class Assistant(val text: String, val toolCalls: List<ToolCall>) : Msg()
     data class ToolResult(val callId: String, val name: String, val content: String) : Msg()
 }
@@ -152,7 +153,7 @@ object OpenAiFormat {
         val msgs = JSONArray()
         msgs.put(JSONObject().put("role", "system").put("content", system))
         for (m in messages) when (m) {
-            is Msg.User -> msgs.put(JSONObject().put("role", "user").put("content", m.text))
+            is Msg.User -> msgs.put(JSONObject().put("role", "user").put("content", userContent(m)))
             is Msg.Assistant -> {
                 val o = JSONObject().put("role", "assistant")
                 o.put("content", if (m.text.isEmpty() && m.toolCalls.isNotEmpty()) JSONObject.NULL else m.text)
@@ -179,6 +180,15 @@ object OpenAiFormat {
             body.put("tools", t)
         }
         return body
+    }
+
+    /** Plain string for text-only turns; `[{type:text},{type:image_url}]` parts when images are attached. */
+    fun userContent(m: Msg.User): Any {
+        if (m.images.isEmpty()) return m.text
+        val parts = JSONArray()
+        parts.put(JSONObject().put("type", "text").put("text", m.text.ifEmpty { " " }))
+        m.images.forEach { parts.put(JSONObject().put("type", "image_url").put("image_url", JSONObject().put("url", it.dataUrl))) }
+        return parts
     }
 
     class StreamAccumulator(private val l: StreamListener) {
@@ -244,7 +254,14 @@ object AnthropicFormat {
             pending.put(block)
         }
         for (m in messages) when (m) {
-            is Msg.User -> add("user", JSONObject().put("type", "text").put("text", m.text.ifEmpty { " " }))
+            is Msg.User -> {
+                // images first, then the text that refers to them (Anthropic's recommended order)
+                m.images.forEach {
+                    add("user", JSONObject().put("type", "image").put("source",
+                        JSONObject().put("type", "base64").put("media_type", it.mediaType).put("data", it.base64)))
+                }
+                add("user", JSONObject().put("type", "text").put("text", m.text.ifEmpty { " " }))
+            }
             is Msg.Assistant -> {
                 if (m.text.isNotBlank()) add("assistant", JSONObject().put("type", "text").put("text", m.text))
                 m.toolCalls.forEach {
@@ -307,5 +324,45 @@ object AnthropicFormat {
             stop,
             if (inTokens < 0 && outTokens < 0) null else Usage(inTokens.coerceAtLeast(0), outTokens.coerceAtLeast(0)),
         )
+    }
+}
+
+/**
+ * Native Gemini `generateContent` request shape (`contents[].parts[]` with `inline_data`).
+ * The app currently reaches Gemini through Google's OpenAI-compatible endpoint, which takes
+ * [OpenAiFormat]'s `image_url` data URLs; this builder is for the native API and is unit tested.
+ */
+object GeminiFormat {
+    fun buildRequest(system: String, messages: List<Msg>, tools: List<ToolSpec>): JSONObject {
+        val contents = JSONArray()
+        var role: String? = null
+        var parts = JSONArray()
+        fun flush() { if (role != null && parts.length() > 0) contents.put(JSONObject().put("role", role).put("parts", parts)); parts = JSONArray(); role = null }
+        fun add(r: String, p: JSONObject) { if (role != r) { flush(); role = r }; parts.put(p) }
+        for (m in messages) when (m) {
+            is Msg.User -> {
+                add("user", JSONObject().put("text", m.text.ifEmpty { " " }))
+                m.images.forEach { add("user", JSONObject().put("inline_data", JSONObject().put("mime_type", it.mediaType).put("data", it.base64))) }
+            }
+            is Msg.Assistant -> {
+                if (m.text.isNotBlank()) add("model", JSONObject().put("text", m.text))
+                m.toolCalls.forEach {
+                    val args = runCatching { JSONObject(it.argsJson) }.getOrDefault(JSONObject())
+                    add("model", JSONObject().put("functionCall", JSONObject().put("name", it.name).put("args", args)))
+                }
+            }
+            is Msg.ToolResult -> add("user", JSONObject().put("functionResponse",
+                JSONObject().put("name", m.name).put("response", JSONObject().put("content", m.content))))
+        }
+        flush()
+        val body = JSONObject()
+            .put("system_instruction", JSONObject().put("parts", JSONArray().put(JSONObject().put("text", system))))
+            .put("contents", contents)
+        if (tools.isNotEmpty()) {
+            val decl = JSONArray()
+            tools.forEach { decl.put(JSONObject().put("name", it.name).put("description", it.description).put("parameters", it.parameters)) }
+            body.put("tools", JSONArray().put(JSONObject().put("function_declarations", decl)))
+        }
+        return body
     }
 }

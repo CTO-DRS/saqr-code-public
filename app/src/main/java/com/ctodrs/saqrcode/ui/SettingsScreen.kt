@@ -105,6 +105,10 @@ class SettingsUi(
     val onBudget: (Double?) -> Unit = {},
     val prices: List<ModelPrice> = PriceTable.seeds,
     val onPrice: (ModelPrice) -> Unit = {},
+    /** Active model and its vision setting (Vision.AUTO / ON / OFF). */
+    val activeModel: String = "",
+    val visionMode: String = com.ctodrs.saqrcode.agent.Vision.AUTO,
+    val onVisionMode: (String) -> Unit = {},
 )
 
 @Composable
@@ -140,6 +144,9 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
         onBudget = { settings.monthlyBudget = it },
         prices = settings.prices(),
         onPrice = { settings.setPrice(it) },
+        activeModel = settings.config(settings.activeProvider).model,
+        visionMode = settings.visionMode(settings.config(settings.activeProvider).model),
+        onVisionMode = { settings.setVisionMode(settings.config(settings.activeProvider).model, it) },
     )
     SettingsContent(ui, onBack)
 }
@@ -197,6 +204,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     trailing = { SaqrSwitch(ui.approveAll, ui.onApproveAll) },
                 )
             }
+            if (ui.activeModel.isNotBlank()) Group { VisionEditor(ui) }
 
             // ---- slash commands
             SectionLabel(stringResource(R.string.slash_section), Modifier.padding(top = Sp.md))
@@ -427,5 +435,20 @@ private fun PricesEditor(ui: SettingsUi) {
             },
             dismissButton = { androidx.compose.material3.TextButton(onClick = { editing = null }) { Text(stringResource(R.string.cancel), color = c.text2) } },
         )
+    }
+}
+
+/** Per-model "supports images" switch: Auto (name heuristic) / On / Off. */
+@Composable
+private fun VisionEditor(ui: SettingsUi) {
+    val c = Saqr.colors
+    val V = com.ctodrs.saqrcode.agent.Vision
+    Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+        LabeledIcon(Lucide.Image, stringResource(R.string.vision_title))
+        Text(stringResource(R.string.vision_desc, com.ctodrs.saqrcode.ui.chat.ltr(ui.activeModel)), style = Saqr.type.caption, color = c.text3)
+        val modes = listOf(V.AUTO, V.ON, V.OFF)
+        val guess = stringResource(if (V.heuristic(ui.activeModel)) R.string.vision_yes else R.string.vision_no)
+        Segmented(listOf(stringResource(R.string.vision_auto, guess), stringResource(R.string.vision_on), stringResource(R.string.vision_off)),
+            modes.indexOf(ui.visionMode).coerceAtLeast(0), { ui.onVisionMode(modes[it]) })
     }
 }

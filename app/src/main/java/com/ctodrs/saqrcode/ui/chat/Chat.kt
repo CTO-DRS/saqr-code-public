@@ -114,6 +114,10 @@ class ChatUiState(
     val usageEstimated: Boolean = false,
     val budget: Double? = null,
     val monthSpent: Double = 0.0,
+    /** Images attached in the composer, not sent yet. */
+    val pendingImages: List<com.ctodrs.saqrcode.agent.ImagePart> = emptyList(),
+    /** The pending images go out as an "Image → Code" request. */
+    val imageToCode: Boolean = false,
 ) {
     val budgetLevel get() = Budget.level(monthSpent, budget)
 }
@@ -134,6 +138,8 @@ fun ChatContent(
     onAnswer: (ChatItem.AskUser, Boolean) -> Unit = { _, _ -> },
     onMeter: () -> Unit = {},
     onRestore: (ChatItem.User) -> Unit = {},
+    onImageAction: (ImageAction) -> Unit = {},
+    onRemoveImage: (Int) -> Unit = {},
 ) {
     val c = Saqr.colors
     var modelMenu by remember { mutableStateOf(false) }
@@ -192,7 +198,7 @@ fun ChatContent(
             if (SlashCommands.parse(input, state.customCommands)?.command?.action == SlashCommand.Action.MODEL) { onInput(""); modelMenu = true }
             else onSend()
         }
-        Composer(state, input, onInput, send, onStop, onPickModel, onManageProviders, modelMenu) { modelMenu = it }
+        Composer(state, input, onInput, send, onStop, onPickModel, onManageProviders, modelMenu, { modelMenu = it }, onImageAction, onRemoveImage)
     }
 }
 
@@ -212,7 +218,8 @@ fun ChatRow(
 ) {
     when (item) {
         is ChatItem.User -> Column(Modifier.fillMaxWidth()) {
-            UserBubble(item.text)
+            if (item.images.isNotEmpty()) UserImages(item.images)
+            if (item.text.isNotBlank()) UserBubble(item.text)
             if (item.checkpointId != null && onRestore != null) RestoreHere { onRestore(item) }
         }
         is ChatItem.Assistant -> if (item.text.isBlank() && item.streaming) WorkingRow() else MarkdownText(item.text)
@@ -642,6 +649,7 @@ private fun Composer(
     state: ChatUiState, input: String, onInput: (String) -> Unit, onSend: () -> Unit, onStop: () -> Unit,
     onPickModel: (String) -> Unit, onManageProviders: () -> Unit,
     modelMenu: Boolean, setModelMenu: (Boolean) -> Unit,
+    onImageAction: (ImageAction) -> Unit = {}, onRemoveImage: (Int) -> Unit = {},
 ) {
     val c = Saqr.colors
     val shape = RoundedCornerShape(Radius.xxl)
@@ -651,13 +659,14 @@ private fun Composer(
             .clip(shape).background(c.surface1).border(1.dp, c.borderStrong.copy(alpha = 0.7f), shape)
             .padding(start = Sp.md, end = Sp.md, top = Sp.md, bottom = Sp.sm),
     ) {
+        if (state.pendingImages.isNotEmpty()) PendingImagesStrip(state.pendingImages, state.imageToCode, onRemoveImage)
         BasicTextField(
             input, onInput, Modifier.fillMaxWidth().heightIn(min = 30.dp, max = 168.dp).padding(horizontal = Sp.xs),
             textStyle = Saqr.type.body.copy(color = c.text1, textDirection = TextDirection.Content),
             cursorBrush = SolidColor(c.accent), maxLines = 7,
             decorationBox = { inner ->
                 Box {
-                    if (input.isEmpty()) Text(stringResource(R.string.ask_agent_hint), style = Saqr.type.body, color = c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (input.isEmpty()) Text(stringResource(if (state.imageToCode) R.string.image_to_code_hint else R.string.ask_agent_hint), style = Saqr.type.body, color = c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     inner()
                 }
             },
@@ -667,7 +676,28 @@ private fun Composer(
             Box {
                 Box(Modifier.size(40.dp).pressable { attach = true }.clip(CircleShape).background(c.surface2).border(1.dp, c.border, CircleShape),
                     contentAlignment = Alignment.Center) { SIcon(Lucide.Plus, size = 20.dp, tint = c.text1, contentDescription = stringResource(R.string.attach_file)) }
-                DropdownMenu(attach, { attach = false }, Modifier.heightIn(max = 360.dp).background(c.surface2)) {
+                DropdownMenu(attach, { attach = false }, Modifier.heightIn(max = 420.dp).background(c.surface2)) {
+                    DropdownMenuItem(
+                        text = {
+                            Column {
+                                Text(stringResource(R.string.image_to_code), style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1)
+                                Text(stringResource(R.string.image_to_code_desc), style = Saqr.type.caption, color = c.text3)
+                            }
+                        },
+                        leadingIcon = { SIcon(Lucide.ScanEye, size = 18.dp, tint = c.accentText) },
+                        onClick = { attach = false; onImageAction(ImageAction.IMAGE_TO_CODE) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.attach_image), style = Saqr.type.label, color = c.text1) },
+                        leadingIcon = { SIcon(Lucide.Image, size = 18.dp, tint = c.text2) },
+                        onClick = { attach = false; onImageAction(ImageAction.PICK) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.take_photo), style = Saqr.type.label, color = c.text1) },
+                        leadingIcon = { SIcon(Lucide.Camera, size = 18.dp, tint = c.text2) },
+                        onClick = { attach = false; onImageAction(ImageAction.CAMERA) },
+                    )
+                    HorizontalDivider(color = c.border)
                     Text(stringResource(R.string.attach_file), style = Saqr.type.caption, color = c.text3, modifier = Modifier.padding(horizontal = Sp.lg, vertical = Sp.xs))
                     val files = remember(attach) { if (attach) state.projectFiles() else emptyList() }
                     files.forEach { f ->
@@ -712,7 +742,7 @@ private fun Composer(
                 }
             }
             Spacer(Modifier.weight(0.001f).widthIn(min = Sp.sm))
-            SendButton(running = state.running, enabled = input.isNotBlank() && state.ready, onSend = onSend, onStop = onStop)
+            SendButton(running = state.running, enabled = (input.isNotBlank() || state.pendingImages.isNotEmpty()) && state.ready, onSend = onSend, onStop = onStop)
         }
     }
 }

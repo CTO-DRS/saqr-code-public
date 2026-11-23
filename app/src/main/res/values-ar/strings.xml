@@ -322,4 +322,47 @@
     <string name="slash_custom">أمر مخصص</string>
     <string name="commit_review_title">الموافقة على الإيداع</string>
     <string name="commit_review_sub">يريد الوكيل الإيداع بهذه الرسالة.</string>
+
+    <!-- v0.5: element picker + images -->
+    <string name="pick_element">اختيار عنصر</string>
+    <string name="pick_hint">اضغط على أي عنصر في الصفحة لتعديله</string>
+    <string name="pick_sheet_title">تعديل هذا العنصر</string>
+    <string name="pick_what_change">ما الذي تريد تغييره؟</string>
+    <string name="pick_placeholder">مثلًا: اجعل الزر ذهبيًا وأكبر</string>
+    <string name="pick_locating">جارٍ البحث عنه في الكود…</string>
+    <string name="pick_source_none">لم يُعثر عليه في الكود — سيبحث الوكيل عنه</string>
+    <string name="pick_send">أرسل للوكيل</string>
+    <string name="pick_busy">الوكيل مشغول الآن. انتظر حتى ينتهي ثم أرسل.</string>
+    <string name="pick_no_vision">لن تُرفق لقطة العنصر: هذا النموذج لا يقبل الصور.</string>
+    <string name="chip_color">لون</string>
+    <string name="chip_size">حجم</string>
+    <string name="chip_text">نص</string>
+    <string name="chip_delete">احذف</string>
+    <string name="chip_move">حرّك</string>
+    <string name="chip_color_prompt">غيّر لونه إلى </string>
+    <string name="chip_size_prompt">كبّر حجمه.</string>
+    <string name="chip_text_prompt">غيّر النص إلى: </string>
+    <string name="chip_delete_prompt">احذف هذا العنصر.</string>
+    <string name="chip_move_prompt">حرّكه إلى </string>
+    <string name="image_to_code">صورة ← كود</string>
+    <string name="image_to_code_desc">حوّل لقطة شاشة إلى كود</string>
+    <string name="image_to_code_hint">ملاحظات على التصميم (اختياري)…</string>
+    <string name="attach_image">إرفاق صورة</string>
+    <string name="take_photo">التقاط صورة</string>
+    <string name="image_label">صورة</string>
+    <string name="image_open">فتح الصورة</string>
+    <string name="remove_image">إزالة الصورة</string>
+    <string name="image_load_failed">تعذّرت قراءة الصورة</string>
+    <string name="vision_warn_title">هذا النموذج لا يرى الصور</string>
+    <string name="vision_warn_body">النموذج %1$s لا يقبل الصور، فلن تصله الصورة. هل تريد التبديل إلى نموذج يدعم الرؤية؟</string>
+    <string name="vision_none_hint">اختر نموذجًا يدعم الرؤية (GPT-4o أو Claude أو Gemini…) أو فعّل إدخال الصور لهذا النموذج من الإعدادات.</string>
+    <string name="vision_switch">بدّل إلى %1$s</string>
+    <string name="vision_text_only">أرسل النص فقط</string>
+    <string name="vision_title">إدخال الصور (الرؤية)</string>
+    <string name="vision_desc">للنموذج %1$s. «تلقائي» يخمّن من اسم النموذج؛ غيّره إن كان التخمين خاطئًا.</string>
+    <string name="vision_auto">تلقائي (%1$s)</string>
+    <string name="vision_on">مفعّل</string>
+    <string name="vision_off">معطّل</string>
+    <string name="vision_yes">نعم</string>
+    <string name="vision_no">لا</string>
 </resources>

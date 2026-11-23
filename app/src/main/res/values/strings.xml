@@ -322,4 +322,47 @@
     <string name="slash_custom">Custom command</string>
     <string name="commit_review_title">Approve commit</string>
     <string name="commit_review_sub">The agent wants to commit with this message.</string>
+
+    <!-- v0.5: element picker + images -->
+    <string name="pick_element">Pick element</string>
+    <string name="pick_hint">Tap any element in the page to edit it</string>
+    <string name="pick_sheet_title">Edit this element</string>
+    <string name="pick_what_change">What should change?</string>
+    <string name="pick_placeholder">e.g. make the button gold and bigger</string>
+    <string name="pick_locating">Finding it in the source…</string>
+    <string name="pick_source_none">Not found in the source — the agent will search</string>
+    <string name="pick_send">Send to agent</string>
+    <string name="pick_busy">The agent is busy. Wait for it to finish, then send.</string>
+    <string name="pick_no_vision">The element screenshot won’t be attached: this model has no image input.</string>
+    <string name="chip_color">Color</string>
+    <string name="chip_size">Size</string>
+    <string name="chip_text">Text</string>
+    <string name="chip_delete">Delete</string>
+    <string name="chip_move">Move</string>
+    <string name="chip_color_prompt">Change its color to </string>
+    <string name="chip_size_prompt">Make it bigger.</string>
+    <string name="chip_text_prompt">Change the text to: </string>
+    <string name="chip_delete_prompt">Delete this element.</string>
+    <string name="chip_move_prompt">Move it </string>
+    <string name="image_to_code">Image → Code</string>
+    <string name="image_to_code_desc">Recreate a screenshot as code</string>
+    <string name="image_to_code_hint">Notes for the design (optional)…</string>
+    <string name="attach_image">Attach image</string>
+    <string name="take_photo">Take photo</string>
+    <string name="image_label">Image</string>
+    <string name="image_open">Open image</string>
+    <string name="remove_image">Remove image</string>
+    <string name="image_load_failed">Couldn’t read that image</string>
+    <string name="vision_warn_title">This model can’t see images</string>
+    <string name="vision_warn_body">%1$s has no image input, so it would not receive the picture. Switch to a model with vision?</string>
+    <string name="vision_none_hint">Pick a vision model (GPT-4o, Claude, Gemini…) or turn on image input for this model in Settings.</string>
+    <string name="vision_switch">Switch to %1$s</string>
+    <string name="vision_text_only">Send text only</string>
+    <string name="vision_title">Image input (vision)</string>
+    <string name="vision_desc">For %1$s. Auto guesses from the model name; override it if that’s wrong.</string>
+    <string name="vision_auto">Auto (%1$s)</string>
+    <string name="vision_on">On</string>
+    <string name="vision_off">Off</string>
+    <string name="vision_yes">yes</string>
+    <string name="vision_no">no</string>
 </resources>

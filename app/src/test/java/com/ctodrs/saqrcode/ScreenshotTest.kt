@@ -4,7 +4,16 @@ import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
@@ -282,6 +291,98 @@ class ScreenshotTest {
     @Test fun onboarding() = shot("onboarding") { OnboardingScreen(onDone = {}) }
 
     @Test fun onboarding2() = shot("onboarding-2") { OnboardingScreen(onDone = {}, initialPage = 1) }
+
+    // ------------------------------------------------------------ v0.5: element picker sheet + image bubbles
+
+    /** A fake phone screenshot (header, hero, two cards, a gold button) to stand in for a user's image. */
+    private fun sampleImage(w: Int = 1080, h: Int = 1920): com.ctodrs.saqrcode.agent.ImagePart {
+        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val cv = Canvas(bmp)
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        cv.drawColor(android.graphics.Color.rgb(250, 246, 238))
+        p.color = android.graphics.Color.rgb(28, 24, 20); cv.drawRect(0f, 0f, w.toFloat(), 220f, p)
+        p.color = android.graphics.Color.rgb(233, 180, 76); cv.drawCircle(w - 120f, 110f, 54f, p)
+        p.color = android.graphics.Color.rgb(240, 226, 200); cv.drawRoundRect(60f, 300f, w - 60f, 860f, 48f, 48f, p)
+        p.color = android.graphics.Color.WHITE
+        cv.drawRoundRect(60f, 920f, w / 2f - 20f, 1400f, 40f, 40f, p); cv.drawRoundRect(w / 2f + 20f, 920f, w - 60f, 1400f, 40f, 40f, p)
+        p.color = android.graphics.Color.rgb(233, 180, 76); cv.drawRoundRect(60f, 1500f, w - 60f, 1660f, 80f, 80f, p)
+        return com.ctodrs.saqrcode.ui.chat.ImageCodec.encode(bmp)
+    }
+
+    /** What an element crop looks like: a gold pill button with a label. */
+    private fun buttonCrop(): com.ctodrs.saqrcode.agent.ImagePart {
+        val bmp = Bitmap.createBitmap(504, 168, Bitmap.Config.ARGB_8888)
+        val cv = Canvas(bmp)
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        cv.drawColor(android.graphics.Color.WHITE)
+        p.color = android.graphics.Color.rgb(233, 180, 76); cv.drawRoundRect(21f, 21f, 483f, 147f, 63f, 63f, p)
+        p.color = android.graphics.Color.rgb(26, 20, 6); p.textSize = 54f; p.textAlign = android.graphics.Paint.Align.CENTER
+        cv.drawText("Order now", 252f, 102f, p)
+        return com.ctodrs.saqrcode.ui.chat.ImageCodec.encode(bmp)
+    }
+
+    private fun pickedButton(dir: File? = null) = com.ctodrs.saqrcode.agent.PickedElement.parse("""
+        {"chain":[{"tag":"button","cls":["btn","primary"],"nth":1,"count":1},{"tag":"div","cls":["card","featured"],"nth":2,"count":3},
+          {"tag":"section","cls":["cards"],"nth":1,"count":1},{"tag":"main"},{"tag":"body"}],
+         "html":"<button class=\"btn primary\" type=\"button\">اطلب الآن</button>","text":"اطلب الآن",
+         "styles":{"color":"rgb(26, 20, 6)","background":"rgb(233, 180, 76)","font-size":"16px","margin":"0px","padding":"12px 20px","display":"inline-flex"},
+         "rect":{"x":24,"y":540,"w":180,"h":48},"vw":411,"url":"file:///p/index.html"}""", dir)!!
+
+    @Composable
+    private fun SheetFrame(content: @Composable () -> Unit) {
+        val c = com.ctodrs.saqrcode.ui.theme.Saqr.colors
+        Box(Modifier.fillMaxSize().background(c.bg)) {
+            Box(Modifier.fillMaxSize().background(c.bg.copy(alpha = 0.6f)))
+            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(c.surface1)
+                .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
+                Box(Modifier.fillMaxWidth().padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(width = 32.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(c.text3.copy(alpha = 0.5f)))
+                }
+                content()
+            }
+        }
+    }
+
+    @Composable
+    private fun ElementSheetShot(match: Boolean, vision: Boolean, text: String) {
+        val crop = remember { buttonCrop() }
+        SheetFrame {
+            com.ctodrs.saqrcode.ui.ElementEditContent(
+                pickedButton(), if (match) com.ctodrs.saqrcode.agent.SourceMatch("index.html", 42, "snippet") else null, locating = false,
+                crop = if (vision) crop else null, attachShot = vision, busy = false, text = text, onText = {}, onSubmit = {},
+            )
+        }
+    }
+
+    @Test fun elementSheet() = shot("element-sheet") { ElementSheetShot(match = true, vision = true, text = "اجعل الزر أكبر وبلون أغمق قليلًا") }
+
+    @Test fun elementSheetLight() = shot("element-sheet-light", theme = "light") { ElementSheetShot(match = false, vision = false, text = "") }
+
+    @Composable
+    private fun ImageChatShot(pending: Boolean) {
+        val img = remember { sampleImage() }
+        val list = remember {
+            mutableStateListOf<ChatItem>(
+                ChatItem.User("حوّل هذه الشاشة إلى صفحة HTML", listOf(img)),
+                assistant("سأعيد بناء الواجهة كما في الصورة: شريط علوي داكن، بطاقة رئيسية، بطاقتان، وزر ذهبي — مع اتجاه RTL."),
+                applied("index.html", null, created(64), 6_000),
+                ChatItem.User("🎯 body > main > div.card:nth-of-type(2) > button.btn.primary\nاجعل الزر أكبر", listOf(buttonCrop())),
+            )
+        }
+        IdeFrame(topBar = { IdeTopBar(Pane.AGENT, {}, {}, center = { PlanPillContent(emptyList(), false, {}, "siraj") }) }) { top ->
+            ChatContent(
+                ChatUiState(list, false, step = 3, maxSteps = 40, contextTokens = 9_800, contextWindow = 200_000,
+                    providerId = "anthropic", model = "claude-sonnet-4-5", models = listOf("claude-sonnet-4-5"), ready = true,
+                    pendingImages = if (pending) listOf(img, sampleImage(800, 600)) else emptyList(), imageToCode = pending),
+                "", {}, {}, {}, { _, _ -> }, {}, {}, topInset = top, autoScroll = false,
+            )
+        }
+    }
+
+    @Test fun chatImages() = shot("chat-images") { ImageChatShot(pending = true) }
+
+    @Test fun chatImagesLight() = shot("chat-images-light", theme = "light") { ImageChatShot(pending = false) }
 
     companion object {
         val TAFQIT = """package tafqit

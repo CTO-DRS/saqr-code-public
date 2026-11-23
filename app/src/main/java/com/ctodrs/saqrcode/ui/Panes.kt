@@ -282,47 +282,4 @@ private fun sizeLabel(b: Long) = when {
 @Composable
 fun GitPane(ws: Workspace, onAccounts: () -> Unit = {}) { GitScreen(ws, onAccounts) }
 
-// ------------------------------------------------------------------ Preview
-
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun PreviewPane(ws: Workspace) {
-    val entry = remember(ws.fsVersion) {
-        File(ws.dir, "index.html").takeIf { it.isFile }
-            ?: ws.dir.walkTopDown().maxDepth(3).onEnter { it.name !in setOf("node_modules", ".git") }.firstOrNull { it.isFile && it.extension in setOf("html", "htm") }
-    }
-    var reload by remember { mutableIntStateOf(0) }
-    val c = Saqr.colors
-    if (entry == null) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            EmptyState(stringResource(R.string.preview_empty_title), stringResource(R.string.preview_empty_body), icon = Lucide.Globe)
-        }
-        return
-    }
-    Column(Modifier.fillMaxSize().padding(horizontal = Sp.md).padding(bottom = Sp.sm).navigationBarsPadding()) {
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            Row(Modifier.fillMaxWidth().padding(bottom = Sp.sm).clip(CircleShape).background(c.surface2).border(1.dp, c.border, CircleShape)
-                .padding(start = Sp.md, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                SIcon(Lucide.Globe, size = 15.dp, tint = c.text3)
-                Spacer(Modifier.width(Sp.sm))
-                Text(entry.relativeTo(ws.dir).path, style = Saqr.type.monoSmall, color = c.text2, modifier = Modifier.weight(1f), maxLines = 1)
-                Box(Modifier.size(32.dp).clip(CircleShape).clickable { reload++ }, contentAlignment = Alignment.Center) { SIcon(Lucide.RefreshCw, size = 15.dp) }
-            }
-        }
-        val shape = RoundedCornerShape(Radius.lg)
-        Box(Modifier.weight(1f).fillMaxWidth().clip(shape).border(1.dp, c.border, shape).background(Color.White)) {
-            AndroidView(
-                factory = { ctx ->
-                    WebView(ctx).apply {
-                        settings.javaScriptEnabled = true
-                        settings.allowFileAccess = true
-                        settings.domStorageEnabled = true
-                        webViewClient = WebViewClient()
-                    }
-                },
-                update = { wv -> wv.tag.let { if (it != reload) { wv.tag = reload; wv.loadUrl("file://" + entry.absolutePath) } } },
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-    }
-}
+// Preview: see ElementPicker.kt (PreviewPane + element picker).

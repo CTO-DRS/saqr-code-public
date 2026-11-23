@@ -105,4 +105,9 @@ object Lucide {
     val Undo2: ImageVector by lazy { stroked("undo-2", true, "M9 14 4 9l5-5", "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11") }
     val User: ImageVector by lazy { stroked("user", false, "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", "M8.0,7.0a4.0,4.0 0 1,0 8.0,0a4.0,4.0 0 1,0 -8.0,0") }
     val Users: ImageVector by lazy { stroked("users", false, "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", "M5.0,7.0a4.0,4.0 0 1,0 8.0,0a4.0,4.0 0 1,0 -8.0,0", "M22 21v-2a4 4 0 0 0-3-3.87", "M16 3.13a4 4 0 0 1 0 7.75") }
+    // v0.5
+    val Crosshair: ImageVector by lazy { stroked("crosshair", false, "M2.0,12.0a10.0,10.0 0 1,0 20.0,0a10.0,10.0 0 1,0 -20.0,0", "M22 12h-4", "M6 12H2", "M12 6V2", "M12 22v-4") }
+    val Image: ImageVector by lazy { stroked("image", false, "M5.0,3.0h14.0a2.0,2.0 0 0 1 2.0,2.0v14.0a2.0,2.0 0 0 1 -2.0,2.0h-14.0a2.0,2.0 0 0 1 -2.0,-2.0v-14.0a2.0,2.0 0 0 1 2.0,-2.0Z", "M7.0,9.0a2.0,2.0 0 1,0 4.0,0a2.0,2.0 0 1,0 -4.0,0", "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21") }
+    val Camera: ImageVector by lazy { stroked("camera", false, "M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z", "M9.0,13.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0") }
+    val ScanEye: ImageVector by lazy { stroked("scan-eye", false, "M3 7V5a2 2 0 0 1 2-2h2", "M17 3h2a2 2 0 0 1 2 2v2", "M21 17v2a2 2 0 0 1-2 2h-2", "M7 21H5a2 2 0 0 1-2-2v-2", "M11.0,12.0a1.0,1.0 0 1,0 2.0,0a1.0,1.0 0 1,0 -2.0,0", "M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0") }
 }

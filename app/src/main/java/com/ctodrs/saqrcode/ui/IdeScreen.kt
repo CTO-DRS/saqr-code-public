@@ -87,6 +87,21 @@ import com.ctodrs.saqrcode.ui.theme.Radius
 import com.ctodrs.saqrcode.ui.theme.Saqr
 import com.ctodrs.saqrcode.ui.theme.Sp
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
+import com.ctodrs.saqrcode.agent.ImagePart
+import com.ctodrs.saqrcode.agent.Stack
+import com.ctodrs.saqrcode.agent.StackDetector
+import com.ctodrs.saqrcode.agent.Vision
+import com.ctodrs.saqrcode.ui.chat.ImageAction
+import com.ctodrs.saqrcode.ui.chat.ImageCodec
+import com.ctodrs.saqrcode.ui.chat.VisionWarningDialog
 
 object Pane { const val AGENT = 0; const val FILES = 1; const val TERMINAL = 2; const val GIT = 3; const val PREVIEW = 4 }
 
@@ -107,6 +122,55 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     var budgetPending by remember { mutableStateOf<String?>(null) }
     var input by remember { mutableStateOf("") }
     val arabicUi = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "ar"
+    val ctx = LocalContext.current
+    // ---- image attachments (v0.5)
+    val pendingImages = remember(projectName) { mutableStateListOf<ImagePart>() }
+    var imageToCode by remember { mutableStateOf(false) }
+    var visionPending by remember { mutableStateOf<String?>(null) }
+    var previewWhenDone by remember { mutableStateOf(false) }
+    var cameraUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    fun addImage(uri: android.net.Uri?, deleteAfter: java.io.File? = null) {
+        if (uri == null) { if (pendingImages.isEmpty()) imageToCode = false; return }
+        scope.launch {
+            val part = withContext(Dispatchers.IO) { ImageCodec.load(ctx, uri).also { deleteAfter?.delete() } }
+            if (part != null) pendingImages += part
+            else android.widget.Toast.makeText(ctx, R.string.image_load_failed, android.widget.Toast.LENGTH_SHORT).show()
+            if (pendingImages.isEmpty()) imageToCode = false
+        }
+    }
+    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { addImage(it) }
+    val takePhoto = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        val uri = cameraUri
+        addImage(if (ok) uri else null, java.io.File(ctx.cacheDir, "camera/shot.jpg"))
+    }
+    fun onImageAction(a: ImageAction) {
+        when (a) {
+            ImageAction.IMAGE_TO_CODE -> { imageToCode = true; pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+            ImageAction.PICK -> pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            ImageAction.CAMERA -> runCatching {
+                val f = java.io.File(ctx.cacheDir, "camera/shot.jpg").apply { parentFile?.mkdirs() }
+                val uri = FileProvider.getUriForFile(ctx, ctx.packageName + ".files", f)
+                cameraUri = uri
+                takePhoto.launch(uri)
+            }.onFailure { android.widget.Toast.makeText(ctx, R.string.image_load_failed, android.widget.Toast.LENGTH_SHORT).show() }
+        }
+    }
+    /** Sends [text] with the pending images ([withImages] = false drops them, e.g. for a text-only model). */
+    fun sendWithImages(text: String, withImages: Boolean = true) {
+        val images = if (withImages) pendingImages.toList() else emptyList()
+        val i2c = imageToCode && withImages
+        val stack = if (i2c) StackDetector.detect(ws.dir) else Stack.UNKNOWN
+        val prompt = when {
+            i2c -> StackDetector.imageToCodePrompt(stack, text)
+            text.isBlank() && images.isNotEmpty() -> "(see the attached image)"
+            else -> text
+        }
+        val display = text.ifBlank { if (i2c) ctx.getString(R.string.image_to_code) else "" }
+        if (prompt.isBlank() && images.isEmpty()) return
+        ws.agent.send(prompt, display = display, images = images)
+        previewWhenDone = i2c && stack == Stack.WEB
+        pendingImages.clear(); imageToCode = false
+    }
 
     fun askRestore(id: String?) {
         val p = id?.let { ws.agent.checkpoints.get(it) } ?: return
@@ -127,6 +191,16 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
             }
         }
     }
+
+    /** Vision check for attachments, then send (or run a slash command when there are none). */
+    fun submit(text: String) {
+        if (pendingImages.isEmpty()) { dispatch(text); return }
+        val model = settings.config(settings.activeProvider).model
+        if (!settings.supportsVision(model)) visionPending = text else sendWithImages(text)
+    }
+
+    // "Image → Code" on a web project: show the result in the preview when the turn ends.
+    LaunchedEffect(ws.agent.running) { if (!ws.agent.running && previewWhenDone) { previewWhenDone = false; ws.tab = Pane.PREVIEW } }
 
     // Any agent activity may change files: refresh tree + clean editor tabs.
     LaunchedEffect(ws.agent.items.size, ws.agent.running) { ws.fsVersion++; ws.syncFromDisk() }
@@ -184,6 +258,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                             sessionTokens = sessionTotal.total, sessionCost = com.ctodrs.saqrcode.agent.PriceTable.cost(session, prices),
                             usageEstimated = sessionTotal.estimated, budget = settings.monthlyBudget,
                             monthSpent = com.ctodrs.saqrcode.agent.PriceTable.cost(month, prices) ?: 0.0,
+                            pendingImages = pendingImages.toList(), imageToCode = imageToCode,
                         )
                         Box(Modifier.imePadding()) {
                             ChatContent(
@@ -191,7 +266,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                                 onSend = {
                                     val text = input
                                     val local = SlashCommands.parse(text, state.customCommands)?.command?.action == SlashCommand.Action.CLEAR
-                                    if (!local && Budget.needsConfirmation(state.monthSpent, state.budget)) budgetPending = text else dispatch(text)
+                                    if (!local && Budget.needsConfirmation(state.monthSpent, state.budget)) budgetPending = text else submit(text)
                                     input = ""
                                 },
                                 onStop = { ws.agent.stop() },
@@ -200,6 +275,8 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                                 onAnswer = { a, skip -> ws.agent.answer(a, skip) },
                                 onMeter = { showUsage = true },
                                 onRestore = { askRestore(it.checkpointId) },
+                                onImageAction = { onImageAction(it) },
+                                onRemoveImage = { i -> if (i in pendingImages.indices) pendingImages.removeAt(i); if (pendingImages.isEmpty()) imageToCode = false },
                             )
                         }
                     }
@@ -231,6 +308,17 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
             confirmRestore = null
         })
     }
+    visionPending?.let { text ->
+        val def = Providers.byId(settings.activeProvider)
+        val model = settings.config(def.id).model
+        val suggestion = remember(model, version) { Vision.suggestSwitch(def.suggestedModels.filter { it != model }, settings.visionOverrides) }
+        VisionWarningDialog(
+            model, suggestion,
+            onSwitch = { m -> settings.setModel(def.id, m); visionPending = null; sendWithImages(text) },
+            onTextOnly = { visionPending = null; sendWithImages(text, withImages = false) },
+            onDismiss = { visionPending = null; input = text },
+        )
+    }
     budgetPending?.let { text ->
         val c = Saqr.colors
         val budget = settings.monthlyBudget ?: 0.0
@@ -241,7 +329,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
             icon = { SIcon(Lucide.TriangleAlert, size = 24.dp, tint = c.danger) },
             title = { Text(stringResource(R.string.budget_confirm_title), style = Saqr.type.title2) },
             text = { Text(stringResource(R.string.budget_confirm_body, com.ctodrs.saqrcode.ui.chat.ltr(formatUsd(spent)), com.ctodrs.saqrcode.ui.chat.ltr(formatUsd(budget))), style = Saqr.type.body) },
-            confirmButton = { TextButton(onClick = { budgetPending = null; dispatch(text) }) { Text(stringResource(R.string.send_anyway), color = c.danger) } },
+            confirmButton = { TextButton(onClick = { budgetPending = null; submit(text) }) { Text(stringResource(R.string.send_anyway), color = c.danger) } },
             dismissButton = { TextButton(onClick = { budgetPending = null; input = text }) { Text(stringResource(R.string.cancel), color = c.text2) } },
         )
     }
