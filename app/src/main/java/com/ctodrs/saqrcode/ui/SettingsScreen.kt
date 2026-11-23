@@ -117,6 +117,13 @@ class SettingsUi(
     val keepInBackground: Boolean = true,
     val onKeepInBackground: (Boolean) -> Unit = {},
     val onBatterySettings: () -> Unit = {},
+    /** v0.7 team mode + context compaction. */
+    val teamMode: Boolean = false,
+    val onTeamMode: (Boolean) -> Unit = {},
+    val reviewModel: String = "",
+    val onReviewModel: (String) -> Unit = {},
+    val autoCompact: Boolean = true,
+    val onAutoCompact: (Boolean) -> Unit = {},
 )
 
 @Composable
@@ -163,6 +170,12 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
         keepInBackground = settings.keepInBackground,
         onKeepInBackground = { settings.keepInBackground = it },
         onBatterySettings = { showBattery = true },
+        teamMode = settings.agentMode == "team",
+        onTeamMode = { settings.agentMode = if (it) "team" else "single" },
+        reviewModel = settings.reviewModel,
+        onReviewModel = { settings.reviewModel = it },
+        autoCompact = settings.autoCompact,
+        onAutoCompact = { settings.autoCompact = it },
     )
     if (showBattery) BatteryDialog(onDismiss = { showBattery = false })
     SettingsContent(ui, onBack)
@@ -221,6 +234,20 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     trailing = { SaqrSwitch(ui.approveAll, ui.onApproveAll) },
                 )
             }
+            Group {
+                Column {
+                    ListRow(
+                        title = stringResource(R.string.team_mode), subtitle = stringResource(R.string.team_mode_desc), icon = Lucide.Users,
+                        trailing = { SaqrSwitch(ui.teamMode, ui.onTeamMode) },
+                    )
+                    RowDivider()
+                    ListRow(
+                        title = stringResource(R.string.auto_compact), subtitle = stringResource(R.string.auto_compact_desc), icon = Lucide.RefreshCw,
+                        trailing = { SaqrSwitch(ui.autoCompact, ui.onAutoCompact) },
+                    )
+                }
+            }
+            if (ui.teamMode) Group { ReviewModelEditor(ui) }
             if (ui.activeModel.isNotBlank()) Group { VisionEditor(ui) }
             Group {
                 Column {
@@ -304,6 +331,26 @@ internal fun Group(content: @Composable () -> Unit) {
     val c = Saqr.colors
     val shape = RoundedCornerShape(Radius.lg)
     Box(Modifier.fillMaxWidth().clip(shape).background(c.surface1).border(1.dp, c.border, shape)) { content() }
+}
+
+/** v0.7 team mode: the reviewer model id (blank = the coder's model). */
+@Composable
+private fun ReviewModelEditor(ui: SettingsUi) {
+    val c = Saqr.colors
+    var text by remember(ui.reviewModel) { mutableStateOf(ui.reviewModel) }
+    val savedText = stringResource(R.string.saved)
+    var status by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+        LabeledIcon(Lucide.ShieldCheck, stringResource(R.string.review_model))
+        Text(stringResource(R.string.review_model_desc), style = Saqr.type.caption, color = c.text3)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SaqrField(text, { text = it; status = null }, Modifier.weight(1f), label = stringResource(R.string.model),
+                placeholder = "claude-haiku-4-5 / gemini-2.5-flash", mono = true)
+            Spacer(Modifier.width(Sp.sm))
+            GhostButton(stringResource(R.string.save), { ui.onReviewModel(text); status = savedText }, icon = Lucide.Save)
+        }
+        status?.let { Text(it, style = Saqr.type.caption, color = c.text2) }
+    }
 }
 
 @Composable

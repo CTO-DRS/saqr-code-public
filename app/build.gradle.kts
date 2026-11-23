@@ -20,8 +20,8 @@ android {
         applicationId = "com.ctodrs.saqrcode"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.6.0"
+        versionCode = 7
+        versionName = "0.7.0"
         ndk { abiFilters += "arm64-v8a" }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += listOf("en", "ar")
@@ -69,7 +69,7 @@ android {
         unitTests {
             isIncludeAndroidResources = true
             all {
-                it.maxHeapSize = "3g"
+                it.maxHeapSize = System.getenv("SAQR_TEST_HEAP") ?: "3g"
                 // Robolectric fetches android-all jars at runtime; Maven Central rate-limits shared IPs, so use Google's mirror.
                 it.systemProperty("robolectric.dependency.repo.url", "https://maven-central.storage-download.googleapis.com/maven2")
                 // Screenshot rendering is opt-in: SAQR_SCREENS=1 ./gradlew testDebugUnitTest --tests '*ScreenshotTest*'

@@ -1,5 +1,7 @@
 pluginManagement {
     repositories {
+        // Google's Maven Central mirror first (Central rate-limits shared CI IPs) — same as below.
+        maven("https://maven-central.storage-download.googleapis.com/maven2/")
         google()
         mavenCentral()
         gradlePluginPortal()

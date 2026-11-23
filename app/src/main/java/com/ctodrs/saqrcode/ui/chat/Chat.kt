@@ -231,6 +231,7 @@ private fun spacingFor(item: ChatItem) = when (item) {
     is ChatItem.AskUser -> if (item.status == ChatItem.AskUser.Status.PENDING) 8.dp else 4.dp
     is ChatItem.User -> 10.dp
     is ChatItem.Notice -> 8.dp
+    is ChatItem.Review -> 8.dp
     is ChatItem.Assistant -> 6.dp
 }
 
@@ -257,6 +258,7 @@ fun ChatRow(
             else if (item.action != null) ActionDecisionRow(item)
             else Column { item.changes.forEach { ChangeRow(it, item.decision == true, item.durationMs) } }
         is ChatItem.AskUser -> AskUserCard(item, onAnswer)
+        is ChatItem.Review -> ReviewCard(item)
         is ChatItem.Notice -> when (item.kind) {
             ChatItem.Notice.Kind.INTERRUPTED -> InterruptedCard(onResumeTask)
             ChatItem.Notice.Kind.RESUMED -> ResumedPill()
@@ -633,13 +635,57 @@ private fun NoticeCard(item: ChatItem.Notice) {
             ChatItem.Notice.Kind.STEP_LIMIT -> stringResource(R.string.notice_step_limit)
             ChatItem.Notice.Kind.RESTORED -> if (item.count >= 0) stringResource(R.string.notice_checkpoint_restored, item.text, item.count.toString())
                 else stringResource(R.string.notice_restored, item.text)
+            ChatItem.Notice.Kind.COMPACTED -> stringResource(R.string.notice_compacted)
+            ChatItem.Notice.Kind.LOOP -> stringResource(R.string.notice_loop)
             else -> item.text
         }
         Text(body, style = Saqr.type.bodySmall.copy(color = c.text1, textDirection = TextDirection.Content))
     }
 }
 
-// ---------------------------------------------------------------- meter + composer
+/** v0.7 team mode: the reviewer's verdict card (running → ok / issues / failed). */
+@Composable
+private fun ReviewCard(item: ChatItem.Review) {
+    val c = Saqr.colors
+    val shape = RoundedCornerShape(Radius.lg)
+    val (icon, fg, bg, border, titleRes) = when (item.status) {
+        ChatItem.Review.ReviewStatus.RUNNING -> Quintet(Lucide.ShieldCheck, c.warning, c.warningBg, c.warningBorder, R.string.review_running)
+        ChatItem.Review.ReviewStatus.OK -> Quintet(Lucide.CircleCheck, c.success, c.success.copy(alpha = if (c.isDark) 0.08f else 0.06f), c.success.copy(alpha = 0.4f), R.string.review_ok)
+        ChatItem.Review.ReviewStatus.ISSUES -> Quintet(Lucide.TriangleAlert, c.warning, c.warningBg, c.warningBorder, R.string.review_issues)
+        ChatItem.Review.ReviewStatus.FAILED -> Quintet(Lucide.CircleAlert, c.text3, c.surface1, c.border, R.string.review_failed)
+    }
+    Column(Modifier.fillMaxWidth().clip(shape).background(bg).border(1.dp, border, shape).padding(Sp.lg)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SIcon(icon, size = 20.dp, tint = fg)
+            Spacer(Modifier.width(Sp.sm))
+            Text(stringResource(titleRes), style = Saqr.type.title3.copy(fontWeight = FontWeight.SemiBold), color = fg)
+            Spacer(Modifier.weight(1f))
+            Text(ltr(item.model), style = Saqr.type.micro, color = c.text3, maxLines = 1)
+        }
+        if (item.summary.isNotBlank()) {
+            Spacer(Modifier.height(Sp.xs))
+            Text(item.summary, style = Saqr.type.bodySmall.copy(color = c.text1, textDirection = TextDirection.Content))
+        }
+        if (item.issues.isNotEmpty()) {
+            Spacer(Modifier.height(Sp.sm))
+            item.issues.forEach { issue ->
+                Row(Modifier.padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
+                    SIcon(Lucide.ChevronRight, size = 14.dp, tint = fg)
+                    Spacer(Modifier.width(4.dp))
+                    Column {
+                        Text(ltr(issue.file + ":" + issue.line), style = Saqr.type.monoMicro, color = c.accentText)
+                        Text(issue.comment, style = Saqr.type.bodySmall.copy(color = c.text1, textDirection = TextDirection.Content))
+                    }
+                }
+            }
+        }
+    }
+}
+
+private data class Quintet(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val fg: Color, val bg: Color, val border: Color, val title: Int,
+)
 
 fun formatTokens(n: Long): String = formatTokens(n.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
 

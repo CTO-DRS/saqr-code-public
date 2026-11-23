@@ -22,6 +22,10 @@ object Tools {
     const val GIT_BRANCH = "git_branch"
     const val GIT_PULL = "git_pull"
     const val GIT_PUSH = "git_push"
+    const val WEB_SEARCH = "web_search"
+    const val WEB_FETCH = "web_fetch"
+    const val LINT = "lint_project"
+    const val TESTS = "run_tests"
 
     val GIT = setOf(GIT_STATUS, GIT_DIFF, GIT_LOG, GIT_COMMIT, GIT_BRANCH, GIT_PULL, GIT_PUSH)
 
@@ -63,6 +67,18 @@ object Tools {
                 .put("query", p("string", "Text or regex to search for"))
                 .put("regex", p("boolean", "Treat query as a regular expression"))
                 .put("path", p("string", "Folder to search, default '.'")), listOf("query"))),
+        ToolSpec(WEB_SEARCH, "Search the public web (DuckDuckGo) for current docs, API references and error messages. Returns titles, URLs and snippets; follow a URL with web_fetch to read the full page.",
+            schema(JSONObject()
+                .put("query", p("string", "Search keywords"))
+                .put("max_results", p("integer", "1–10, default 6")), listOf("query"))),
+        ToolSpec(WEB_FETCH, "Fetch a public web page by URL and return its readable text (HTML stripped, capped). Use for documentation and error pages found by web_search. Private/local addresses are blocked by policy.",
+            schema(JSONObject()
+                .put("url", p("string", "http(s) URL to fetch"))
+                .put("max_chars", p("integer", "Max characters of text (default 8000)")), listOf("url"))),
+        ToolSpec(LINT, "Run quick quality checks on the project: node --check for JS, py_compile for Python, JSON validation and HTML tag balance. Returns file:line issues. Needs nodejs/python3 installed in the terminal for their checks.",
+            schema(JSONObject(), emptyList())),
+        ToolSpec(TESTS, "Detect and run the project's tests (npm test, pytest or python unittest) in the terminal and return the runner output. If no tests exist, offer to write them.",
+            schema(JSONObject(), emptyList())),
         ToolSpec(PLAN, "Create or replace your step-by-step plan for the current task. The user sees it as a progress pill. Send the full list every time.",
             schema(JSONObject().put("items", JSONObject().put("type", "array").put("description", "Ordered steps")
                 .put("items", JSONObject().put("type", "object")
@@ -166,6 +182,9 @@ object Tools {
         GIT_LOG -> "-n " + args.optInt("max_count", 15)
         GIT_STATUS -> "."
         GIT_DIFF -> args.optString("path").ifBlank { if (args.optBoolean("staged")) "--staged" else "." }
+        WEB_SEARCH -> "\"" + args.optString("query") + "\""
+        WEB_FETCH -> args.optString("url").take(60)
+        LINT, TESTS -> "auto"
         else -> args.optString("path")
     }
 }

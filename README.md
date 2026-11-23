@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.5.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.7.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 
 ---
 
@@ -25,6 +25,16 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.7
+| الميزة | الحالة |
+|---|---|
+| فريق الوكلاء (مخطط ← مبرمج ← مراجع): بعد كل دفعة تعديلات يراجعها نموذج ثانٍ ويتصحّح الوكيل تلقائياً، بنموذج مراجع قابل للاختيار وبطاقة حكم في المحادثة | ✅ |
+| ضغط السياق تلقائياً: تلخيص الجولات الأقدم عند تجاوز الحد بدل فقدانها (مفتاح في الإعدادات) | ✅ |
+| كاشف الحلقات المفرغة: توجيه عند التكرار ثم إيقاف الجولة لتوفير الرموز | ✅ |
+| أدوات جديدة: `web_search` و`web_fetch` (الإنترنت العام فقط مع حجب العناوين الداخلية)، و`lint_project`، و`run_tests` | ✅ |
+| بناء APK على الجهاز (تجريبي): ديبيان + JDK 17 + Android SDK داخل proot مع aapt2 arm64 وسجل مباشر وتثبيت بنقرة | ✅ |
+| قوالب جديدة: تطبيق Kotlin + Compose عربي RTL، ولوحة مفاتيح IME عربية — تُبنى مباشرة من تبويب «بناء» | ✅ |
 
 ### الجديد في 0.6
 | الميزة | الحالة |
@@ -61,7 +71,7 @@
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `SaqrCode-v0.5.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.7.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -72,6 +82,14 @@
 ---
 
 ## English
+
+### New in v0.7
+- **Agent team (Planner → Coder → Reviewer):** after every applied file batch, a second model reviews the diff and the coder fixes its notes in the same turn (max 2 review rounds). The reviewer model is selectable in Settings (blank = the coder's model); a verdict card shows the result in chat.
+- **Auto context compaction:** when the estimated context passes the threshold, older turns are summarised into one brief the loop continues from (Settings toggle; cut points are always safe user-message boundaries).
+- **Loop detector:** identical repeated tool calls get one nudge, then the turn stops instead of burning tokens in circles.
+- **New agent tools:** `web_search` + `web_fetch` (public internet only — private/link-local/cloud-metadata addresses are blocked), `lint_project` (node --check, py_compile, JSON and HTML checks), `run_tests` (npm test / pytest / unittest detection and run).
+- **On-device APK build (experimental):** a **Build** tab prepares a Debian rootfs (ubuntu-base) + OpenJDK 17 + Android cmdline-tools + android-35 + an arm64 aapt2 inside proot, streams the Gradle log live, and installs the produced debug APK with one tap. Pairs with the new Compose template for a full phone-only workflow.
+- **New templates:** Kotlin + Jetpack Compose app (Arabic/RTL-ready) and an Arabic IME keyboard (InputMethodService + Arabic layout).
 
 ### New in v0.6
 - **Persistent chat history:** each project's sessions are saved on the phone (JSON per session, images as files); the last session reopens on start and the agent really resumes from the rebuilt history. **Sessions** list with new / rename / delete / Arabic-aware search / auto-titles (200 per project, warning above 50 MB). `ask_user` answered after a restart continues the real turn.
@@ -117,7 +135,7 @@ Requirements: JDK 17+ (tested with JDK 21), Android SDK platform 35 + build-tool
 
 ```bash
 # On a normal x86_64 machine remove the aapt2 override line from gradle.properties first.
-./gradlew testDebugUnitTest      # 23 JVM unit tests (+13 opt-in screenshot renders)
+./gradlew testDebugUnitTest      # JVM unit tests (V0x feature suites; + opt-in screenshot renders)
 ./gradlew lintDebug              # 0 errors
 ./gradlew assembleRelease        # signed with keystore.properties if present, otherwise debug key
 ```
@@ -131,9 +149,10 @@ Optional integration test (downloads Alpine and checks our tar extractor against
 ui/        Compose screens: Onboarding, Home, Settings, IDE (Agent · Files · Terminal · Git · Preview)
 ui/theme   "Falcon" design system (colors, type, spacing, radius, motion; dark + light)
 ui/icons   Lucide-style icon set, file-type glyphs, provider monograms
-ui/chat    Agent chat: tool rows, approval/notice cards, composer, Markdown
+ui/chat    Agent chat: tool rows, approval/notice/review cards, composer, Markdown
 agent/     Providers, LlmClient (OpenAI-compatible + Anthropic SSE streaming), Tools,
-           AgentSession (loop, approvals, restore points), SafetyPolicy, Diff, Snapshots
+           AgentSession (loop, approvals, team review, compaction, loop guard), SafetyPolicy, Diff
+ondevice/  OnDeviceBuild (proot Debian + JDK 17 + Android SDK, on-device assembleDebug)
 terminal/  LinuxEnv (Alpine install + proot command line), ShellSession, TarExtractor
 git/       GitService (JGit + GitHub REST)
 data/      SecureStore (Keystore), SettingsStore, ProjectRepository + templates

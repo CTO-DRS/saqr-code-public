@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Camera captures for chat attachments (cache only, deleted after reading). -->
+<!-- v0.7: apks staged here for the on-device install intent. -->
 <paths>
     <cache-path name="camera" path="camera/" />
+    <cache-path name="apk" path="apk/" />
 </paths>

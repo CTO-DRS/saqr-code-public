@@ -1,5 +1,36 @@
 # Changelog · سجل التغييرات
 
+## [0.7.0] — 2026-11-23 — Agent team, web tools & on-device build · فريق الوكلاء وأدوات الويب والبناء على الجهاز
+
+### Agent team (Planner → Coder → Reviewer) · فريق الوكلاء
+- **Settings → Agent team:** after every applied file batch a **reviewer** model receives the user's request and a compact diff, and must answer with a strict JSON verdict. Issues go back to the coder as a `[Reviewer]` message and are **fixed in the same turn** (max 2 review rounds; the loop detector still applies). The reviewer model is selectable (blank = the coder's model — a cheaper, faster model works well) and a **verdict card** (ok / issues / failed) appears in the chat.
+  في الإعدادات: «فريق الوكلاء» — بعد كل دفعة تعديلات يراجعها نموذج ثانٍ ويعيد الوكيل إصلاح ملاحظاته في الجولة نفسها (حتى جولتَي مراجعة)، بنموذج مراجع اختياري وبطاقة حكم في المحادثة.
+- The reviewer shares the active provider and is billed per call (its usage lands in the same meter under the reviewer model).
+
+### Context compaction & loop guard · ضغط السياق وكاشف الحلقات
+- **Auto compaction:** when the estimated context passes ~150k chars, the oldest safe block of the model's message list is summarised into one `[COMPACTED EARLIER CONTEXT]` brief (goals, decisions, files, pending work) and the loop continues from it — instead of silently losing the far end. Cut points are always user-message boundaries, so no tool call/result pair is ever split. Settings toggle (on by default) and a notice pill in the chat.
+  ضغط السياق تلقائياً عند تجاوز الحد: يُلخّص أقدم جزء آمن من السجل إلى موجز واحد ويكمل الوكيل منه، مع مفتاح في الإعدادات وتنبيه في المحادثة.
+- **Loop detector:** the same tool fingerprint (name + canonical args) three steps in a row gets the model one nudge; a second detection **stops the turn** with a clear notice instead of burning tokens in circles.
+  كاشف الحلقات: توجيه أول عند تكرار نفس الأدوات بنفس الوسائط، ثم إيقاف الجولة بتنبيه واضح.
+
+### New agent tools · أدوات جديدة للوكيل
+- **`web_search`:** DuckDuckGo HTML search (no key needed) returning titles, URLs and snippets; **`web_fetch`:** readable text of a page (HTML stripped, capped, JSON pretty-printed). Both are **public internet only** — localhost, LAN ranges (10/172.16–31/192.168/100.64–127/169.254), `.local`, embedded credentials and cloud metadata endpoints are blocked, and the resolved DNS is re-checked against private ranges.
+  بحث ويب وقراءة صفحة بدون مفاتيح، مع حجب العناوين الخاصة/المحلية ونقاط البيانات السحابية والتحقق من DNS.
+- **`lint_project`:** `node --check` for JS, `python3 -m py_compile` for Python inside the terminal, plus pure JSON validation and HTML tag-balance checks with `file: issue` output.
+  فحص جودة سريع: تحقق صيغة جافاسكربت وبايثون في الطرفية، وتحقق JSON وتوازن وسوم HTML مباشرة.
+- **`run_tests`:** detects `npm test` / `pytest` / `python -m unittest` from the project layout and runs the first match (300 s budget), telling the agent to offer writing tests when none exist.
+  تشغيل الاختبارات: يكتشف المشغّل المناسب للمشروع ويشغّله، ويقترح كتابة اختبارات إن لم توجد.
+
+### On-device APK build (experimental) · بناء APK على الجهاز
+- New **Build** tab: one tap prepares a Debian build environment inside proot — ubuntu-base arm64 rootfs, OpenJDK 17 via apt, Android cmdline-tools + `platforms;android-35` via sdkmanager, an **arm64 aapt2** fetched from a community GitHub release (Google ships build-tools for x86_64 only), and Gradle 8.11.1. Every step streams into a live log and retries skip finished steps.
+  تبويب «بناء» جديد: يجهّز ديبيان وJDK 17 وأدوات Android SDK داخل proot مع aapt2 لمعمارية arm64 وGradle، ويعرض السجل مباشرة، وإعادة المحاولة تتجاوز الخطوات المكتملة.
+- **Build APK** runs `assembleDebug` with `android.aapt2FromMavenOverride` pointed at the arm64 binary and a phone-friendly 1.4 GB heap, copies the APK to `dist/` in the project, and **installs it** with one tap (unknown-sources confirm). First preparation downloads ~600 MB; a small Compose app builds in 5–15 minutes on a mid-range phone.
+  زر «بناء APK» يشغّل Gradle بنقرة، ينسخ الناتج إلى `dist/` داخل المشروع، ويثبّته مباشرة. التجهيز الأول ينزّل نحو 600 ميغابايت وبناء تطبيق صغير يستغرق 5–15 دقيقة.
+
+### New templates · قوالب جديدة
+- **Kotlin + Jetpack Compose app** (Arabic/RTL-ready, strings in `values` + `values-ar`, Compose BOM) and an **Arabic IME keyboard** (InputMethodService, `arabic_keyboard.xml` layout, method.xml) — both compile straight from the new Build tab for a phone-only workflow.
+  قالبا «تطبيق Compose» و«لوحة مفاتيح عربية» — كلاهما يُبنى مباشرة من تبويب البناء دون حاسوب.
+
 ## [0.6.0] — 2026-11-23 — Chat history, voice & background agent · سجل المحادثات والصوت والعمل في الخلفية
 
 ### Persistent chat history · حفظ سجل المحادثات

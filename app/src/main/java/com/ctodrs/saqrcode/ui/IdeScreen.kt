@@ -103,7 +103,7 @@ import com.ctodrs.saqrcode.ui.chat.ImageAction
 import com.ctodrs.saqrcode.ui.chat.ImageCodec
 import com.ctodrs.saqrcode.ui.chat.VisionWarningDialog
 
-object Pane { const val AGENT = 0; const val FILES = 1; const val TERMINAL = 2; const val GIT = 3; const val PREVIEW = 4 }
+object Pane { const val AGENT = 0; const val FILES = 1; const val TERMINAL = 2; const val GIT = 3; const val PREVIEW = 4; const val BUILD = 5 }
 
 val TopBarHeight: Dp = 68.dp
 
@@ -361,6 +361,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                     Pane.FILES -> Box(Modifier.padding(top = top).imePadding()) { FilesPane(ws) }
                     Pane.TERMINAL -> Box(Modifier.padding(top = top).imePadding()) { TerminalPane(ws) }
                     Pane.GIT -> Box(Modifier.padding(top = top).imePadding()) { GitPane(ws, onAccounts) }
+                    Pane.BUILD -> Box(Modifier.padding(top = top)) { BuildPane(ws) }
                     else -> Box(Modifier.padding(top = top)) { PreviewPane(ws) }
                 }
             }
@@ -543,6 +544,7 @@ fun IdeTopBar(pane: Int, onDrawer: () -> Unit, onPane: (Int) -> Unit, overflow: 
         GlassPill {
             PillIcon(Lucide.Globe, stringResource(R.string.tab_preview), { onPane(Pane.PREVIEW) }, active = pane == Pane.PREVIEW)
             PillIcon(Lucide.SquareTerminal, stringResource(R.string.tab_terminal), { onPane(Pane.TERMINAL) }, active = pane == Pane.TERMINAL)
+            PillIcon(Lucide.Package, stringResource(R.string.tab_build), { onPane(Pane.BUILD) }, active = pane == Pane.BUILD)
             overflow?.invoke()
         }
     }
@@ -566,6 +568,7 @@ fun paneMeta(pane: Int): Pair<ImageVector, Int> = when (pane) {
     Pane.TERMINAL -> Lucide.SquareTerminal to R.string.tab_terminal
     Pane.GIT -> Lucide.GitBranch to R.string.tab_git
     Pane.PREVIEW -> Lucide.Globe to R.string.tab_preview
+    Pane.BUILD -> Lucide.Package to R.string.tab_build
     else -> Lucide.Sparkles to R.string.tab_agent
 }
 
@@ -593,7 +596,7 @@ fun IdeDrawer(
             DrawerAction(Lucide.MessageSquarePlus, stringResource(R.string.clear_chat), onNewChat, highlight = true)
             Spacer(Modifier.height(Sp.lg))
             Text(stringResource(R.string.workspace), style = Saqr.type.micro, color = c.text3, modifier = Modifier.padding(horizontal = Sp.md, vertical = Sp.xs))
-            listOf(Pane.AGENT, Pane.FILES, Pane.TERMINAL, Pane.GIT, Pane.PREVIEW).forEach { p ->
+            listOf(Pane.AGENT, Pane.FILES, Pane.TERMINAL, Pane.GIT, Pane.PREVIEW, Pane.BUILD).forEach { p ->
                 val (icon, label) = paneMeta(p)
                 DrawerItem(icon, stringResource(label), selected = current == p) { onPane(p) }
             }

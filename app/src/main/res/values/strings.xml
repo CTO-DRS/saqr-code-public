@@ -422,4 +422,40 @@
     <string name="voice_language">Dictation language</string>
     <string name="voice_follow_app">App language</string>
     <string name="voice_language_hint">Tip: long-press the mic to switch between Arabic and English.</string>
+    <!-- v0.7 build tab -->
+    <string name="tab_build">Build</string>
+    <string name="build_title">On-device APK build</string>
+    <string name="build_desc">Prepare a Debian build environment (JDK 17 + Android SDK inside proot), then build and install a debug APK of this project. Experimental: first preparation downloads about 600 MB.</string>
+    <string name="build_prepare">Prepare environment</string>
+    <string name="build_preparing">Preparing…</string>
+    <string name="build_run">Build APK</string>
+    <string name="build_running">Building…</string>
+    <string name="build_again">Build again</string>
+    <string name="build_install">Install</string>
+    <string name="build_apk_ready">APK ready: %1$s (%2$s KB)</string>
+    <string name="build_log_empty">The build log will appear here.</string>
+    <string name="build_phase_setup">Not prepared</string>
+    <string name="build_phase_setup_run">Preparing…</string>
+    <string name="build_phase_ready">Environment ready</string>
+    <string name="build_phase_building">Building…</string>
+    <string name="build_phase_built">APK ready</string>
+    <string name="build_phase_failed">Failed</string>
+    <!-- v0.7 reviewer + compaction -->
+    <string name="review_running">Reviewer is checking the changes…</string>
+    <string name="review_ok">Reviewer: changes look correct</string>
+    <string name="review_issues">Reviewer found issues</string>
+    <string name="review_failed">Review did not complete</string>
+    <string name="notice_compacted">Context compacted: older turns were summarised to save tokens; the agent continues from the brief.</string>
+    <string name="notice_loop">Agent stopped: it repeated the same tools without progress. Rephrase the request or edit manually.</string>
+    <string name="team_mode">Agent team</string>
+    <string name="team_mode_desc">After each applied batch, a second model reviews the diff and the agent fixes its notes automatically</string>
+    <string name="review_model">Reviewer model</string>
+    <string name="review_model_desc">Blank = the coder model. A cheaper, faster model works well for review.</string>
+    <string name="auto_compact">Auto context compaction</string>
+    <string name="auto_compact_desc">Summarise old turns when the context grows, instead of silently losing the far end</string>
+    <!-- v0.7 templates -->
+    <string name="tpl_compose">Compose app</string>
+    <string name="tpl_compose_desc">Kotlin + Jetpack Compose, Arabic/RTL — builds on the phone</string>
+    <string name="tpl_ime">Keyboard</string>
+    <string name="tpl_ime_desc">Arabic IME keyboard (InputMethodService), 3 letter rows</string>
 </resources>

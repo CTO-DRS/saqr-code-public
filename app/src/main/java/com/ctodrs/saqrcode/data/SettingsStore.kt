@@ -77,6 +77,16 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("agent_mode", "single") ?: "single"
         set(v) { prefs.edit().putString("agent_mode", v).apply(); bump() }
 
+    /** v0.7 team mode: the reviewer model id. Blank = the same model as the coder. */
+    var reviewModel: String
+        get() = prefs.getString("review_model", "") ?: ""
+        set(v) { prefs.edit().putString("review_model", v.trim()).apply(); bump() }
+
+    /** v0.7: summarise the oldest context when it grows past the threshold (keeps the meter honest on small models). */
+    var autoCompact: Boolean
+        get() = prefs.getBoolean("auto_compact", true)
+        set(v) { prefs.edit().putBoolean("auto_compact", v).apply(); bump() }
+
     /** v0.6: keep agent turns running in a foreground service when the app is in the background. */
     var keepInBackground: Boolean
         get() = prefs.getBoolean("keep_background", true)

@@ -4,15 +4,22 @@
 - ✅ v0.6 — Persistent chat history + Sessions list (rename/delete/search/auto-title), real resume after restart.
 - ✅ v0.6 — Voice input (Arabic ar-SA / English en-US, live partial results) and Read aloud.
 - ✅ v0.6 — Background agent: foreground service, step/attention/finish notifications, resume after process kill, resume offer after reboot, battery-optimization guide.
+- ✅ v0.7 — Agent team (Planner → Coder → Reviewer on a second model), verdict card in chat, max 2 review rounds per turn.
+- ✅ v0.7 — Auto context compaction (safe cut boundaries, Settings toggle) and the loop detector (nudge once, then stop).
+- ✅ v0.7 — Web tools (`web_search`, `web_fetch`, public-only with private-net guard) and quality tools (`lint_project`, `run_tests`).
+- ✅ v0.7 — On-device APK build v1 (experimental Build tab: Debian + JDK 17 + SDK in proot, arm64 aapt2, streamed log, one-tap install).
+- ✅ v0.7 — Templates: Kotlin + Jetpack Compose app (Arabic/RTL) and Arabic IME keyboard.
 
 ## المتبقي · Remaining
 
+Details and step-by-step acceptance criteria: [docs/PLAN.md](docs/PLAN.md).
+
 ### الأولوية 1 · Priority 1
-1. **قوالب · Templates**: Kotlin + Jetpack Compose app (Arabic/RTL-ready) and Android **IME keyboard** template (InputMethodService + Arabic layout).
-2. **بناء APK على الجهاز · On-device APK build**: Debian rootfs option, JDK 17 + Android SDK inside proot, "Lite build" path, install via `PackageInstaller`, stream `logcat`.
+1. **إثبات البناء على الجهاز · Field-test the on-device builder**: real-device matrix, lite WebView template, resumable downloads + SHA-256 pinning, aapt2 mirror list, post-install `logcat` streaming.
+2. **بناء الإصدار الموقّع على الجهاز · On-device signed release build**: use the project keystore (password prompt) instead of debug-only output.
 
 ### الأولوية 2 · Priority 2
-3. **وكيل متعدد العملاء · Multi-agent**: Planner → Coder → Reviewer/Tester, reviewer on a different model, loop detector, context compaction.
+3. **تطوير فريق الوكلاء · Evolve the agent team**: explicit planner stage, reviewer consumes lint/test output, per-provider reviewer model, MCP over HTTP/SSE.
 4. **GitLab / Gitea UI**: account linking and repository flows in the app UI (the account store already supports other HTTPS hosts).
 5. **زر GitHub Device Flow · Device-flow sign-in button** instead of pasting tokens.
 

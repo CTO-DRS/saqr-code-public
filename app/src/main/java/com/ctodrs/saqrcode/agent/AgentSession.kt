@@ -83,8 +83,26 @@ sealed class ChatItem {
         fun update(q: AskQuestion, a: AskAnswer) { if (status == Status.PENDING) answers = answers + (q.id to a) }
     }
     class Notice(val text: String, val isError: Boolean = false, val kind: Kind = if (isError) Kind.ERROR else Kind.INFO, val count: Int = -1) : ChatItem() {
-        /** INTERRUPTED: a turn was cut off (app killed / phone off) and can be resumed; RESUMED: it was. */
-        enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED, INTERRUPTED, RESUMED }
+        /** INTERRUPTED: a turn was cut off (app killed / phone off) and can be resumed; RESUMED: it was. COMPACTED: v0.7 context compaction; LOOP: v0.7 loop detector stopped the turn. */
+        enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED, INTERRUPTED, RESUMED, COMPACTED, LOOP }
+    }
+
+    /** v0.7 team mode: the reviewer's verdict on an applied batch (running → ok / issues / failed). */
+    class Review(val model: String) : ChatItem() {
+        enum class ReviewStatus { RUNNING, OK, ISSUES, FAILED }
+        var status by mutableStateOf(ReviewStatus.RUNNING)
+        var summary by mutableStateOf("")
+        val issues = mutableStateListOf<Reviewer.Issue>()
+
+        fun finish(report: Reviewer.Report?) {
+            if (report == null) {
+                status = ReviewStatus.FAILED; summary = ""
+            } else {
+                status = if (report.ok) ReviewStatus.OK else ReviewStatus.ISSUES
+                summary = report.summary
+                issues.clear(); issues.addAll(report.issues)
+            }
+        }
     }
 
     companion object { private var nextKey = 1L }
@@ -127,6 +145,13 @@ class AgentSession(
     /** Told to the model with the next message, e.g. that the user restored a checkpoint. */
     private var pendingNote: String? = null
 
+    // ---- v0.7 team review / loop guard / compaction
+    /** Approved file changes waiting for the reviewer pass (team mode). */
+    private var pendingReview: List<FileChange>? = null
+    private var reviewRounds = 0
+    private val loopPrints = ArrayList<String>()
+    private var loopNudged = false
+
     // ---- v0.6 sessions
     var sessionId by mutableStateOf(SessionStore.newId()); private set
     var sessionTitle by mutableStateOf(""); private set
@@ -167,6 +192,7 @@ class AgentSession(
         touched.clear(); touched.addAll(d.touched)
         sessionUsage.clear(); sessionUsage.putAll(d.usage)
         step = 0; contextTokens = 0; currentUser = null; pendingNote = null; usageVersion++
+        pendingReview = null; reviewRounds = 0; loopPrints.clear(); loopNudged = false
         // checkpoints that no longer exist lose their "Restore to here"
         val cps = runCatching { checkpoints.list().map { it.id }.toSet() }.getOrDefault(emptySet())
         items.filterIsInstance<ChatItem.User>().forEach { if (it.checkpointId != null && it.checkpointId !in cps) it.checkpointId = null }
@@ -226,6 +252,7 @@ class AgentSession(
     private fun resetState() {
         pendingAsk.clear(); items.clear(); history.clear(); touched.clear(); plan.clear(); step = 0; contextTokens = 0
         sessionUsage.clear(); currentUser = null; pendingNote = null; usageVersion++; interrupted = false
+        pendingReview = null; reviewRounds = 0; loopPrints.clear(); loopNudged = false
     }
 
     /** Switch to a saved session. Refused while a turn runs. */
@@ -327,6 +354,7 @@ class AgentSession(
                     it.ok = false; it.result = "(stopped)"; it.durationMs = System.currentTimeMillis() - it.createdAt
                 }
                 running = false
+                pendingReview = null
                 saveNow()
                 hooks.onTurnEnd(projectName, outcome)
             }
@@ -436,7 +464,7 @@ class AgentSession(
             hooks.onActivity(projectName, step + 1, RunActivity.THINKING)
             val bubble = ChatItem.Assistant()
             items += bubble
-            val sys = withContext(Dispatchers.IO) { SystemPrompt.build(projectDir, touched, linux.ready) }
+            val sys = withContext(Dispatchers.IO) { SystemPrompt.build(projectDir, touched, linux.ready, settings.agentMode == "team") }
             val inputChars = sys.length + history.sumOf { size(it) }
             contextTokens = (inputChars / 3.6).toInt()
             val streamed = StringBuffer()
@@ -459,6 +487,27 @@ class AgentSession(
             markDirty()
             if (turn.toolCalls.isEmpty()) return RunOutcome(RunOutcome.Kind.DONE, NotifText.summary(lastText))
             executeTools(turn.toolCalls, bubble)
+
+            // v0.7: loop guard — nudge once, then stop before burning tokens in circles
+            loopPrints += LoopDetector.fingerprint(turn.toolCalls)
+            if (loopPrints.size > LoopDetector.WINDOW) loopPrints.removeAt(0)
+            if (LoopDetector.tripleRepeat(loopPrints)) {
+                if (!loopNudged) {
+                    loopNudged = true
+                    history += Msg.User(
+                        "[System] You are repeating the same tool calls with the same arguments. " +
+                            "Re-read the affected file, change your approach, or summarise what is blocking you and ask the user.",
+                    )
+                } else {
+                    items += ChatItem.Notice("", kind = ChatItem.Notice.Kind.LOOP)
+                    return RunOutcome(RunOutcome.Kind.STOPPED, NotifText.summary(lastText))
+                }
+            }
+
+            // v0.7: team mode — a reviewer pass over the applied batch
+            if (settings.agentMode == "team") runReview()
+            // v0.7: summarise old context when the history grows past the threshold
+            maybeCompact(llm, model)
         }
         items += ChatItem.Notice("Step limit reached ($MAX_STEPS). Send a message to continue.", kind = ChatItem.Notice.Kind.STEP_LIMIT)
         return RunOutcome(RunOutcome.Kind.STEP_LIMIT, NotifText.summary(lastText))
@@ -523,6 +572,7 @@ class AgentSession(
                 }
                 if (point != null && user != null) user.checkpointId = point.id
                 touched += changes.keys
+                pendingReview = changes.values.toList() // v0.7 team mode: the reviewer sees this batch
                 if (!needApproval) {
                     val ch = changes.values.first()
                     items += ChatItem.Approval(listOf(ch)).also { it.decision = true; it.durationMs = 0; it.deferred.complete(true) }
@@ -563,6 +613,68 @@ class AgentSession(
         }
 
         for (c in calls) history += Msg.ToolResult(c.id, c.name, results[c.id] ?: "Error: not executed")
+    }
+
+    /** v0.7 team mode: one reviewer call over the last applied batch (max [MAX_REVIEW_ROUNDS] per turn). */
+    private suspend fun runReview() {
+        val changes = pendingReview ?: return
+        pendingReview = null
+        if (reviewRounds >= MAX_REVIEW_ROUNDS) return
+        reviewRounds++
+        hooks.onActivity(projectName, step, RunActivity.forTool("review", "diff"))
+        val def = Providers.byId(settings.activeProvider)
+        val cfg = settings.config(def.id)
+        val model = settings.reviewModel.ifBlank { cfg.model }
+        val card = ChatItem.Review(model)
+        items += card
+        markDirty()
+        val diff = Reviewer.diffOf(changes)
+        val req = Reviewer.buildRequest(currentUser?.text ?: "", diff)
+        val out = runCatching {
+            val rl = LlmClient(def, cfg.baseUrl, model, settings.apiKey(def.id))
+            rl.complete(Reviewer.SYSTEM, listOf(Msg.User(req)), emptyList(), object : StreamListener {
+                override fun onText(delta: String) {}
+            })
+        }
+        out.onSuccess { turn ->
+            recordUsage(model, turn.usage ?: UsageParser.estimate(req.length, turn.text.length))
+            val report = Reviewer.parse(turn.text)
+            card.finish(report)
+            history += Msg.User(
+                when {
+                    report == null -> "[Reviewer] The review returned an unreadable answer; continue with your best judgement."
+                    report.ok -> "[Reviewer] OK — ${report.summary.ifBlank { "changes look correct" }}"
+                    else -> Reviewer.feedbackMessage(report)
+                },
+            )
+        }
+        out.onFailure { e ->
+            card.finish(null)
+            history += Msg.User("[Reviewer] The review call failed (${(e.message ?: "error").take(120)}); continue with your best judgement.")
+        }
+        markDirty()
+    }
+
+    /** v0.7: summarise the oldest context into one note once it passes the threshold. */
+    private suspend fun maybeCompact(llm: LlmClient, model: String) {
+        if (!settings.autoCompact) return
+        val chars = history.sumOf { size(it) }.toLong()
+        if (!ContextCompactor.needsCompact(chars, history.size)) return
+        val cut = ContextCompactor.cutIndex(history) ?: return
+        hooks.onActivity(projectName, step, RunActivity.forTool("compact", ""))
+        val rendered = ContextCompactor.renderForSummary(history.subList(0, cut))
+        val out = runCatching {
+            llm.complete(ContextCompactor.SUMMARY_SYSTEM, listOf(Msg.User(rendered)), emptyList(), object : StreamListener {
+                override fun onText(delta: String) {}
+            })
+        }.getOrNull() ?: return
+        recordUsage(model, out.usage ?: UsageParser.estimate(rendered.length, out.text.length))
+        val summary = out.text.trim()
+        if (summary.length < 60) return
+        val compacted = ContextCompactor.apply(history, cut, summary)
+        history.clear(); history.addAll(compacted)
+        items += ChatItem.Notice("", kind = ChatItem.Notice.Kind.COMPACTED)
+        markDirty()
     }
 
     private fun updatePlan(a: JSONObject?): String {
@@ -620,7 +732,42 @@ class AgentSession(
                     }
                 }
             }
+            Tools.WEB_SEARCH -> WebTools.search(a.optString("query"), a.optInt("max_results", 6))
+            Tools.WEB_FETCH -> WebTools.fetch(a.optString("url"), a.optInt("max_chars", 8_000))
+            Tools.LINT -> lintProject()
+            Tools.TESTS -> runProjectTests()
             else -> "Error: unknown tool $name"
+        }
+    }
+
+    /** v0.7: terminal lint checks + pure JSON/HTML checks, formatted as one report. */
+    private suspend fun lintProject(): String {
+        val cmds = ProjectChecks.lintCommands(projectDir)
+        val outputs = ArrayList<Pair<String, String>>()
+        for ((kind, cmd) in cmds) {
+            val r = linux.exec(projectDir, cmd, 240)
+            var out = r.output
+            if (Regex("""(not found|command not found)""").containsMatchIn(out)) {
+                out += "\nHint: install the tool first (e.g. `apk add nodejs` or `apk add python3`)."
+            }
+            outputs += kind to out
+        }
+        val pure = ProjectChecks.jsonIssues(projectDir) + ProjectChecks.htmlIssues(projectDir)
+        return ProjectChecks.formatLint(outputs, pure)
+    }
+
+    /** v0.7: detect and run the project's tests (npm test / pytest / unittest). */
+    private suspend fun runProjectTests(): String {
+        val runners = ProjectChecks.detectTests(projectDir)
+        if (runners.isEmpty()) {
+            return "No test runner detected (no package.json test script, no pytest layout, no *_test.py files). Offer to write tests for this project."
+        }
+        val r = runners.first()
+        val res = linux.exec(projectDir, r.command, 300)
+        return buildString {
+            appendLine("Runner: ${r.label} (${r.command})")
+            append(if (res.timedOut) "[timed out]\n" else "[exit ${res.exitCode}]\n")
+            append(res.output.ifBlank { "(no output)" })
         }
     }
 
@@ -647,6 +794,10 @@ class AgentSession(
     companion object {
         const val MAX_STEPS = 40
         const val MAX_CONTEXT_CHARS = 180_000
+        /** v0.7: reviewer passes per turn (team mode). */
+        const val MAX_REVIEW_ROUNDS = 2
+        /** v0.7: compaction threshold (chars), from [ContextCompactor.THRESHOLD_CHARS]. */
+        const val COMPACT_THRESHOLD = ContextCompactor.THRESHOLD_CHARS
         /** Rough context cost of one attached image (~1.5k tokens) for the meter and trimming. */
         const val IMAGE_CHARS = 5_400
         const val SAVE_DEBOUNCE_MS = 1_000L
@@ -654,7 +805,7 @@ class AgentSession(
 }
 
 object SystemPrompt {
-    fun build(projectDir: File, touched: Collection<String>, linuxReady: Boolean): String {
+    fun build(projectDir: File, touched: Collection<String>, linuxReady: Boolean, teamMode: Boolean = false): String {
         val rules = File(projectDir, "AGENTS.md").takeIf { it.isFile }?.readText()?.take(4000)
         return buildString {
             appendLine("""You are Saqr (صقر), an expert software engineer working as a coding agent inside the Saqr Code Android app.
@@ -684,6 +835,11 @@ You operate on the user's project through tools. The project root is the current
             if (linuxReady) appendLine("- run_command executes in Alpine Linux (proot, no root on the phone). Install packages with `apk add` (e.g. `apk add nodejs npm python3 git`). Servers must bind 127.0.0.1. Commands are non-interactive; pass -y flags.")
             else appendLine("- The Linux environment is NOT installed yet; run_command uses Android's limited /system/bin/sh (toybox). If the task needs node/python/etc., tell the user to install Linux from the Terminal tab.")
             appendLine("- Dangerous commands (rm -rf /, curl|sh, eval, sudo, etc.) are blocked by policy.")
+            appendLine()
+            appendLine("# Web & quality tools (v0.7)")
+            appendLine("- web_search / web_fetch reach the public internet only (private addresses are blocked). Use them for docs, API references and unfamiliar errors.")
+            appendLine("- lint_project gives quick JS/Python/JSON/HTML checks; run_tests detects and runs the project's tests. Use them after meaningful changes and fix what they report.")
+            if (teamMode) appendLine("- Team mode: a reviewer agent checks your applied changes after each batch. Reviewer messages start with \"[Reviewer]\"; fix reported issues immediately without re-asking the user.")
             appendLine()
             appendLine("# PROJECT MAP")
             appendLine(Tools.projectMap(projectDir))

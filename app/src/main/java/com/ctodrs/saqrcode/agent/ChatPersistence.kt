@@ -164,6 +164,12 @@ object SessionCodec {
                 })
             }
             is ChatItem.Notice -> o.put("t", "notice").put("text", item.text).put("kind", item.kind.name).put("count", item.count)
+            is ChatItem.Review -> {
+                o.put("t", "review").put("model", item.model).put("status", item.status.name).put("summary", item.summary)
+                if (item.issues.isNotEmpty()) o.put("issues", JSONArray().apply {
+                    item.issues.forEach { put(JSONObject().put("file", it.file).put("line", it.line).put("comment", it.comment)) }
+                })
+            }
         }
         return o
     }
@@ -224,6 +230,15 @@ object SessionCodec {
             "notice" -> {
                 val kind = runCatching { ChatItem.Notice.Kind.valueOf(o.optString("kind")) }.getOrDefault(ChatItem.Notice.Kind.INFO)
                 ChatItem.Notice(o.optString("text"), kind == ChatItem.Notice.Kind.ERROR, kind, o.optInt("count", -1))
+            }
+            "review" -> ChatItem.Review(o.optString("model")).apply {
+                status = runCatching { ChatItem.Review.ReviewStatus.valueOf(o.optString("status")) }.getOrDefault(ChatItem.Review.ReviewStatus.FAILED)
+                summary = o.optString("summary")
+                o.optJSONArray("issues")?.let { a ->
+                    (0 until a.length()).mapNotNull { a.optJSONObject(it) }.forEach {
+                        issues += Reviewer.Issue(it.optString("file"), it.optString("line"), it.optString("comment"))
+                    }
+                }
             }
             else -> return null
         }
