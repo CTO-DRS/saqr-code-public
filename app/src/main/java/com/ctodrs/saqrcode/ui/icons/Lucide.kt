@@ -67,4 +67,42 @@ object Lucide {
     val Upload: ImageVector by lazy { stroked("upload", false, "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", "M17,8 L12,3 L7,8", "M12,3L12,15") }
     val X: ImageVector by lazy { stroked("x", false, "M18 6 6 18", "m6 6 12 12") }
     val Zap: ImageVector by lazy { stroked("zap", false, "M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z") }
+    // ---- added in v0.3 (git, terminal, editor, accounts)
+    val ArrowDownToLine: ImageVector by lazy { stroked("arrow-down-to-line", false, "M12 17V3", "m6 11 6 6 6-6", "M19 21H5") }
+    val ArrowDown: ImageVector by lazy { stroked("arrow-down", false, "M12 5v14", "m19 12-7 7-7-7") }
+    val ArrowUpDown: ImageVector by lazy { stroked("arrow-up-down", false, "m21 16-4 4-4-4", "M17 20V4", "m3 8 4-4 4 4", "M7 4v16") }
+    val ArrowUpFromLine: ImageVector by lazy { stroked("arrow-up-from-line", true, "m18 9-6-6-6 6", "M12 3v14", "M5 21h14") }
+    val BookMarked: ImageVector by lazy { stroked("book-marked", false, "M10 2v8l3-3 3 3V2", "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20") }
+    val CheckCheck: ImageVector by lazy { stroked("check-check", false, "M18 6 7 17l-5-5", "m22 10-7.5 7.5L13 16") }
+    val ChevronsUpDown: ImageVector by lazy { stroked("chevrons-up-down", false, "m7 15 5 5 5-5", "m7 9 5-5 5 5") }
+    val CircleDot: ImageVector by lazy { stroked("circle-dot", false, "M2.0,12.0a10.0,10.0 0 1,0 20.0,0a10.0,10.0 0 1,0 -20.0,0", "M11.0,12.0a1.0,1.0 0 1,0 2.0,0a1.0,1.0 0 1,0 -2.0,0") }
+    val ClipboardPaste: ImageVector by lazy { stroked("clipboard-paste", false, "M15 2H9a1 1 0 0 0-1 1v2c0 .6.4 1 1 1h6c.6 0 1-.4 1-1V3c0-.6-.4-1-1-1Z", "M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2M16 4h2a2 2 0 0 1 2 2v2M11 14h10", "m17 10 4 4-4 4") }
+    val CloudDownload: ImageVector by lazy { stroked("cloud-download", false, "M12 13v8l-4-4", "m12 21 4-4", "M4.393 15.269A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.436 8.284") }
+    val Command: ImageVector by lazy { stroked("command", false, "M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3") }
+    val CornerDownLeft: ImageVector by lazy { stroked("corner-down-left", true, "M9 L10 L4 L15 L9 L20", "M20 4v7a4 4 0 0 1-4 4H4") }
+    val FileDiff: ImageVector by lazy { stroked("file-diff", false, "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", "M9 10h6", "M12 13V7", "M9 17h6") }
+    val Filter: ImageVector by lazy { stroked("filter", false, "M22 L3 L2 L3 L10 L12.46 L10 L19 L14 L21 L14 L12.46 L22 L3Z") }
+    val GitCommitHorizontal: ImageVector by lazy { stroked("git-commit-horizontal", false, "M9.0,12.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M3,12L9,12", "M15,12L21,12") }
+    val GitCompare: ImageVector by lazy { stroked("git-compare", false, "M15.0,18.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M3.0,6.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M13 6h3a2 2 0 0 1 2 2v7", "M11 18H8a2 2 0 0 1-2-2V9") }
+    val GitFork: ImageVector by lazy { stroked("git-fork", false, "M9.0,18.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M3.0,6.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M15.0,6.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M18 9v2c0 .6-.4 1-1 1H7c-.6 0-1-.4-1-1V9", "M12 12v3") }
+    val GitMerge: ImageVector by lazy { stroked("git-merge", false, "M15.0,18.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M3.0,6.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M6 21V9a9 9 0 0 0 9 9") }
+    val GitPullRequestArrow: ImageVector by lazy { stroked("git-pull-request-arrow", false, "M2.0,6.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M5 9v12", "M16.0,18.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "m15 9-3-3 3-3", "M12 6h5a2 2 0 0 1 2 2v7") }
+    val GitPullRequest: ImageVector by lazy { stroked("git-pull-request", false, "M15.0,18.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M3.0,6.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M13 6h3a2 2 0 0 1 2 2v7", "M6,9L6,21") }
+    val Hammer: ImageVector by lazy { stroked("hammer", false, "m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9", "m18 15 4-4", "m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5") }
+    val Keyboard: ImageVector by lazy { stroked("keyboard", false, "M10 8h.01", "M12 12h.01", "M14 8h.01", "M16 12h.01", "M18 8h.01", "M6 8h.01", "M7 16h10", "M8 12h.01", "M4.0,4.0h16.0a2.0,2.0 0 0 1 2.0,2.0v12.0a2.0,2.0 0 0 1 -2.0,2.0h-16.0a2.0,2.0 0 0 1 -2.0,-2.0v-12.0a2.0,2.0 0 0 1 2.0,-2.0Z") }
+    val Link: ImageVector by lazy { stroked("link", false, "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71") }
+    val ListTree: ImageVector by lazy { stroked("list-tree", false, "M21 12h-8", "M21 6H8", "M21 18h-8", "M3 6v4c0 1.1.9 2 2 2h3", "M3 10v6c0 1.1.9 2 2 2h3") }
+    val Lock: ImageVector by lazy { stroked("lock", false, "M5.0,11.0h14.0a2.0,2.0 0 0 1 2.0,2.0v7.0a2.0,2.0 0 0 1 -2.0,2.0h-14.0a2.0,2.0 0 0 1 -2.0,-2.0v-7.0a2.0,2.0 0 0 1 2.0,-2.0Z", "M7 11V7a5 5 0 0 1 10 0v4") }
+    val LogOut: ImageVector by lazy { stroked("log-out", true, "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 L17 L21 L12 L16 L7", "M21,12L9,12") }
+    val Minus: ImageVector by lazy { stroked("minus", false, "M5 12h14") }
+    val Package: ImageVector by lazy { stroked("package", false, "M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z", "M12 22V12", "m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7", "m7.5 4.27 9 5.15") }
+    val Redo2: ImageVector by lazy { stroked("redo-2", true, "m15 14 5-5-5-5", "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13") }
+    val Replace: ImageVector by lazy { stroked("replace", false, "M14 4a2 2 0 0 1 2-2", "M16 10a2 2 0 0 1-2-2", "M20 2a2 2 0 0 1 2 2", "M22 8a2 2 0 0 1-2 2", "m3 7 3 3 3-3", "M6 10V5a3 3 0 0 1 3-3h1", "M4.0,14.0h4.0a2.0,2.0 0 0 1 2.0,2.0v4.0a2.0,2.0 0 0 1 -2.0,2.0h-4.0a2.0,2.0 0 0 1 -2.0,-2.0v-4.0a2.0,2.0 0 0 1 2.0,-2.0Z") }
+    val Scissors: ImageVector by lazy { stroked("scissors", false, "M3.0,6.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M8.12 8.12 12 12", "M20 4 8.12 15.88", "M3.0,18.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M14.8 14.8 20 20") }
+    val Smartphone: ImageVector by lazy { stroked("smartphone", false, "M7.0,2.0h10.0a2.0,2.0 0 0 1 2.0,2.0v16.0a2.0,2.0 0 0 1 -2.0,2.0h-10.0a2.0,2.0 0 0 1 -2.0,-2.0v-16.0a2.0,2.0 0 0 1 2.0,-2.0Z", "M12 18h.01") }
+    val Star: ImageVector by lazy { stroked("star", false, "M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z") }
+    val Tag: ImageVector by lazy { stroked("tag", false, "M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z", "M7.0,7.5a0.5,0.5 0 1,0 1.0,0a0.5,0.5 0 1,0 -1.0,0") }
+    val Undo2: ImageVector by lazy { stroked("undo-2", true, "M9 14 4 9l5-5", "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11") }
+    val User: ImageVector by lazy { stroked("user", false, "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", "M8.0,7.0a4.0,4.0 0 1,0 8.0,0a4.0,4.0 0 1,0 -8.0,0") }
+    val Users: ImageVector by lazy { stroked("users", false, "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", "M5.0,7.0a4.0,4.0 0 1,0 8.0,0a4.0,4.0 0 1,0 -8.0,0", "M22 21v-2a4 4 0 0 0-3-3.87", "M16 3.13a4 4 0 0 1 0 7.75") }
 }

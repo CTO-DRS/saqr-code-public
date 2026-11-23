@@ -8,7 +8,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.TextFieldValue
 import com.ctodrs.saqrcode.SaqrApp
 import com.ctodrs.saqrcode.agent.AgentSession
-import com.ctodrs.saqrcode.terminal.ShellSession
+import com.ctodrs.saqrcode.git.GitController
+import com.ctodrs.saqrcode.terminal.TerminalManager
 import java.io.File
 
 class OpenFile(val path: String, initial: String) {
@@ -21,7 +22,9 @@ class OpenFile(val path: String, initial: String) {
 class Workspace(val name: String, val dir: File) {
     private val app = SaqrApp.instance
     val agent = AgentSession(name, dir, File(app.filesDir, "snapshots"), app.settings, app.linux)
-    val shell by lazy { ShellSession(app.linux, dir) }
+    val terminals by lazy { TerminalManager(app.linux, dir) }
+    val git by lazy { GitController(dir, app.settings, app.filesDir) }
+    var gitTab by mutableIntStateOf(0)
     val tabs = mutableStateListOf<OpenFile>()
     var activeTab by mutableIntStateOf(-1)
     var fsVersion by mutableIntStateOf(0)

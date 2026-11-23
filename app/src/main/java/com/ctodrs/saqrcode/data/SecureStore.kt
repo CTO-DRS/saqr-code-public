@@ -10,7 +10,7 @@ import androidx.security.crypto.MasterKey
  * Secrets (API keys, GitHub token) live in EncryptedSharedPreferences whose master key
  * is held by the Android Keystore (AES-256-GCM). Never logged, never backed up.
  */
-class SecureStore(context: Context) {
+class SecureStore(context: Context) : KeyValue {
     private val prefs: SharedPreferences = try {
         create(context)
     } catch (e: Exception) {
@@ -31,8 +31,8 @@ class SecureStore(context: Context) {
         )
     }
 
-    fun get(name: String): String? = prefs.getString(name, null)?.takeIf { it.isNotBlank() }
-    fun put(name: String, value: String?) {
+    override fun get(name: String): String? = prefs.getString(name, null)?.takeIf { it.isNotBlank() }
+    override fun put(name: String, value: String?) {
         prefs.edit().apply { if (value.isNullOrBlank()) remove(name) else putString(name, value.trim()) }.apply()
     }
     fun has(name: String) = get(name) != null

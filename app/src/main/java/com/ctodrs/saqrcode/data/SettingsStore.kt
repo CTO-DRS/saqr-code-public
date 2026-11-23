@@ -46,9 +46,37 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("github_user", "") ?: ""
         set(v) { prefs.edit().putString("github_user", v.trim()).apply(); bump() }
 
-    var githubToken: String?
-        get() = secure.get("github_token")
-        set(v) { secure.put("github_token", v); bump() }
+    /** Git hosting accounts (GitHub + other HTTPS hosts); tokens encrypted by [SecureStore]. */
+    val accounts = AccountStore(secure).also { it.migrateLegacy(prefs.getString("github_user", null)) }
+
+    /** Kept for the v0.2 Git pane code paths: the GitHub token, if linked. */
+    val githubToken: String? get() = accounts.githubToken()
+
+    fun accountsChanged() = bump()
+
+    /** Commit identity; defaults to the linked GitHub account. */
+    var gitName: String
+        get() = prefs.getString("git_name", null)?.takeIf { it.isNotBlank() } ?: accounts.github?.displayName ?: ""
+        set(v) { prefs.edit().putString("git_name", v.trim()).apply(); bump() }
+
+    var gitEmail: String
+        get() = prefs.getString("git_email", null)?.takeIf { it.isNotBlank() } ?: accounts.github?.noreplyEmail ?: ""
+        set(v) { prefs.edit().putString("git_email", v.trim()).apply(); bump() }
+
+    /** Client ID of the user's own GitHub OAuth App (Device Flow). Public value, no secret needed. */
+    var githubClientId: String
+        get() = prefs.getString("gh_client_id", "") ?: ""
+        set(v) { prefs.edit().putString("gh_client_id", v.trim()).apply(); bump() }
+
+    /** Agent mode: "single" (one agent) or "team" (planner → coder → reviewer). */
+    var agentMode: String
+        get() = prefs.getString("agent_mode", "single") ?: "single"
+        set(v) { prefs.edit().putString("agent_mode", v).apply(); bump() }
+
+    /** Terminal font size in sp. */
+    var terminalFontSize: Int
+        get() = prefs.getInt("term_font", 12)
+        set(v) { prefs.edit().putInt("term_font", v.coerceIn(8, 22)).apply(); bump() }
 
     fun config(id: String): ProviderConfig {
         val def = Providers.byId(id)

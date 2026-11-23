@@ -444,66 +444,7 @@ private fun colorizeTerminal(out: String, accent: Color) = buildAnnotatedString 
 // ------------------------------------------------------------------ Git
 
 @Composable
-fun GitPane(ws: Workspace) {
-    val app = SaqrApp.instance
-    val settings = app.settings
-    val git = remember { GitService(app.filesDir) }
-    val scope = rememberCoroutineScope()
-    val c = Saqr.colors
-    var repo by remember { mutableStateOf(listOf(settings.githubUser, ws.name).filter { it.isNotBlank() }.joinToString("/")) }
-    var message by remember { mutableStateOf("Update from Saqr Code") }
-    var create by remember { mutableStateOf(true) }
-    var busy by remember { mutableStateOf(false) }
-    var log by remember { mutableStateOf("") }
-    val needToken = stringResource(R.string.git_need_token)
-
-    LaunchedEffect(ws.fsVersion) { if (!busy) log = runCatching { git.status(ws.dir) }.getOrElse { it.message ?: "" } }
-
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.lg).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
-        SaqrCard(Modifier.fillMaxWidth()) {
-            Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(c.accentSoft), contentAlignment = Alignment.Center) {
-                        SIcon(Lucide.Github, size = 19.dp, tint = c.accentText)
-                    }
-                    Spacer(Modifier.width(Sp.md))
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.git_title), style = Saqr.type.title3.copy(fontWeight = FontWeight.SemiBold), color = c.text1)
-                        Text(stringResource(R.string.git_subtitle), style = Saqr.type.caption, color = c.text2)
-                    }
-                    Tag(if (settings.githubToken != null) stringResource(R.string.connected) else stringResource(R.string.not_connected),
-                        color = if (settings.githubToken != null) c.success else c.text3, dot = true)
-                }
-                SaqrField(repo, { repo = it }, label = stringResource(R.string.git_remote), placeholder = "owner/repo", mono = true)
-                SaqrField(message, { message = it }, label = stringResource(R.string.git_commit_msg), singleLine = false)
-                Row(Modifier.clip(RoundedCornerShape(Radius.sm)).clickable { create = !create }.padding(end = Sp.sm), verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(create, { create = it }, colors = CheckboxDefaults.colors(checkedColor = c.accent, checkmarkColor = c.onAccent, uncheckedColor = c.borderStrong))
-                    Text(stringResource(R.string.git_create_repo), style = Saqr.type.bodySmall, color = c.text1)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), verticalAlignment = Alignment.CenterVertically) {
-                    PrimaryButton(stringResource(R.string.git_push), enabled = !busy && repo.contains('/'), icon = Lucide.Upload, modifier = Modifier.weight(1f), onClick = {
-                        val token = settings.githubToken
-                        if (token == null) { log = needToken; return@PrimaryButton }
-                        busy = true
-                        scope.launch {
-                            log = runCatching {
-                                val (owner, name) = repo.trim().split('/').let { it[0] to it[1] }
-                                val pre = if (create) git.ensureRepo(owner, name, token) + "\n" else ""
-                                pre + git.commitAndPush(ws.dir, repo, settings.githubUser, token, message)
-                            }.getOrElse { "✗ " + (it.message ?: it.toString()) }
-                            busy = false
-                        }
-                    })
-                    SecondaryButton(stringResource(R.string.git_status), enabled = !busy, icon = Lucide.RefreshCw, onClick = {
-                        scope.launch { log = runCatching { git.status(ws.dir) }.getOrElse { it.message ?: "" } }
-                    })
-                    if (busy) Spinner(20.dp)
-                }
-            }
-        }
-        if (log.isNotBlank()) OutputBox(log, maxHeight = 420)
-    }
-}
+fun GitPane(ws: Workspace) { GitScreen(ws) }
 
 // ------------------------------------------------------------------ Preview
 

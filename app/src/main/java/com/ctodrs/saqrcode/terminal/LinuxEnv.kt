@@ -55,7 +55,7 @@ class LinuxEnv(private val context: Context) {
             File(rootfs, "workspace").mkdirs()
             File(rootfs, "root").mkdirs()
             File(rootfs, "etc/profile.d").mkdirs()
-            File(rootfs, "etc/profile.d/saqr.sh").writeText("export PS1='saqr:\\w\\$ '\n")
+            writeProfile()
             marker.writeText(ALPINE_VERSION)
             _progress.value = ""
             _state.value = State.READY
@@ -84,6 +84,31 @@ class LinuxEnv(private val context: Context) {
         pb.directory(projectDir)
         pb.redirectErrorStream(true)
         return pb
+    }
+
+    /** argv0-first command, cwd and environment for an interactive PTY session (Termux JNI). */
+    data class PtyCommand(val executable: String, val args: Array<String>, val env: Array<String>, val cwd: String, val linux: Boolean)
+
+    private fun writeProfile() = runCatching {
+        File(rootfs, "etc/profile.d").mkdirs()
+        File(rootfs, "etc/profile.d/saqr.sh").writeText(PROFILE)
+    }
+
+    fun ptyCommand(projectDir: File): PtyCommand {
+        if (ready) {
+            writeProfile()
+            val tmp = File(context.cacheDir, "proot-tmp").apply { mkdirs() }
+            val args = prootArgs(proot.absolutePath, rootfs.absolutePath, projectDir.absolutePath, listOf("-l"), term = "xterm-256color")
+            val env = arrayOf(
+                "PROOT_LOADER=" + File(nativeDir, "libproot-loader.so").absolutePath,
+                "PROOT_TMP_DIR=" + tmp.absolutePath,
+                "LD_LIBRARY_PATH=" + nativeDir.absolutePath,
+                "PATH=/system/bin", "TERM=xterm-256color", "HOME=" + projectDir.absolutePath,
+            )
+            return PtyCommand(proot.absolutePath, args.toTypedArray(), env, projectDir.absolutePath, true)
+        }
+        val env = arrayOf("TERM=xterm-256color", "HOME=" + projectDir.absolutePath, "PATH=/system/bin:/system/xbin", "TMPDIR=" + context.cacheDir.absolutePath)
+        return PtyCommand("/system/bin/sh", arrayOf("sh"), env, projectDir.absolutePath, false)
     }
 
     data class ExecResult(val exitCode: Int, val output: String, val timedOut: Boolean)
@@ -121,17 +146,21 @@ class LinuxEnv(private val context: Context) {
 
     companion object {
         /** Pure, testable proot command line. */
-        fun prootArgs(proot: String, rootfs: String, projectDir: String, shellArgs: List<String>): List<String> = listOf(
+        fun prootArgs(proot: String, rootfs: String, projectDir: String, shellArgs: List<String>, term: String = "dumb"): List<String> = listOf(
             proot, "--kill-on-exit", "--link2symlink", "-L", "--sysvipc", "-0",
             "-r", rootfs,
             "-b", "/dev", "-b", "/proc", "-b", "/sys",
             "-b", "$projectDir:/workspace",
             "-w", "/workspace",
             "/usr/bin/env", "-i",
-            "HOME=/root", "USER=root", "TERM=dumb", "LANG=C.UTF-8",
+            "HOME=/root", "USER=root", "TERM=$term", "LANG=C.UTF-8", "COLORTERM=truecolor",
             "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
             "/bin/sh",
         ) + shellArgs
+
+        /** Coloured prompt (Saqr gold user, soft blue path) + colour aliases for the PTY terminal. */
+        const val PROFILE = "export PS1='\\[\\e[1;38;2;233;180;76m\\]saqr\\[\\e[0m\\]:\\[\\e[38;5;110m\\]\\w\\[\\e[0m\\]\\$ '\n" +
+            "alias ls='ls --color=auto'\nalias grep='grep --color=auto'\nexport CLICOLOR=1\n"
 
         const val ALPINE_VERSION = "3.24.4"
         const val ALPINE_URL = "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/alpine-minirootfs-3.24.4-aarch64.tar.gz"

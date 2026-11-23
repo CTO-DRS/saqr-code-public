@@ -115,7 +115,7 @@ fun SettingsScreen(onBack: () -> Unit) {
         onSaveProvider = { id, b, m, k -> settings.saveProvider(id, b, m, k) },
         fetchModels = { def, b, m, k -> runCatching { LlmClient(def, b, m, k ?: settings.apiKey(def.id)).listModels() } },
         onApproveAll = { settings.approveAll = it },
-        onSaveGithub = { u, t -> settings.githubUser = u; if (t != null) settings.githubToken = t },
+        onSaveGithub = { u, t -> settings.githubUser = u; if (t != null) runCatching { settings.accounts.saveGitHub(t, com.ctodrs.saqrcode.data.GitHubAccount(u.ifBlank { "github" }, null, null, 0, null, false)); settings.accountsChanged() } },
     )
     SettingsContent(ui, onBack)
 }
