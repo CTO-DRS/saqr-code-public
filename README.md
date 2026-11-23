@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.4.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.5.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 
 ---
 
@@ -26,6 +26,15 @@
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
 
+### الجديد في 0.5
+| الميزة | الحالة |
+|---|---|
+| منتقي العناصر في المعاينة: انقر عنصرًا، صف التعديل، والوكيل يعدّل السطر المطابق في الكود | ✅ |
+| جسر آمن ومحلي فقط بين المعاينة والتطبيق برمز عشوائي لكل صفحة | ✅ |
+| الصورة إلى كود: إرفاق صور من الكاميرا أو المعرض، وطلبات متعددة الوسائط (OpenAI المتوافق وAnthropic) | ✅ |
+| اكتشاف تلقائي لدعم الصور لكل نموذج مع تجاوز يدوي من الإعدادات | ✅ |
+| الاحتفاظ بآخر صورتين فقط في السياق لتوفير التكلفة | ✅ |
+
 ### الجديد في 0.4
 | الميزة | الحالة |
 |---|---|
@@ -43,7 +52,7 @@
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `SaqrCode-v0.4.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.5.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -54,6 +63,12 @@
 ---
 
 ## English
+
+### New in v0.5
+- **Preview element picker:** tap an element in the web preview, describe the change, and the agent edits the matched source line. Secure local-only bridge (project preview pages only, per-page random token regenerated on navigation).
+- **Image → code & image attachments:** attach images from the camera or photo picker; multimodal requests for OpenAI-compatible providers and Anthropic.
+- **Vision auto-detect** per model with a per-model override (Auto / On / Off) in Settings, plus a warning and model suggestion when the current model can't see images.
+- **Last-2-images pruning:** only the two most recent images stay in context, to keep token cost down.
 
 ### New in v0.4
 - **Editor:** incremental syntax highlighting for 12 languages, find & replace with regex, undo/redo with keyboard shortcuts (Ctrl+Z/Y/F/H, F3).

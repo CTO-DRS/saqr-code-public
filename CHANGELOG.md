@@ -1,5 +1,25 @@
 # Changelog · سجل التغييرات
 
+## [0.5.0] — 2026-11-23 — Preview element picker & image → code · منتقي العناصر والصورة إلى كود
+
+### Preview element picker · منتقي العناصر في المعاينة
+- **Tap an element** in the web preview to select it, then **describe the change** in plain words (Arabic or English); the agent receives the element's tag, selector, text and attributes, is pointed at the **matched source line**, and edits it directly.
+  انقر أي عنصر في المعاينة، صف التعديل المطلوب، والوكيل يجد السطر المطابق في الكود ويعدّله.
+- With a vision-capable model, a **cropped screenshot** of the picked element is attached for extra context.
+  مع النماذج التي تدعم الصور تُرفق لقطة مقصوصة للعنصر.
+- **Secure, local-only bridge**: the picker runs only on local preview pages (the project's own files or localhost), and every message must carry a per-page random **token** that is regenerated on each navigation; remote pages cannot talk to the app.
+  جسر آمن ومحلي فقط: يعمل على صفحات المشروع المحلية فقط، مع رمز عشوائي يتجدد مع كل تنقّل.
+
+### Image → code & image attachments · الصورة إلى كود ومرفقات الصور
+- **Attach images** to any message from the **camera** or the **photo picker**; send a screenshot or mockup and the agent rebuilds it for the project's stack (HTML/CSS/JS or Jetpack Compose, Arabic/RTL-aware; asks when the stack is unclear).
+  أرفق صورًا من الكاميرا أو المعرض، وأرسل لقطة أو تصميمًا ليبنيه الوكيل.
+- **Multimodal requests** for OpenAI-compatible providers (OpenAI, Gemini, OpenRouter, DeepSeek, custom) and the **Anthropic** Messages API.
+  طلبات متعددة الوسائط لمزوّدي OpenAI المتوافقين وAnthropic.
+- **Vision auto-detect** per model, with a **per-model override** (Auto / On / Off) in Settings; sending images to a non-vision model warns you and suggests a vision-capable model.
+  اكتشاف تلقائي لدعم الصور لكل نموذج، مع تجاوز يدوي لكل نموذج من الإعدادات، وتنبيه واقتراح نموذج بديل.
+- **Last-2-images pruning**: only the two most recent images stay in the conversation context; older ones are replaced by a short placeholder to save tokens and cost.
+  الاحتفاظ بآخر صورتين فقط في السياق لتوفير الرموز والتكلفة.
+
 ## [0.4.0] — 2026-11-23 — Editor, interactive agent & cost control · المحرر والوكيل التفاعلي والتكلفة
 
 ### Editor · المحرر
