@@ -54,6 +54,10 @@ import com.ctodrs.saqrcode.BuildConfig
 import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.SaqrApp
 import com.ctodrs.saqrcode.agent.LlmClient
+import com.ctodrs.saqrcode.agent.ModelPrice
+import com.ctodrs.saqrcode.agent.PriceTable
+import com.ctodrs.saqrcode.agent.SlashCommand
+import com.ctodrs.saqrcode.agent.SlashCommands
 import com.ctodrs.saqrcode.agent.ProviderDef
 import com.ctodrs.saqrcode.agent.Providers
 import com.ctodrs.saqrcode.data.ProviderConfig
@@ -93,6 +97,14 @@ class SettingsUi(
     val fetchModels: suspend (def: ProviderDef, baseUrl: String, model: String, key: String?) -> Result<List<String>>,
     val onApproveAll: (Boolean) -> Unit,
     val onAccounts: () -> Unit = {},
+    val customCommands: List<SlashCommand> = emptyList(),
+    /** Returns an error key from [SlashCommands.validate], or null when added. */
+    val onAddCommand: (name: String, template: String) -> String? = { _, _ -> null },
+    val onDeleteCommand: (String) -> Unit = {},
+    val monthlyBudget: Double? = null,
+    val onBudget: (Double?) -> Unit = {},
+    val prices: List<ModelPrice> = PriceTable.seeds,
+    val onPrice: (ModelPrice) -> Unit = {},
 )
 
 @Composable
@@ -116,6 +128,18 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
         fetchModels = { def, b, m, k -> runCatching { LlmClient(def, b, m, k ?: settings.apiKey(def.id)).listModels() } },
         onApproveAll = { settings.approveAll = it },
         onAccounts = onAccounts,
+        customCommands = settings.customCommands,
+        onAddCommand = { n, t ->
+            val existing = settings.customCommands
+            SlashCommands.validate(n, t, existing).also { err ->
+                if (err == null) settings.customCommands = existing + SlashCommand(n.trim().removePrefix("/"), t.trim())
+            }
+        },
+        onDeleteCommand = { n -> settings.customCommands = settings.customCommands.filter { it.name != n } },
+        monthlyBudget = settings.monthlyBudget,
+        onBudget = { settings.monthlyBudget = it },
+        prices = settings.prices(),
+        onPrice = { settings.setPrice(it) },
     )
     SettingsContent(ui, onBack)
 }
@@ -173,6 +197,15 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     trailing = { SaqrSwitch(ui.approveAll, ui.onApproveAll) },
                 )
             }
+
+            // ---- slash commands
+            SectionLabel(stringResource(R.string.slash_section), Modifier.padding(top = Sp.md))
+            Group { SlashCommandsEditor(ui) }
+
+            // ---- usage & budget
+            SectionLabel(stringResource(R.string.usage_section), Modifier.padding(top = Sp.md))
+            Group { BudgetEditor(ui) }
+            Group { PricesEditor(ui) }
 
             // ---- accounts
             SectionLabel(stringResource(R.string.accounts), Modifier.padding(top = Sp.md))
@@ -288,3 +321,111 @@ private fun ProviderItem(def: ProviderDef, cfg: ProviderConfig, active: Boolean,
     }
 }
 
+
+@Composable
+private fun SlashCommandsEditor(ui: SettingsUi) {
+    val c = Saqr.colors
+    var name by remember { mutableStateOf("") }
+    var template by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+        Text(stringResource(R.string.slash_desc), style = Saqr.type.caption, color = c.text2)
+        ui.customCommands.forEach { cmd ->
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2).padding(start = Sp.md, top = Sp.xs, bottom = Sp.xs),
+                verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("/" + cmd.name, style = Saqr.type.mono.copy(fontWeight = FontWeight.SemiBold, textDirection = androidx.compose.ui.text.style.TextDirection.Ltr),
+                        color = c.accentText, maxLines = 1)
+                    Text(cmd.template, style = Saqr.type.caption.copy(textDirection = androidx.compose.ui.text.style.TextDirection.Content),
+                        color = c.text2, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+                Box(Modifier.size(44.dp).clip(CircleShape).clickable { ui.onDeleteCommand(cmd.name) }, contentAlignment = Alignment.Center) {
+                    SIcon(Lucide.Trash2, size = 17.dp, tint = c.danger, contentDescription = stringResource(R.string.delete))
+                }
+            }
+        }
+        SaqrField(name, { name = it; error = null }, label = stringResource(R.string.slash_name), placeholder = "deploy", mono = true)
+        SaqrField(template, { template = it; error = null }, label = stringResource(R.string.slash_template),
+            placeholder = "Build {file} and deploy it to staging. {args}", singleLine = false)
+        error?.let { Text(stringResource(when (it) {
+            "builtin" -> R.string.slash_err_builtin
+            "duplicate" -> R.string.slash_err_duplicate
+            "template" -> R.string.slash_err_template
+            else -> R.string.slash_err_name
+        }), style = Saqr.type.caption, color = c.danger) }
+        GhostButton(stringResource(R.string.slash_add), {
+            val err = ui.onAddCommand(name, template)
+            if (err == null) { name = ""; template = "" } else error = err
+        }, icon = Lucide.Plus)
+    }
+}
+
+private fun fmtNum(v: Double): String = if (v == Math.floor(v)) v.toLong().toString() else v.toBigDecimal().stripTrailingZeros().toPlainString()
+
+@Composable
+private fun BudgetEditor(ui: SettingsUi) {
+    val c = Saqr.colors
+    var text by remember(ui.monthlyBudget) { mutableStateOf(ui.monthlyBudget?.let { fmtNum(it) } ?: "") }
+    val savedText = stringResource(R.string.saved)
+    var status by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+        LabeledIcon(Lucide.Zap, stringResource(R.string.monthly_budget))
+        Text(stringResource(R.string.monthly_budget_desc), style = Saqr.type.caption, color = c.text2)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SaqrField(text, { text = it.filter { ch -> ch.isDigit() || ch == '.' }; status = null }, Modifier.weight(1f), placeholder = "10", mono = true,
+                keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+            Spacer(Modifier.width(Sp.sm))
+            GhostButton(stringResource(R.string.save), { ui.onBudget(text.toDoubleOrNull()?.takeIf { it > 0 }); status = savedText }, icon = Lucide.Save)
+        }
+        status?.let { Text(it, style = Saqr.type.caption, color = c.text2) }
+    }
+}
+
+@Composable
+private fun PricesEditor(ui: SettingsUi) {
+    val c = Saqr.colors
+    var editing by remember { mutableStateOf<ModelPrice?>(null) }
+    Column(Modifier.padding(vertical = Sp.md)) {
+        LabeledIcon(Lucide.Tag, stringResource(R.string.prices_title), Modifier.padding(horizontal = Sp.lg))
+        Text(stringResource(R.string.prices_desc), style = Saqr.type.caption, color = c.text2, modifier = Modifier.padding(horizontal = Sp.lg, vertical = Sp.xs))
+        ui.prices.forEach { p ->
+            Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { editing = p }.padding(horizontal = Sp.lg),
+                verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
+                    Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                        Text(p.model, style = Saqr.type.monoSmall, color = c.text1, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        Text("$" + fmtNum(p.inputPerM) + " / $" + fmtNum(p.outputPerM), style = Saqr.type.monoSmall, color = c.text2, maxLines = 1)
+                    }
+                }
+                Spacer(Modifier.width(Sp.sm))
+                SIcon(Lucide.Pencil, size = 15.dp, tint = c.text3)
+            }
+        }
+        GhostButton(stringResource(R.string.add_price), { editing = ModelPrice("", 0.0, 0.0) }, Modifier.padding(horizontal = Sp.sm), icon = Lucide.Plus)
+    }
+    editing?.let { p ->
+        var model by remember(p) { mutableStateOf(p.model) }
+        var inp by remember(p) { mutableStateOf(fmtNum(p.inputPerM)) }
+        var out by remember(p) { mutableStateOf(fmtNum(p.outputPerM)) }
+        val num = { v: String -> v.filter { it.isDigit() || it == '.' } }
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { editing = null },
+            containerColor = c.surface1,
+            title = { Text(stringResource(R.string.prices_title), style = Saqr.type.title3) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                    SaqrField(model, { model = it }, label = stringResource(R.string.price_model), mono = true)
+                    SaqrField(inp, { inp = num(it) }, label = stringResource(R.string.price_in), mono = true, keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                    SaqrField(out, { out = num(it) }, label = stringResource(R.string.price_out), mono = true, keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    if (model.isNotBlank()) ui.onPrice(ModelPrice(model.trim(), inp.toDoubleOrNull() ?: 0.0, out.toDoubleOrNull() ?: 0.0))
+                    editing = null
+                }) { Text(stringResource(R.string.save), color = c.accentText) }
+            },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { editing = null }) { Text(stringResource(R.string.cancel), color = c.text2) } },
+        )
+    }
+}

@@ -235,7 +235,47 @@ class ScreenshotTest {
 
     @Test fun chatAskUserLight() = shot("chat-ask-user-light", theme = "light") { ChatScreenShot(askItems(), running = true) }
 
+    @Composable
+    private fun ChatV04(input: String) {
+        val list = remember {
+            mutableStateListOf<ChatItem>(
+                ChatItem.User("أضف وضعًا داكنًا لصفحة الهبوط").apply { checkpointId = "1" },
+                assistant("تم: أضفت زر التبديل ومتغيرات CSS للوضعين."),
+                applied("style.css", tafqitBefore, edited(4), 4_000),
+                ChatItem.Notice("أضف وضعًا داكنًا لصفحة الهبوط", kind = ChatItem.Notice.Kind.RESTORED, count = 2),
+            )
+        }
+        IdeFrame(topBar = {
+            IdeTopBar(Pane.AGENT, {}, {}, overflow = { com.ctodrs.saqrcode.ui.components.PillIcon(com.ctodrs.saqrcode.ui.icons.Lucide.EllipsisVertical, null, {}) },
+                center = { PlanPillContent(emptyList(), false, {}, "landing") })
+        }) { top ->
+            ChatContent(
+                ChatUiState(list, false, step = 6, maxSteps = 40, contextTokens = 18_400, contextWindow = 200_000,
+                    providerId = "anthropic", model = "claude-sonnet-4-5", models = listOf("claude-sonnet-4-5"), ready = true,
+                    customCommands = listOf(com.ctodrs.saqrcode.agent.SlashCommand("deploy", "Deploy {file} to staging")),
+                    sessionTokens = 48_200, sessionCost = 0.31, usageEstimated = false, budget = 10.0, monthSpent = 8.6),
+                input, {}, {}, {}, { _, _ -> }, {}, {}, topInset = top, autoScroll = false,
+            )
+        }
+    }
+
+    @Test fun chatSlash() = shot("chat-slash") { ChatV04("/") }
+
+    @Test fun chatSlashLight() = shot("chat-slash-light", theme = "light") { ChatV04("/ا") }
+
     @Test fun settings() = shot("settings") { SettingsContent(settingsUi(), {}) }
+
+    /** Tall window so the v0.4 sections (slash commands, budget, prices) are in frame. */
+    @Config(qualifiers = "+h2600dp")
+    @Test fun settingsFull() = shot("settings-full") {
+        SettingsContent(SettingsUi(
+            themeMode = "dark", langTag = "ar", providers = emptyList(), activeProvider = "anthropic", approveAll = false,
+            githubUser = "", githubTokenSet = false, versionName = "0.4.0", onTheme = {}, onLang = {}, onActivate = {},
+            onSaveProvider = { _, _, _, _ -> }, fetchModels = { _, _, _, _ -> Result.success(emptyList()) }, onApproveAll = {},
+            customCommands = listOf(com.ctodrs.saqrcode.agent.SlashCommand("deploy", "Build {file} and deploy it to staging. {args}")),
+            monthlyBudget = 10.0,
+        ), {})
+    }
 
     @Test fun settingsProvider() = shot("settings-provider") { SettingsContent(settingsUi(), {}, initiallyExpanded = "anthropic") }
 

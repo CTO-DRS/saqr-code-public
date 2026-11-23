@@ -5,7 +5,7 @@ import com.ctodrs.saqrcode.agent.Diff
 import com.ctodrs.saqrcode.agent.Msg
 import com.ctodrs.saqrcode.agent.OpenAiFormat
 import com.ctodrs.saqrcode.agent.SafetyPolicy
-import com.ctodrs.saqrcode.agent.Snapshots
+import com.ctodrs.saqrcode.agent.Checkpoints
 import com.ctodrs.saqrcode.agent.SseParser
 import com.ctodrs.saqrcode.agent.StreamListener
 import com.ctodrs.saqrcode.agent.ToolCall
@@ -139,11 +139,10 @@ class ToolsTest {
 
     @Test fun snapshotsRestore() {
         val f = File(root, "a.txt"); f.writeText("v1")
-        val snaps = Snapshots(root, Files.createTempDirectory("snap").toFile())
-        val p1 = snaps.create("one", listOf("a.txt", "b.txt"))
+        val snaps = Checkpoints(root, Files.createTempDirectory("snap").toFile())
+        val p1 = snaps.record("t1", "one", listOf("a.txt", "b.txt"))
         f.writeText("v2"); File(root, "b.txt").writeText("new")
-        Thread.sleep(5)
-        snaps.create("two", listOf("a.txt"))
+        snaps.record("t2", "two", listOf("a.txt"))
         f.writeText("v3")
         snaps.restore(p1)
         assertEquals("v1", f.readText())

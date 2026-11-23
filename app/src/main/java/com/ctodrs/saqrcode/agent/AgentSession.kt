@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.ctodrs.saqrcode.data.SettingsStore
@@ -37,7 +38,11 @@ sealed class ChatItem {
     val key: Long = nextKey++
     val createdAt: Long = System.currentTimeMillis()
 
-    class User(val text: String) : ChatItem()
+    /** [text] is what the bubble shows (e.g. "/fix"); the model may have received an expanded prompt. */
+    class User(val text: String) : ChatItem() {
+        /** Checkpoint recorded before this message's turn changed files; null when none (or restored). */
+        var checkpointId by mutableStateOf<String?>(null)
+    }
     class Assistant : ChatItem() {
         var text by mutableStateOf("")
         var streaming by mutableStateOf(true)
@@ -48,7 +53,8 @@ sealed class ChatItem {
         var durationMs by mutableLongStateOf(-1L)
     }
     /** File changes to approve, or (when [action] is set) a non-file action such as `git push`. */
-    class Approval(val changes: List<FileChange>, val action: String? = null) : ChatItem() {
+    class Approval(val changes: List<FileChange>, val action: String? = null, val actionKind: ActionKind = ActionKind.PUSH) : ChatItem() {
+        enum class ActionKind { PUSH, COMMIT }
         var decision by mutableStateOf<Boolean?>(null)
         var durationMs by mutableLongStateOf(-1L)
         val deferred = CompletableDeferred<Boolean>()
@@ -63,7 +69,7 @@ sealed class ChatItem {
         val canSubmit get() = AskUserTool.canSubmit(request, answers)
         fun update(q: AskQuestion, a: AskAnswer) { if (status == Status.PENDING) answers = answers + (q.id to a) }
     }
-    class Notice(val text: String, val isError: Boolean = false, val kind: Kind = if (isError) Kind.ERROR else Kind.INFO) : ChatItem() {
+    class Notice(val text: String, val isError: Boolean = false, val kind: Kind = if (isError) Kind.ERROR else Kind.INFO, val count: Int = -1) : ChatItem() {
         enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED }
     }
 
@@ -79,11 +85,12 @@ sealed class ChatItem {
 class AgentSession(
     val projectName: String,
     private val projectDir: File,
-    snapshotRoot: File,
+    checkpointRoot: File,
     private val settings: SettingsStore,
     private val linux: LinuxEnv,
     private val git: GitService = GitService(null, settings.accounts),
-    pendingAskFile: File = File(snapshotRoot.parentFile ?: snapshotRoot, "pending_ask/$projectName.json"),
+    pendingAskFile: File = File(checkpointRoot.parentFile ?: checkpointRoot, "pending_ask/$projectName.json"),
+    val ledger: UsageLedger = UsageLedger(File(checkpointRoot.parentFile ?: checkpointRoot, "usage/usage.json")),
 ) {
     val items = mutableStateListOf<ChatItem>()
     var running by mutableStateOf(false); private set
@@ -92,7 +99,15 @@ class AgentSession(
     /** Rough context size in tokens (chars / 3.6) of system prompt + history. */
     var contextTokens by mutableIntStateOf(0); private set
     val plan = mutableStateListOf<PlanItem>()
-    val snapshots = Snapshots(projectDir, File(snapshotRoot, projectName))
+    val checkpoints = Checkpoints(projectDir, File(checkpointRoot, projectName))
+    /** Tokens used in this chat session, per model. */
+    val sessionUsage = mutableStateMapOf<String, Usage>()
+    /** Bumps on every recorded model call so the meter can re-read today / this month. */
+    var usageVersion by mutableIntStateOf(0); private set
+    /** The user message whose turn is running (checkpoints attach to it). */
+    private var currentUser: ChatItem.User? = null
+    /** Told to the model with the next message, e.g. that the user restored a checkpoint. */
+    private var pendingNote: String? = null
 
     private val history = ArrayList<Msg>()
     private val touched = LinkedHashSet<String>()
@@ -106,14 +121,19 @@ class AgentSession(
         pendingAsk.load()?.let { items += ChatItem.AskUser(it, "", restored = true) }
     }
 
-    fun send(text: String) {
+    /** Send [text] to the agent; the chat bubble shows [display] (e.g. the slash command as typed). */
+    fun send(text: String, display: String = text) {
         if (running || text.isBlank()) return
         // typing instead of answering a card restored after a restart dismisses it
         items.filterIsInstance<ChatItem.AskUser>().filter { it.restored && it.status == ChatItem.AskUser.Status.PENDING }.forEach {
             it.status = ChatItem.AskUser.Status.CANCELLED; pendingAsk.clear()
         }
-        items += ChatItem.User(text.trim())
-        history += Msg.User(text.trim())
+        val user = ChatItem.User(display.trim().ifEmpty { text.trim() })
+        items += user
+        currentUser = user
+        val note = pendingNote?.let { "[$it]\n\n" }.orEmpty()
+        pendingNote = null
+        history += Msg.User(note + text.trim())
         running = true
         step = 0
         job = scope.launch {
@@ -138,6 +158,26 @@ class AgentSession(
 
     fun clear() {
         stop(); pendingAsk.clear(); items.clear(); history.clear(); touched.clear(); plan.clear(); step = 0; contextTokens = 0
+        sessionUsage.clear(); currentUser = null; pendingNote = null; usageVersion++
+    }
+
+    /** Revert the project to just before [point]'s turn (and drop it and every newer checkpoint). */
+    fun restoreCheckpoint(point: Checkpoints.Point): Checkpoints.Plan {
+        val plan = checkpoints.restore(point)
+        val remaining = checkpoints.list().map { it.id }.toSet()
+        items.filterIsInstance<ChatItem.User>().forEach { if (it.checkpointId != null && it.checkpointId !in remaining) it.checkpointId = null }
+        items += ChatItem.Notice(point.prompt, kind = ChatItem.Notice.Kind.RESTORED, count = plan.changedCount)
+        val files = (plan.restored + plan.deleted).take(30).joinToString(", ")
+        pendingNote = "Note: the user restored the project to the checkpoint taken before their message \"${point.prompt}\". " +
+            "Files reverted: ${files.ifEmpty { "none" }}. Re-read files before editing them."
+        return plan
+    }
+
+    /** Record one model call's usage in this session and in the persistent ledger. */
+    private suspend fun recordUsage(model: String, u: Usage) {
+        sessionUsage[model] = (sessionUsage[model] ?: Usage.ZERO) + u
+        withContext(Dispatchers.IO) { runCatching { ledger.record(model, u) } }
+        usageVersion++
     }
 
     fun decide(item: ChatItem.Approval, approve: Boolean) {
@@ -169,23 +209,24 @@ class AgentSession(
         return card.deferred.await()
     }
 
-    private fun client(): LlmClient {
+    private fun client(): Pair<LlmClient, String> {
         val id = settings.activeProvider
         val def = Providers.byId(id)
         val cfg = settings.config(id)
         require(cfg.model.isNotBlank()) { "No model selected for ${def.displayName}" }
-        return LlmClient(def, cfg.baseUrl, cfg.model, settings.apiKey(id))
+        return LlmClient(def, cfg.baseUrl, cfg.model, settings.apiKey(id)) to cfg.model
     }
 
     private suspend fun loop() {
-        val llm = client()
+        val (llm, model) = client()
         for (step in 0 until MAX_STEPS) {
             trimHistory()
             this.step = step + 1
             val bubble = ChatItem.Assistant()
             items += bubble
             val sys = withContext(Dispatchers.IO) { SystemPrompt.build(projectDir, touched, linux.ready) }
-            contextTokens = ((sys.length + history.sumOf { size(it) }) / 3.6).toInt()
+            val inputChars = sys.length + history.sumOf { size(it) }
+            contextTokens = (inputChars / 3.6).toInt()
             val streamed = StringBuffer()
             val turn = llm.complete(sys, history, Tools.specs, object : StreamListener {
                 override fun onText(delta: String) {
@@ -193,6 +234,9 @@ class AgentSession(
                     scope.launch { bubble.text = streamed.toString() }
                 }
             })
+            val used = turn.usage ?: UsageParser.estimate(inputChars, turn.text.length + turn.toolCalls.sumOf { it.argsJson.length + it.name.length })
+            if (!used.estimated && used.input > 0) contextTokens = used.input.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+            recordUsage(model, used)
             // make sure the bubble shows the final text even if a delta launch is pending
             bubble.text = turn.text
             bubble.streaming = false
@@ -244,13 +288,18 @@ class AgentSession(
                 card.deferred.await().also { card.durationMs = System.currentTimeMillis() - card.createdAt }
             } else true
             if (approved) {
-                withContext(Dispatchers.IO) {
-                    snapshots.create(changes.keys.joinToString(", ").take(120), changes.keys)
+                val user = currentUser
+                val point = withContext(Dispatchers.IO) {
+                    val cp = runCatching {
+                        checkpoints.record(user?.key?.toString() ?: "turn", user?.text ?: changes.keys.joinToString(", "), changes.keys)
+                    }.getOrNull()
                     for (ch in changes.values) {
                         val f = File(projectDir, ch.path)
                         if (ch.after == null) f.delete() else { f.parentFile?.mkdirs(); f.writeText(ch.after) }
                     }
+                    cp
                 }
+                if (point != null && user != null) user.checkpointId = point.id
                 touched += changes.keys
                 if (!needApproval) {
                     val ch = changes.values.first()
@@ -277,7 +326,11 @@ class AgentSession(
             val item = ChatItem.Tool(c.name, Tools.summarizeArgs(c.name, args))
             items += item
             val out = try {
-                if (c.name == Tools.GIT_PUSH) gitPush(args) else runTool(c.name, args)
+                when (c.name) {
+                    Tools.GIT_PUSH -> gitPush(args)
+                    Tools.GIT_COMMIT -> gitCommit(args)
+                    else -> runTool(c.name, args)
+                }
             } catch (e: CancellationException) { throw e } catch (e: Exception) { item.ok = false; "Error: " + Redact.text(e.message ?: e.toString(), settings.githubToken) }
             if (out.startsWith("Error") || out.startsWith("Blocked") || Regex("""^\[exit [1-9]""").containsMatchIn(out) || out.startsWith("[timed out]")) item.ok = false
             item.durationMs = System.currentTimeMillis() - item.createdAt
@@ -308,6 +361,19 @@ class AgentSession(
         val ok = card.deferred.await().also { card.durationMs = System.currentTimeMillis() - card.createdAt }
         if (!ok) return "The user REJECTED the push. Nothing was pushed."
         return withContext(Dispatchers.IO) { GitTools.push(a, projectDir, git) }
+    }
+
+    /** `git_commit` also waits for an explicit yes, showing the message that will be committed. */
+    private suspend fun gitCommit(a: JSONObject): String {
+        val msg = a.optString("message").trim()
+        if (msg.isEmpty()) return "Error: `message` is required."
+        val card = ChatItem.Approval(emptyList(), action = "git commit -m \"" + msg.lineSequence().first() + "\"" +
+            msg.lineSequence().drop(1).joinToString("\n").let { if (it.isBlank()) "" else "\n\n" + it.trim() },
+            actionKind = ChatItem.Approval.ActionKind.COMMIT)
+        items += card
+        val ok = card.deferred.await().also { card.durationMs = System.currentTimeMillis() - card.createdAt }
+        if (!ok) return "The user REJECTED the commit. Nothing was committed. Ask what they would like to change."
+        return runTool(Tools.GIT_COMMIT, a)
     }
 
     private suspend fun runTool(name: String, a: JSONObject): String = withContext(Dispatchers.IO) {

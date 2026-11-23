@@ -24,7 +24,8 @@ sealed class Msg {
 
 data class ToolSpec(val name: String, val description: String, val parameters: JSONObject)
 
-data class Turn(val text: String, val toolCalls: List<ToolCall>, val stopReason: String?)
+/** [usage] is what the provider reported, or null when it sent no usage fields. */
+data class Turn(val text: String, val toolCalls: List<ToolCall>, val stopReason: String?, val usage: Usage? = null)
 
 class LlmException(message: String) : Exception(message)
 
@@ -55,7 +56,7 @@ class LlmClient(
 
     // ---------------------------------------------------------------- OpenAI-compatible
     private suspend fun openAi(system: String, messages: List<Msg>, tools: List<ToolSpec>, l: StreamListener): Turn {
-        val body = OpenAiFormat.buildRequest(model, system, messages, tools)
+        val body = OpenAiFormat.buildRequest(model, system, messages, tools, includeUsage = def.id in USAGE_STREAM_OPTION)
         val req = Request.Builder()
             .url(baseUrl.trimEnd('/') + "/chat/completions")
             .post(body.toString().toRequestBody(JSON))
@@ -131,6 +132,9 @@ class LlmClient(
     companion object {
         private val JSON = "application/json; charset=utf-8".toMediaType()
 
+        /** Providers known to accept `stream_options.include_usage`; others may reject unknown fields. */
+        val USAGE_STREAM_OPTION = setOf("openai", "openrouter", "deepseek")
+
         fun extractError(body: String): String = try {
             val o = JSONObject(body)
             val e = o.opt("error")
@@ -144,7 +148,7 @@ class LlmClient(
 }
 
 object OpenAiFormat {
-    fun buildRequest(model: String, system: String, messages: List<Msg>, tools: List<ToolSpec>): JSONObject {
+    fun buildRequest(model: String, system: String, messages: List<Msg>, tools: List<ToolSpec>, includeUsage: Boolean = false): JSONObject {
         val msgs = JSONArray()
         msgs.put(JSONObject().put("role", "system").put("content", system))
         for (m in messages) when (m) {
@@ -165,6 +169,7 @@ object OpenAiFormat {
             is Msg.ToolResult -> msgs.put(JSONObject().put("role", "tool").put("tool_call_id", m.callId).put("content", m.content))
         }
         val body = JSONObject().put("model", model).put("messages", msgs).put("stream", true)
+        if (includeUsage) body.put("stream_options", JSONObject().put("include_usage", true))
         if (tools.isNotEmpty()) {
             val t = JSONArray()
             tools.forEach {
@@ -181,11 +186,13 @@ object OpenAiFormat {
         private class Partial(var id: String = "", var name: String = "", val args: StringBuilder = StringBuilder())
         private val calls = sortedMapOf<Int, Partial>()
         private var finish: String? = null
+        private var usage: Usage? = null
 
         fun onData(data: String) {
             if (data.trim() == "[DONE]") return
             val o = try { JSONObject(data) } catch (_: Exception) { return }
             o.optJSONObject("error")?.let { throw LlmException(it.optString("message", data)) }
+            UsageParser.any(o)?.let { usage = it }
             val choices = o.optJSONArray("choices") ?: return
             for (i in 0 until choices.length()) {
                 val c = choices.getJSONObject(i)
@@ -218,6 +225,7 @@ object OpenAiFormat {
                     it.args.toString().ifBlank { "{}" })
             },
             finish,
+            usage,
         )
     }
 }
@@ -263,9 +271,15 @@ object AnthropicFormat {
         private class Block(val type: String, val id: String = "", val name: String = "", val json: StringBuilder = StringBuilder())
         private val blocks = sortedMapOf<Int, Block>()
         private var stop: String? = null
+        private var inTokens = -1L
+        private var outTokens = -1L
 
         fun onEvent(event: String?, data: String) {
             val o = try { JSONObject(data) } catch (_: Exception) { return }
+            UsageParser.anthropic(o)?.let { u ->
+                if (u.input > 0) inTokens = u.input
+                if (u.output > 0 || outTokens < 0) outTokens = u.output
+            }
             when (o.optString("type", event ?: "")) {
                 "error" -> throw LlmException(o.optJSONObject("error")?.optString("message") ?: data)
                 "content_block_start" -> {
@@ -291,6 +305,7 @@ object AnthropicFormat {
             text.toString(),
             blocks.values.filter { it.type == "tool_use" }.map { ToolCall(it.id, it.name, it.json.toString().ifBlank { "{}" }) },
             stop,
+            if (inTokens < 0 && outTokens < 0) null else Usage(inTokens.coerceAtLeast(0), outTokens.coerceAtLeast(0)),
         )
     }
 }

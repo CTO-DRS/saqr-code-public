@@ -71,8 +71,11 @@ private fun AskUserForm(item: ChatItem.AskUser, onAnswer: (ChatItem.AskUser, Boo
                 SIcon(Lucide.Sparkles, size = 17.dp, tint = c.accentText)
             }
             Spacer(Modifier.width(Sp.md))
-            Text(req.title ?: stringResource(R.string.ask_default_title), style = Saqr.type.title3.copy(fontWeight = FontWeight.SemiBold, textDirection = TextDirection.Content),
-                color = c.text1, modifier = Modifier.weight(1f))
+            // Box keeps the title next to the icon (layout start) even when its text runs the other way.
+            Box(Modifier.weight(1f)) {
+                Text(req.title ?: stringResource(R.string.ask_default_title), style = Saqr.type.title3.copy(fontWeight = FontWeight.SemiBold, textDirection = TextDirection.Content),
+                    color = c.text1)
+            }
         }
         req.questions.forEachIndexed { i, q ->
             if (i > 0) HorizontalDivider(Modifier.padding(vertical = Sp.md), color = c.border) else Spacer(Modifier.height(Sp.md))
@@ -202,8 +205,10 @@ private fun AskUserSummary(item: ChatItem.AskUser) {
             SIcon(if (st == ChatItem.AskUser.Status.ANSWERED) Lucide.CircleCheck else Lucide.Sparkles, size = 16.dp,
                 tint = when (st) { ChatItem.AskUser.Status.ANSWERED -> c.success; ChatItem.AskUser.Status.CANCELLED -> c.text3; else -> c.accentText })
             Spacer(Modifier.width(Sp.sm))
-            Text(item.request.title ?: stringResource(R.string.ask_default_title), style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold, textDirection = TextDirection.Content),
-                color = c.text1, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            Box(Modifier.weight(1f)) {
+                Text(item.request.title ?: stringResource(R.string.ask_default_title), style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold, textDirection = TextDirection.Content),
+                    color = c.text1, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
             Spacer(Modifier.width(Sp.sm))
             Text(stringResource(when (st) {
                 ChatItem.AskUser.Status.ANSWERED -> R.string.ask_answered

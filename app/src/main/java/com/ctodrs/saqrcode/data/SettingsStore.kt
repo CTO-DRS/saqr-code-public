@@ -1,8 +1,12 @@
 package com.ctodrs.saqrcode.data
 
 import android.content.Context
+import com.ctodrs.saqrcode.agent.ModelPrice
+import com.ctodrs.saqrcode.agent.PriceTable
 import com.ctodrs.saqrcode.agent.ProviderKind
 import com.ctodrs.saqrcode.agent.Providers
+import com.ctodrs.saqrcode.agent.SlashCommand
+import com.ctodrs.saqrcode.agent.SlashCommands
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -77,6 +81,28 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
     var terminalFontSize: Int
         get() = prefs.getInt("term_font", 12)
         set(v) { prefs.edit().putInt("term_font", v.coerceIn(8, 22)).apply(); bump() }
+
+    /** User-defined slash commands (name + prompt template). */
+    var customCommands: List<SlashCommand>
+        get() = SlashCommands.decode(prefs.getString("slash_custom", null))
+        set(v) { prefs.edit().putString("slash_custom", SlashCommands.encode(v)).apply(); bump() }
+
+    /** The user's price rows (overrides / additions to [PriceTable.seeds]). */
+    var userPrices: List<ModelPrice>
+        get() = PriceTable.decode(prefs.getString("prices", null))
+        set(v) { prefs.edit().putString("prices", PriceTable.encode(v)).apply(); bump() }
+
+    /** Effective price table: seeds merged with the user's rows. */
+    fun prices(): List<ModelPrice> = PriceTable.merge(userPrices)
+
+    fun setPrice(row: ModelPrice) {
+        userPrices = userPrices.filter { PriceTable.key(it.model) != PriceTable.key(row.model) } + row
+    }
+
+    /** Optional monthly budget in USD; null = no budget. */
+    var monthlyBudget: Double?
+        get() = prefs.getString("monthly_budget_usd", null)?.toDoubleOrNull()?.takeIf { it > 0.0 }
+        set(v) { prefs.edit().putString("monthly_budget_usd", v?.takeIf { it > 0.0 }?.toString()).apply(); bump() }
 
     fun config(id: String): ProviderConfig {
         val def = Providers.byId(id)

@@ -61,9 +61,19 @@ import com.ctodrs.saqrcode.SaqrApp
 import com.ctodrs.saqrcode.agent.AgentSession
 import com.ctodrs.saqrcode.agent.ChatItem
 import com.ctodrs.saqrcode.agent.Providers
-import com.ctodrs.saqrcode.agent.Snapshots
+import com.ctodrs.saqrcode.agent.Budget
+import com.ctodrs.saqrcode.agent.Checkpoints
+import com.ctodrs.saqrcode.agent.SlashCommand
+import com.ctodrs.saqrcode.agent.SlashCommands
+import com.ctodrs.saqrcode.agent.SlashContext
+import com.ctodrs.saqrcode.agent.Usage
 import com.ctodrs.saqrcode.agent.Tools
 import com.ctodrs.saqrcode.ui.chat.ChatContent
+import com.ctodrs.saqrcode.ui.chat.CheckpointsSheet
+import com.ctodrs.saqrcode.ui.chat.RestoreConfirmDialog
+import com.ctodrs.saqrcode.ui.chat.UsageSheet
+import com.ctodrs.saqrcode.ui.chat.UsageSummary
+import com.ctodrs.saqrcode.ui.chat.formatUsd
 import com.ctodrs.saqrcode.ui.chat.ChatUiState
 import com.ctodrs.saqrcode.ui.chat.PlanPillContent
 import com.ctodrs.saqrcode.ui.components.FalconMark
@@ -91,11 +101,39 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     val version by settings.version.collectAsState()
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var showRestore by remember { mutableStateOf(false) }
+    var showCheckpoints by remember { mutableStateOf(false) }
+    var showUsage by remember { mutableStateOf(false) }
+    var confirmRestore by remember { mutableStateOf<Pair<Checkpoints.Point, Checkpoints.Plan>?>(null) }
+    var budgetPending by remember { mutableStateOf<String?>(null) }
     var input by remember { mutableStateOf("") }
+    val arabicUi = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "ar"
+
+    fun askRestore(id: String?) {
+        val p = id?.let { ws.agent.checkpoints.get(it) } ?: return
+        confirmRestore = p to ws.agent.checkpoints.preview(p)
+    }
+
+    /** Run a slash command or send the text as is. */
+    fun dispatch(raw: String) {
+        val inv = SlashCommands.parse(raw, settings.customCommands)
+        when (inv?.command?.action) {
+            null -> ws.agent.send(raw)
+            SlashCommand.Action.CLEAR -> ws.agent.clear()
+            SlashCommand.Action.MODEL -> Unit // handled by the composer (opens the model menu)
+            SlashCommand.Action.PROMPT -> {
+                val tab = ws.tabs.getOrNull(ws.activeTab)
+                val sel = tab?.value?.let { v -> if (v.selection.collapsed) null else v.text.substring(v.selection.min, v.selection.max) }
+                ws.agent.send(SlashCommands.expand(inv, SlashContext(tab?.path, sel, arabicUi)), display = raw.trim())
+            }
+        }
+    }
 
     // Any agent activity may change files: refresh tree + clean editor tabs.
     LaunchedEffect(ws.agent.items.size, ws.agent.running) { ws.fsVersion++; ws.syncFromDisk() }
+
+    val chatOverflow: @Composable () -> Unit = {
+        ChatOverflow(onCheckpoints = { showCheckpoints = true }, onUsage = { showUsage = true }, onNewChat = { ws.agent.clear() })
+    }
 
     ModalNavigationDrawer(
         drawerState = drawer,
@@ -104,7 +142,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                 projectName = projectName, current = ws.tab,
                 onPane = { ws.tab = it; scope.launch { drawer.close() } },
                 onNewChat = { ws.agent.clear(); ws.tab = Pane.AGENT; scope.launch { drawer.close() } },
-                onRestore = { showRestore = true; scope.launch { drawer.close() } },
+                onRestore = { showCheckpoints = true; scope.launch { drawer.close() } },
                 onSettings = { scope.launch { drawer.close() }; onSettings() },
                 onProjects = { scope.launch { drawer.close() }; onBack() },
             )
@@ -115,6 +153,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                 IdeTopBar(
                     pane = ws.tab, onDrawer = { scope.launch { drawer.open() } },
                     onPane = { ws.tab = if (ws.tab == it) Pane.AGENT else it },
+                    overflow = chatOverflow.takeIf { ws.tab == Pane.AGENT },
                     center = {
                         if (ws.tab == Pane.AGENT) PlanPillContent(ws.agent.plan, ws.agent.running, onPause = { ws.agent.stop() }, title = projectName)
                         else PaneTitle(ws.tab, projectName)
@@ -128,6 +167,10 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                         version
                         val def = Providers.byId(settings.activeProvider)
                         val cfg = settings.config(def.id)
+                        val prices = remember(version) { settings.prices() }
+                        val month = remember(ws.agent.usageVersion) { ws.agent.ledger.month() }
+                        val session = ws.agent.sessionUsage.toMap()
+                        val sessionTotal = session.values.fold(Usage.ZERO) { a, b -> a + b }
                         val state = ChatUiState(
                             items = ws.agent.items, running = ws.agent.running, step = ws.agent.step, maxSteps = AgentSession.MAX_STEPS,
                             contextTokens = ws.agent.contextTokens, contextWindow = def.contextWindow, providerId = def.id,
@@ -137,14 +180,26 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                                 Tools.listFiles(ws.dir, ".", true, 200).lines().filter { !it.endsWith("/") && !it.contains("(skipped)") && it.isNotBlank() }
                                     .map { it.substringBeforeLast(" (") }
                             },
+                            customCommands = settings.customCommands,
+                            sessionTokens = sessionTotal.total, sessionCost = com.ctodrs.saqrcode.agent.PriceTable.cost(session, prices),
+                            usageEstimated = sessionTotal.estimated, budget = settings.monthlyBudget,
+                            monthSpent = com.ctodrs.saqrcode.agent.PriceTable.cost(month, prices) ?: 0.0,
                         )
                         Box(Modifier.imePadding()) {
                             ChatContent(
                                 state, input, { input = it },
-                                onSend = { ws.agent.send(input); input = "" }, onStop = { ws.agent.stop() },
+                                onSend = {
+                                    val text = input
+                                    val local = SlashCommands.parse(text, state.customCommands)?.command?.action == SlashCommand.Action.CLEAR
+                                    if (!local && Budget.needsConfirmation(state.monthSpent, state.budget)) budgetPending = text else dispatch(text)
+                                    input = ""
+                                },
+                                onStop = { ws.agent.stop() },
                                 onDecide = { a, ok -> ws.agent.decide(a, ok) },
                                 onPickModel = { settings.setModel(def.id, it) }, onManageProviders = onSettings, topInset = top,
                                 onAnswer = { a, skip -> ws.agent.answer(a, skip) },
+                                onMeter = { showUsage = true },
+                                onRestore = { askRestore(it.checkpointId) },
                             )
                         }
                     }
@@ -157,7 +212,65 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
         }
     }
 
-    if (showRestore) RestoreDialog(ws, onDismiss = { showRestore = false })
+    if (showCheckpoints) {
+        val points = remember(ws.agent.items.size) { ws.agent.checkpoints.list() }
+        CheckpointsSheet(points, remember(points) { ws.agent.checkpoints.sizeBytes() },
+            onPick = { showCheckpoints = false; askRestore(it.id) }, onDismiss = { showCheckpoints = false })
+    }
+    if (showUsage) {
+        version
+        val summary = UsageSummary(ws.agent.sessionUsage.toMap(), ws.agent.ledger.day(), ws.agent.ledger.month(), settings.prices(), settings.monthlyBudget)
+        UsageSheet(summary, onDismiss = { showUsage = false })
+    }
+    confirmRestore?.let { (p, plan) ->
+        RestoreConfirmDialog(p, plan, onDismiss = { confirmRestore = null }, onConfirm = {
+            if (!ws.agent.running) {
+                ws.agent.restoreCheckpoint(p)
+                ws.fsVersion++; ws.syncFromDisk()
+            }
+            confirmRestore = null
+        })
+    }
+    budgetPending?.let { text ->
+        val c = Saqr.colors
+        val budget = settings.monthlyBudget ?: 0.0
+        val spent = com.ctodrs.saqrcode.agent.PriceTable.cost(ws.agent.ledger.month(), settings.prices()) ?: 0.0
+        AlertDialog(
+            onDismissRequest = { budgetPending = null; input = text },
+            containerColor = c.surface1,
+            icon = { SIcon(Lucide.TriangleAlert, size = 24.dp, tint = c.danger) },
+            title = { Text(stringResource(R.string.budget_confirm_title), style = Saqr.type.title2) },
+            text = { Text(stringResource(R.string.budget_confirm_body, com.ctodrs.saqrcode.ui.chat.ltr(formatUsd(spent)), com.ctodrs.saqrcode.ui.chat.ltr(formatUsd(budget))), style = Saqr.type.body) },
+            confirmButton = { TextButton(onClick = { budgetPending = null; dispatch(text) }) { Text(stringResource(R.string.send_anyway), color = c.danger) } },
+            dismissButton = { TextButton(onClick = { budgetPending = null; input = text }) { Text(stringResource(R.string.cancel), color = c.text2) } },
+        )
+    }
+}
+
+@Composable
+private fun ChatOverflow(onCheckpoints: () -> Unit, onUsage: () -> Unit, onNewChat: () -> Unit) {
+    val c = Saqr.colors
+    var open by remember { mutableStateOf(false) }
+    Box {
+        PillIcon(Lucide.EllipsisVertical, stringResource(R.string.more), { open = true })
+        androidx.compose.material3.DropdownMenu(open, { open = false }, Modifier.background(c.surface2)) {
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(stringResource(R.string.checkpoints), style = Saqr.type.label, color = c.text1) },
+                leadingIcon = { SIcon(Lucide.History, size = 16.dp, tint = c.accentText) },
+                onClick = { open = false; onCheckpoints() },
+            )
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(stringResource(R.string.usage_title), style = Saqr.type.label, color = c.text1) },
+                leadingIcon = { SIcon(Lucide.Zap, size = 16.dp, tint = c.accentText) },
+                onClick = { open = false; onUsage() },
+            )
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(stringResource(R.string.clear_chat), style = Saqr.type.label, color = c.text1) },
+                leadingIcon = { SIcon(Lucide.MessageSquarePlus, size = 16.dp, tint = c.text2) },
+                onClick = { open = false; onNewChat() },
+            )
+        }
+    }
 }
 
 /** Content with a floating glass top bar over a soft scrim. `content` receives the top inset to pad by. */
@@ -180,7 +293,7 @@ private fun statusBarHeight(): Dp {
 }
 
 @Composable
-fun IdeTopBar(pane: Int, onDrawer: () -> Unit, onPane: (Int) -> Unit, center: @Composable () -> Unit) {
+fun IdeTopBar(pane: Int, onDrawer: () -> Unit, onPane: (Int) -> Unit, overflow: (@Composable () -> Unit)? = null, center: @Composable () -> Unit) {
     Row(
         Modifier.fillMaxWidth().height(TopBarHeight).padding(horizontal = Sp.md),
         verticalAlignment = Alignment.CenterVertically,
@@ -192,6 +305,7 @@ fun IdeTopBar(pane: Int, onDrawer: () -> Unit, onPane: (Int) -> Unit, center: @C
         GlassPill {
             PillIcon(Lucide.Globe, stringResource(R.string.tab_preview), { onPane(Pane.PREVIEW) }, active = pane == Pane.PREVIEW)
             PillIcon(Lucide.SquareTerminal, stringResource(R.string.tab_terminal), { onPane(Pane.TERMINAL) }, active = pane == Pane.TERMINAL)
+            overflow?.invoke()
         }
     }
 }
@@ -247,7 +361,7 @@ fun IdeDrawer(
             }
             Spacer(Modifier.height(Sp.lg))
             Text(stringResource(R.string.more), style = Saqr.type.micro, color = c.text3, modifier = Modifier.padding(horizontal = Sp.md, vertical = Sp.xs))
-            DrawerItem(Lucide.History, stringResource(R.string.restore_points), false, onRestore)
+            DrawerItem(Lucide.History, stringResource(R.string.checkpoints), false, onRestore)
             DrawerItem(Lucide.Settings, stringResource(R.string.settings), false, onSettings)
             Spacer(Modifier.weight(1f))
             DrawerItem(Lucide.House, stringResource(R.string.all_projects), false, onProjects)
@@ -282,52 +396,5 @@ private fun DrawerItem(icon: ImageVector, label: String, selected: Boolean, onCl
         Spacer(Modifier.width(Sp.md))
         Text(label, style = Saqr.type.label, color = if (selected) c.text1 else c.text2, modifier = Modifier.weight(1f))
         if (selected) Box(Modifier.size(6.dp).clip(CircleShape).background(c.accent))
-    }
-}
-
-@Composable
-private fun RestoreDialog(ws: Workspace, onDismiss: () -> Unit) {
-    val c = Saqr.colors
-    var points by remember { mutableStateOf(ws.agent.snapshots.list()) }
-    var confirm by remember { mutableStateOf<Snapshots.Point?>(null) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = c.surface1,
-        icon = { SIcon(Lucide.History, size = 24.dp, tint = c.accentText) },
-        title = { Text(stringResource(R.string.restore_points), style = Saqr.type.title2) },
-        text = {
-            if (points.isEmpty()) Text(stringResource(R.string.no_restore_points), style = Saqr.type.bodySmall, color = c.text2)
-            else LazyColumn(Modifier.heightIn(max = 400.dp), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
-                items(points, key = { it.id }) { p ->
-                    Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2).clickable { confirm = p }.padding(Sp.md),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(DateUtils.getRelativeTimeSpanString(p.time).toString().latinDigits(), style = Saqr.type.label, color = c.text1)
-                            Text(p.label, style = Saqr.type.monoSmall, maxLines = 2, overflow = TextOverflow.Ellipsis, color = c.text2)
-                        }
-                        SIcon(Lucide.RotateCcw, size = 18.dp, tint = c.accentText, contentDescription = stringResource(R.string.restore))
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close), color = c.accentText) } },
-    )
-    confirm?.let { p ->
-        AlertDialog(
-            onDismissRequest = { confirm = null },
-            containerColor = c.surface1,
-            text = { Text(stringResource(R.string.restore) + ": " + DateUtils.getRelativeTimeSpanString(p.time), style = Saqr.type.body) },
-            confirmButton = {
-                TextButton(onClick = {
-                    ws.agent.snapshots.restore(p)
-                    ws.agent.items += ChatItem.Notice(p.label, kind = ChatItem.Notice.Kind.RESTORED)
-                    ws.fsVersion++; ws.syncFromDisk()
-                    points = ws.agent.snapshots.list(); confirm = null
-                }) { Text(stringResource(R.string.restore), color = c.accentText) }
-            },
-            dismissButton = { TextButton(onClick = { confirm = null }) { Text(stringResource(R.string.cancel), color = c.text2) } },
-        )
     }
 }

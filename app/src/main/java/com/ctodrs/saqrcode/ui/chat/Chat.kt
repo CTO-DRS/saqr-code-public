@@ -64,7 +64,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.ctodrs.saqrcode.R
+import com.ctodrs.saqrcode.agent.Budget
 import com.ctodrs.saqrcode.agent.ChatItem
+import com.ctodrs.saqrcode.agent.SlashCommand
+import com.ctodrs.saqrcode.agent.SlashCommands
 import com.ctodrs.saqrcode.agent.Diff
 import com.ctodrs.saqrcode.agent.FileChange
 import com.ctodrs.saqrcode.agent.PlanItem
@@ -104,7 +107,16 @@ class ChatUiState(
     val models: List<String>,
     val ready: Boolean,
     val projectFiles: () -> List<String> = { emptyList() },
-)
+    val customCommands: List<SlashCommand> = emptyList(),
+    /** Tokens used this session (input + output) and their cost in USD (null = no price known). */
+    val sessionTokens: Long = 0,
+    val sessionCost: Double? = null,
+    val usageEstimated: Boolean = false,
+    val budget: Double? = null,
+    val monthSpent: Double = 0.0,
+) {
+    val budgetLevel get() = Budget.level(monthSpent, budget)
+}
 
 @Composable
 fun ChatContent(
@@ -120,8 +132,11 @@ fun ChatContent(
     listState: LazyListState = rememberLazyListState(),
     autoScroll: Boolean = true,
     onAnswer: (ChatItem.AskUser, Boolean) -> Unit = { _, _ -> },
+    onMeter: () -> Unit = {},
+    onRestore: (ChatItem.User) -> Unit = {},
 ) {
     val c = Saqr.colors
+    var modelMenu by remember { mutableStateOf(false) }
     val last = state.items.lastOrNull()
     val lastLen = (last as? ChatItem.Assistant)?.text?.length ?: 0
     if (autoScroll) LaunchedEffect(state.items.size, lastLen) {
@@ -143,7 +158,9 @@ fun ChatContent(
                     contentPadding = PaddingValues(start = Sp.lg, end = Sp.lg, top = topInset + Sp.sm, bottom = Sp.lg),
                 ) {
                     items(state.items, key = { it.key }) { item ->
-                        Box(Modifier.padding(vertical = spacingFor(item))) { ChatRow(item, onDecide, onAnswer) }
+                        Box(Modifier.padding(vertical = spacingFor(item))) {
+                            ChatRow(item, onDecide, onAnswer, onRestore = if (state.running) null else onRestore)
+                        }
                     }
                     val showWorking = state.running && when (last) {
                         is ChatItem.Assistant -> !last.streaming
@@ -162,11 +179,20 @@ fun ChatContent(
             Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(16.dp)
                 .background(Brush.verticalGradient(listOf(Color.Transparent, c.bg))))
         }
-        if (state.items.isNotEmpty()) StepMeter(state)
+        if (state.items.isNotEmpty() || state.sessionTokens > 0) StepMeter(state, onMeter)
+        if (state.budgetLevel == Budget.Level.WARN || state.budgetLevel == Budget.Level.OVER) BudgetBanner(state, onMeter)
+        val slash = remember(input, state.customCommands) { SlashCommands.suggestions(input, state.customCommands) }
         val replyText = if (!state.running) (last as? ChatItem.Assistant)?.takeIf { !it.streaming }?.text else null
         val quick = remember(replyText) { replyText?.let { QuickReplies.detect(it) }.orEmpty() }
-        if (quick.isNotEmpty() && state.ready) QuickReplyChips(quick) { onInput(it) }
-        Composer(state, input, onInput, onSend, onStop, onPickModel, onManageProviders)
+        if (slash.isNotEmpty()) SlashPopup(slash) { cmd ->
+            if (cmd.action == SlashCommand.Action.MODEL) { onInput(""); modelMenu = true } else onInput("/" + cmd.name + " ")
+        }
+        else if (quick.isNotEmpty() && state.ready) QuickReplyChips(quick) { onInput(it) }
+        val send = {
+            if (SlashCommands.parse(input, state.customCommands)?.command?.action == SlashCommand.Action.MODEL) { onInput(""); modelMenu = true }
+            else onSend()
+        }
+        Composer(state, input, onInput, send, onStop, onPickModel, onManageProviders, modelMenu) { modelMenu = it }
     }
 }
 
@@ -180,9 +206,15 @@ private fun spacingFor(item: ChatItem) = when (item) {
 }
 
 @Composable
-fun ChatRow(item: ChatItem, onDecide: (ChatItem.Approval, Boolean) -> Unit, onAnswer: (ChatItem.AskUser, Boolean) -> Unit = { _, _ -> }) {
+fun ChatRow(
+    item: ChatItem, onDecide: (ChatItem.Approval, Boolean) -> Unit, onAnswer: (ChatItem.AskUser, Boolean) -> Unit = { _, _ -> },
+    onRestore: ((ChatItem.User) -> Unit)? = null,
+) {
     when (item) {
-        is ChatItem.User -> UserBubble(item.text)
+        is ChatItem.User -> Column(Modifier.fillMaxWidth()) {
+            UserBubble(item.text)
+            if (item.checkpointId != null && onRestore != null) RestoreHere { onRestore(item) }
+        }
         is ChatItem.Assistant -> if (item.text.isBlank() && item.streaming) WorkingRow() else MarkdownText(item.text)
         is ChatItem.Tool -> ToolRow(item)
         is ChatItem.Approval -> if (item.decision == null) ApprovalCard(item, onDecide)
@@ -208,6 +240,22 @@ private fun UserBubble(text: String) {
             ) {
                 SelectionContainer { Text(text, style = Saqr.type.body.copy(color = c.text1, textDirection = TextDirection.Content)) }
             }
+        }
+    }
+}
+
+/** Small "↺ Restore to here" action under a user message that has a checkpoint. */
+@Composable
+private fun RestoreHere(onClick: () -> Unit) {
+    val c = Saqr.colors
+    Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.End) {
+        Row(
+            Modifier.heightIn(min = 32.dp).clip(CircleShape).clickable(onClick = onClick).padding(horizontal = Sp.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SIcon(Lucide.RotateCcw, size = 13.dp, tint = c.accentText)
+            Spacer(Modifier.width(5.dp))
+            Text(stringResource(R.string.restore_to_here), style = Saqr.type.caption.copy(fontWeight = FontWeight.Medium), color = c.accentText, maxLines = 1)
         }
     }
 }
@@ -386,8 +434,9 @@ private fun ApprovalCard(item: ChatItem.Approval, onDecide: (ChatItem.Approval, 
             Spacer(Modifier.width(Sp.md))
             Column(Modifier.weight(1f)) {
                 if (item.action != null) {
-                    Text(stringResource(R.string.push_review_title), style = Saqr.type.title3, color = c.text1)
-                    Text(stringResource(R.string.push_review_sub), style = Saqr.type.caption, color = c.text2)
+                    val commit = item.actionKind == ChatItem.Approval.ActionKind.COMMIT
+                    Text(stringResource(if (commit) R.string.commit_review_title else R.string.push_review_title), style = Saqr.type.title3, color = c.text1)
+                    Text(stringResource(if (commit) R.string.commit_review_sub else R.string.push_review_sub), style = Saqr.type.caption, color = c.text2)
                 } else {
                     Text(stringResource(R.string.plan_review_title), style = Saqr.type.title3, color = c.text1)
                     Text(stringResource(R.string.plan_title, item.changes.size.toString()), style = Saqr.type.caption, color = c.text2)
@@ -413,7 +462,8 @@ private fun ActionDecisionRow(item: ChatItem.Approval) {
     val c = Saqr.colors
     val ok = item.decision == true
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        SIcon(if (ok) Lucide.ArrowUpFromLine else Lucide.X, size = 16.dp, tint = if (ok) c.success else c.danger)
+        val icon = if (item.actionKind == ChatItem.Approval.ActionKind.COMMIT) Lucide.GitCommitHorizontal else Lucide.ArrowUpFromLine
+        SIcon(if (ok) icon else Lucide.X, size = 16.dp, tint = if (ok) c.success else c.danger)
         Spacer(Modifier.width(Sp.sm))
         Text(item.action!!.lineSequence().first(), style = Saqr.type.monoSmall, color = c.text2, maxLines = 1,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
@@ -463,7 +513,8 @@ private fun NoticeCard(item: ChatItem.Notice) {
         Spacer(Modifier.height(Sp.sm))
         val body = when (item.kind) {
             ChatItem.Notice.Kind.STEP_LIMIT -> stringResource(R.string.notice_step_limit)
-            ChatItem.Notice.Kind.RESTORED -> stringResource(R.string.notice_restored, item.text)
+            ChatItem.Notice.Kind.RESTORED -> if (item.count >= 0) stringResource(R.string.notice_checkpoint_restored, item.text, item.count.toString())
+                else stringResource(R.string.notice_restored, item.text)
             else -> item.text
         }
         Text(body, style = Saqr.type.bodySmall.copy(color = c.text1, textDirection = TextDirection.Content))
@@ -472,35 +523,129 @@ private fun NoticeCard(item: ChatItem.Notice) {
 
 // ---------------------------------------------------------------- meter + composer
 
+fun formatTokens(n: Long): String = formatTokens(n.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+
+/** "$0.42", "<$0.01" for tiny non-zero amounts. */
+fun formatUsd(v: Double): String = when {
+    v > 0 && v < 0.01 -> "<$0.01"
+    v >= 1000 -> String.format(Locale.US, "$%,.0f", v)
+    else -> String.format(Locale.US, "$%.2f", v)
+}
+
+/**
+ * Keeps "$8.60" / "86%" in one piece inside Arabic sentences: after an Arabic letter, digits
+ * become Arabic numbers and the "$" / "%" drift to the other side; an LRM before them prevents it.
+ */
+fun ltr(s: String) = "\u200E" + s + "\u200E"
+
 fun formatTokens(n: Int): String = when {
     n >= 1_000_000 -> String.format(Locale.US, "%.1fM", n / 1_000_000.0).replace(".0M", "M")
     n >= 1000 -> String.format(Locale.US, "%.1fk", n / 1000.0).replace(".0k", "k")
     else -> n.toString()
 }
 
+/** Steps bar + context size + session tokens/cost. Tapping opens the usage sheet. */
 @Composable
-private fun StepMeter(state: ChatUiState) {
+private fun StepMeter(state: ChatUiState, onClick: () -> Unit) {
     val c = Saqr.colors
-    Row(Modifier.fillMaxWidth().padding(horizontal = Sp.xxl, vertical = Sp.xs), verticalAlignment = Alignment.CenterVertically) {
+    val desc = stringResource(R.string.usage_title)
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = Sp.lg).clip(RoundedCornerShape(Radius.sm))
+            .clickable(onClickLabel = desc, onClick = onClick).padding(horizontal = Sp.md, vertical = Sp.xs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         ProgressLine(state.step / state.maxSteps.toFloat(), Modifier.weight(1f))
         Spacer(Modifier.width(Sp.md))
-        Text(stringResource(R.string.steps_n, state.step.toString()), style = Saqr.type.micro, color = c.text3)
+        Text(stringResource(R.string.steps_n, state.step.toString()), style = Saqr.type.micro, color = c.text3, maxLines = 1)
         Spacer(Modifier.width(Sp.md))
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            Text("${formatTokens(state.contextTokens)} / ${formatTokens(state.contextWindow)}", style = Saqr.type.monoMicro, color = c.text2)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("${formatTokens(state.contextTokens)} / ${formatTokens(state.contextWindow)}", style = Saqr.type.monoMicro, color = c.text2, maxLines = 1)
+                if (state.sessionTokens > 0) {
+                    Text(" · " + (if (state.usageEstimated) "~" else "") + formatTokens(state.sessionTokens) +
+                        (state.sessionCost?.let { " · " + formatUsd(it) } ?: ""),
+                        style = Saqr.type.monoMicro, color = c.accentText, maxLines = 1)
+                }
+            }
         }
     }
 }
 
 @Composable
+private fun BudgetBanner(state: ChatUiState, onClick: () -> Unit) {
+    val c = Saqr.colors
+    val over = state.budgetLevel == Budget.Level.OVER
+    val fg = if (over) c.danger else c.warning
+    val shape = RoundedCornerShape(Radius.md)
+    val budget = state.budget ?: return
+    val pct = ltr((state.monthSpent / budget * 100).toInt().toString() + "%")
+    val text = if (over) stringResource(R.string.budget_over, ltr(formatUsd(state.monthSpent)), ltr(formatUsd(budget)))
+        else stringResource(R.string.budget_warn, pct, ltr(formatUsd(state.monthSpent)), ltr(formatUsd(budget)))
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = Sp.md, vertical = Sp.xs).clip(shape)
+            .background(if (over) c.danger.copy(alpha = if (c.isDark) 0.10f else 0.07f) else c.warningBg)
+            .border(1.dp, if (over) c.danger.copy(alpha = 0.4f) else c.warningBorder, shape)
+            .clickable(onClick = onClick).padding(horizontal = Sp.md, vertical = Sp.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SIcon(if (over) Lucide.CircleAlert else Lucide.TriangleAlert, size = 16.dp, tint = fg)
+        Spacer(Modifier.width(Sp.sm))
+        Text(text, style = Saqr.type.caption, color = c.text1, modifier = Modifier.weight(1f))
+    }
+}
+
+/** Popup list of slash commands while the input is "/…" (no space yet). */
+@Composable
+private fun SlashPopup(commands: List<SlashCommand>, onPick: (SlashCommand) -> Unit) {
+    val c = Saqr.colors
+    val shape = RoundedCornerShape(Radius.lg)
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = Sp.md, vertical = Sp.xs).clip(shape).background(c.surface1)
+            .border(1.dp, c.accent.copy(alpha = 0.35f), shape).heightIn(max = 288.dp).verticalScroll(rememberScrollState())
+            .padding(vertical = Sp.xs),
+    ) {
+        commands.forEach { cmd ->
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { onPick(cmd) }.padding(horizontal = Sp.md, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Text("/" + cmd.name, style = Saqr.type.mono.copy(fontWeight = FontWeight.SemiBold), color = c.accentText, maxLines = 1)
+                }
+                cmd.aliases.firstOrNull()?.let {
+                    Spacer(Modifier.width(6.dp))
+                    Text("/$it", style = Saqr.type.caption, color = c.text3, maxLines = 1)
+                }
+                Spacer(Modifier.width(Sp.md))
+                Text(slashDescription(cmd), style = Saqr.type.caption.copy(textDirection = TextDirection.Content), color = c.text2,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+fun slashDescription(cmd: SlashCommand): String = if (!cmd.builtin) cmd.template.lineSequence().first().take(80) else stringResource(when (cmd.name) {
+    SlashCommands.FIX -> R.string.slash_fix
+    SlashCommands.EXPLAIN -> R.string.slash_explain
+    SlashCommands.TEST -> R.string.slash_test
+    SlashCommands.REVIEW -> R.string.slash_review
+    SlashCommands.PLAN -> R.string.slash_plan
+    SlashCommands.CLEAR -> R.string.slash_clear
+    SlashCommands.MODEL -> R.string.slash_model
+    SlashCommands.COMMIT -> R.string.slash_commit
+    else -> R.string.slash_custom
+})
+
+@Composable
 private fun Composer(
     state: ChatUiState, input: String, onInput: (String) -> Unit, onSend: () -> Unit, onStop: () -> Unit,
     onPickModel: (String) -> Unit, onManageProviders: () -> Unit,
+    modelMenu: Boolean, setModelMenu: (Boolean) -> Unit,
 ) {
     val c = Saqr.colors
     val shape = RoundedCornerShape(Radius.xxl)
     var attach by remember { mutableStateOf(false) }
-    var modelMenu by remember { mutableStateOf(false) }
     Column(
         Modifier.fillMaxWidth().navigationBarsPadding().padding(start = Sp.md, end = Sp.md, bottom = Sp.md, top = Sp.xs)
             .clip(shape).background(c.surface1).border(1.dp, c.borderStrong.copy(alpha = 0.7f), shape)
@@ -537,7 +682,7 @@ private fun Composer(
             Spacer(Modifier.width(Sp.sm))
             Box(Modifier.weight(1f, fill = false)) {
                 Row(
-                    Modifier.height(40.dp).pressable { modelMenu = true }.clip(CircleShape).background(c.surface2).border(1.dp, c.border, CircleShape)
+                    Modifier.height(40.dp).pressable { setModelMenu(true) }.clip(CircleShape).background(c.surface2).border(1.dp, c.border, CircleShape)
                         .padding(start = 6.dp, end = Sp.md),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -550,19 +695,19 @@ private fun Composer(
                     Spacer(Modifier.width(6.dp))
                     SIcon(Lucide.ChevronDown, size = 16.dp, tint = c.text3)
                 }
-                DropdownMenu(modelMenu, { modelMenu = false }, Modifier.background(c.surface2)) {
+                DropdownMenu(modelMenu, { setModelMenu(false) }, Modifier.background(c.surface2)) {
                     state.models.forEach { m ->
                         DropdownMenuItem(
                             text = { Text(m, style = Saqr.type.label, color = c.text1) },
                             trailingIcon = { if (m == state.model) SIcon(Lucide.Check, size = 16.dp, tint = c.accentText) },
-                            onClick = { modelMenu = false; onPickModel(m) },
+                            onClick = { setModelMenu(false); onPickModel(m) },
                         )
                     }
                     HorizontalDivider(color = c.border)
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.manage_providers), style = Saqr.type.label, color = c.text1) },
                         leadingIcon = { SIcon(Lucide.Settings, size = 16.dp) },
-                        onClick = { modelMenu = false; onManageProviders() },
+                        onClick = { setModelMenu(false); onManageProviders() },
                     )
                 }
             }

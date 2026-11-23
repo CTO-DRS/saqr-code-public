@@ -39,7 +39,7 @@ class OpenFile(val path: String, initial: String) {
 /** Per-project state that survives navigation (chat, shell, open editor tabs). */
 class Workspace(val name: String, val dir: File) {
     private val app = SaqrApp.instance
-    val agent = AgentSession(name, dir, File(app.filesDir, "snapshots"), app.settings, app.linux,
+    val agent = AgentSession(name, dir, File(app.filesDir, "checkpoints"), app.settings, app.linux,
         com.ctodrs.saqrcode.git.GitService(app.filesDir, app.settings.accounts))
     val terminals by lazy { TerminalManager(app.linux, dir) }
     val git by lazy { GitController(dir, app.settings, app.filesDir) }
