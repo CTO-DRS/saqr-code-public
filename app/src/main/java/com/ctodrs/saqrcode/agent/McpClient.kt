@@ -165,6 +165,29 @@ object Mcp {
         }
         return if (parts.isEmpty()) "no arguments" else parts.joinToString("; ")
     }
+
+    /**
+     * v0.9 · manual tool testing in Settings: a starter arguments JSON built from the schema —
+     * required fields get type-appropriate empty values, optional fields are omitted.
+     */
+    fun sampleArgs(schema: JSONObject): JSONObject {
+        val out = JSONObject()
+        val props = schema.optJSONObject("properties") ?: return out
+        val req = schema.optJSONArray("required")
+        val isRequired = { k: String -> req != null && (0 until req.length()).any { req.optString(it) == k } }
+        props.keys().forEach { k ->
+            if (!isRequired(k)) return@forEach
+            val t = props.optJSONObject(k)?.optString("type", "string")?.lowercase() ?: "string"
+            when (t) {
+                "integer", "number" -> out.put(k, 0)
+                "boolean" -> out.put(k, false)
+                "array" -> out.put(k, org.json.JSONArray())
+                "object" -> out.put(k, JSONObject())
+                else -> out.put(k, "")
+            }
+        }
+        return out
+    }
 }
 
 /**

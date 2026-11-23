@@ -31,6 +31,10 @@ import java.util.concurrent.TimeUnit
  * ([Downloader]), aapt2 comes from a mirror list that accepts a user URL from Settings,
  * failures get actionable [Hints] in the log, and the tab can show the built app's crashes
  * ([LogcatStream]).
+ *
+ * v0.9: the aapt2 sources became curated [Aapt2Mirrors.Preset]s, `build()` can produce a
+ * *signed* release APK from a user keystore ([SigningInit] init script), and cache components
+ * can be measured and reclaimed through [BuildCache] and [reclaim].
  */
 class OnDeviceBuild(private val context: Context, val projectDir: File) {
 
@@ -57,8 +61,28 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
     private val sdkRoot = "/opt/android-sdk"
     private val gradleHome = "/opt/gradle/gradle-8.11.1"
 
-    /** v0.8: aapt2 mirror the user set in Settings (a direct URL to the binary/archive); empty = auto. */
+    /** v0.8/v0.9: aapt2 source from Settings — blank, a preset id ([Aapt2Mirrors]) or a direct URL. */
     var aapt2Mirror: String = ""
+
+    /** v0.9: directories reclaimable from the Build tab (see [BuildCache]). */
+    fun cacheComponents(): List<BuildCache.Entry> =
+        BuildCache.components(context.filesDir, context.cacheDir).filter { it.id != "linux-home" }
+
+    /**
+     * v0.9: deletes a cache component. Environment components (rootfs / SDK / Gradle) also drop
+     * the ready marker so the tab returns to NOT_SETUP and the next Prepare re-fetches only what
+     * is missing.
+     */
+    fun reclaim(entry: BuildCache.Entry): Boolean {
+        val deleted = entry.dir.deleteRecursively()
+        val touchesEnv = entry.dir.absolutePath in setOf(rootfs.absolutePath, sdkDir.absolutePath, gradleDir.absolutePath)
+        if (touchesEnv) {
+            readyMarker.takeIf { it.exists() }?.delete()
+            if (_phase.value != Phase.BOOTSTRAPPING && _phase.value != Phase.BUILDING) _phase.value = Phase.NOT_SETUP
+        }
+        addLog(if (deleted) "✓ reclaimed " + entry.label else "! nothing to reclaim in " + entry.label)
+        return deleted
+    }
 
     private fun addLog(l: String) {
         _log.value = (_log.value + l).takeLast(MAX_LOG_LINES)
@@ -149,7 +173,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
         }
     }
 
-    /** v0.8: fetches the arm64 aapt2 through the mirror list and ELF-validates it. */
+    /** v0.8/v0.9: fetches the arm64 aapt2 through the curated mirrors and ELF-validates it. */
     private fun fetchAapt2() {
         val aapt2 = File(sdkDir, "build-tools/35.0.0/aapt2")
         if (aapt2.isFile) {
@@ -160,14 +184,13 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
         _line.value = "Fetching arm64 aapt2…"
         aapt2.parentFile?.mkdirs()
         val dl = File(aapt2.path + ".dl")
-        val userMirror = aapt2Mirror.trim()
-        val url = if (userMirror.startsWith("http")) {
-            // direct URL: the user vouches for it; the binary is still ELF-validated below
-            addLog("• Using the mirror set in Settings → On-device build")
-            userMirror
+        val preset = Aapt2Mirrors.resolve(aapt2Mirror)
+        val url = if (preset.viaApi) {
+            addLog("• Looking up the latest aapt2 release (${preset.label})…")
+            Downloader.releaseAssetUrl(http, listOf(preset.url), "aapt2", ".tar.gz")
         } else {
-            addLog("• Looking up the latest aapt2 release (aarch64-android-builds)…")
-            Downloader.releaseAssetUrl(http, listOf(GITHUB_AAPT2_API), "aapt2", ".tar.gz")
+            addLog("• Fetching aapt2 from ${preset.label}")
+            preset.url
         }
         simpleDownload(url, dl)
         if (dl.name.endsWith(".tar.gz") || dl.name.endsWith(".tgz") || dl.name.endsWith(".dl")) {
@@ -225,25 +248,57 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
 
     // ------------------------------------------------------------ build
 
-    suspend fun build(): Boolean = withContext(Dispatchers.IO) {
+    /**
+     * v0.9: builds the APK. Without [signing] this is the v0.7/v0.8 debug build; with a complete
+     * [SigningConfig] it runs `assembleRelease` against the user's keystore (signed by AGP through
+     * the generated init script) and lands in dist/app-release.apk.
+     */
+    suspend fun build(signing: SigningConfig? = null): Boolean = withContext(Dispatchers.IO) {
         if (_phase.value != Phase.READY) return@withContext false
+        val sc = signing?.takeIf { it.complete() }
+        val release = sc != null
+        val ksFile = if (release) File(projectDir, sc!!.keystorePath.trim()) else null
+        if (release && (ksFile?.isFile != true)) {
+            _phase.value = Phase.FAILED
+            addLog("✗ keystore not found in the project: " + sc!!.keystorePath)
+            addLog("  → copy the .jks/.keystore file into the project (Files tab), e.g. keystore/release.jks")
+            return@withContext false
+        }
         _phase.value = Phase.BUILDING
         try {
             ensureGradleProps()
-            addLog("• Gradle assembleDebug (this can take 5–15 minutes on a phone)…")
+            val env = ArrayList<Pair<String, String>>()
+            val initScript: File?
+            if (release) {
+                initScript = File(File(context.cacheDir, "saqr-sign"), "init.gradle")
+                initScript.parentFile?.mkdirs()
+                initScript.writeText(SigningInit.script())
+                env.add(SigningInit.ENV_KS to "/workspace/" + sc!!.keystorePath.trim())
+                env.add(SigningInit.ENV_KS_PASS to sc.storePassword)
+                env.add(SigningInit.ENV_ALIAS to sc.alias.trim())
+                env.add(SigningInit.ENV_KEY_PASS to sc.keyPassword)
+                addLog("• Gradle assembleRelease (signed with " + sc.keystorePath.trim() + ")…")
+            } else {
+                initScript = null
+                addLog("• Gradle assembleDebug (this can take 5–15 minutes on a phone)…")
+            }
+            val scriptArg = if (initScript != null) " --init-script " + SigningInit.SCRIPT_PATH else ""
+            val task = if (release) "assembleRelease" else "assembleDebug"
             val cmd = "export JAVA_HOME=$javaHome ANDROID_HOME=$sdkRoot ANDROID_SDK_ROOT=$sdkRoot; " +
-                "$gradleHome/bin/gradle --no-daemon -p /workspace assembleDebug --console=plain -Dorg.gradle.jvmargs=-Xmx1400m"
-            val code = prootRun(cmd, timeoutSec = 2_400)
+                "$gradleHome/bin/gradle --no-daemon -p /workspace $task$scriptArg --console=plain -Dorg.gradle.jvmargs=-Xmx1400m"
+            val binds = if (initScript != null) listOf(initScript.absolutePath to SigningInit.SCRIPT_PATH) else emptyList()
+            val code = prootRun(cmd, timeoutSec = 2_400, extraEnv = env, extraBinds = binds)
             if (code != 0) error("gradle exited $code")
-            val out = File(projectDir, "app/build/outputs/apk/debug")
+            val variant = if (release) "release" else "debug"
+            val out = File(projectDir, "app/build/outputs/apk/$variant")
             val apk = out.listFiles()?.firstOrNull { it.name.endsWith(".apk") }
                 ?: error("no APK produced — check the log for the real error")
             val dist = File(projectDir, "dist").apply { mkdirs() }
-            val target = File(dist, "app-debug.apk")
+            val target = File(dist, "app-$variant.apk")
             apk.copyTo(target, overwrite = true)
             _apk.value = target
             _phase.value = Phase.BUILT
-            addLog("✓ APK ready: dist/app-debug.apk (" + target.length() / 1024 + " KB)")
+            addLog("✓ APK ready: dist/" + target.name + " (" + target.length() / 1024 + " KB)")
             true
         } catch (e: Exception) {
             failWithHints("Build", e)
@@ -297,9 +352,14 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
     // ------------------------------------------------------------ process
 
     /** Runs [cmd] inside the Debian rootfs with the SDK/Gradle bound at /opt; streams into [log]. */
-    private suspend fun prootRun(cmd: String, timeoutSec: Long): Int = withContext(Dispatchers.IO) {
+    private suspend fun prootRun(
+        cmd: String,
+        timeoutSec: Long,
+        extraEnv: List<Pair<String, String>> = emptyList(),
+        extraBinds: List<Pair<String, String>> = emptyList(),
+    ): Int = withContext(Dispatchers.IO) {
         val tmp = File(context.cacheDir, "proot-tmp").apply { mkdirs() }
-        val args = buildProotArgs(cmd)
+        val args = buildProotArgs(cmd, extraEnv, extraBinds)
         val pb = ProcessBuilder(args).directory(projectDir).redirectErrorStream(true)
         pb.environment().apply {
             put("PROOT_LOADER", File(nativeDir, "libproot-loader.so").absolutePath)
@@ -328,20 +388,26 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
         if (finished) p.exitValue() else -1
     }
 
-    /** Like [LinuxEnv.prootArgs], plus /opt binds for the SDK and Gradle. */
-    private fun buildProotArgs(cmd: String): List<String> = listOf(
-        proot.absolutePath, "--kill-on-exit", "--link2symlink", "-L", "--sysvipc", "-0",
-        "-r", rootfs.absolutePath,
-        "-b", "/dev", "-b", "/proc", "-b", "/sys",
-        "-b", projectDir.absolutePath + ":/workspace",
-        "-b", sdkDir.absolutePath + ":" + sdkRoot,
-        "-b", gradleDir.absolutePath + ":/opt/gradle",
-        "-w", "/workspace",
-        "/usr/bin/env", "-i",
-        "HOME=/root", "USER=root", "TERM=dumb", "LANG=C.UTF-8",
-        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-        "/bin/sh", "-c", cmd,
-    )
+    /** Like [LinuxEnv.prootArgs], plus /opt binds for the SDK and Gradle and optional extra binds/env (v0.9). */
+    private fun buildProotArgs(
+        cmd: String,
+        extraEnv: List<Pair<String, String>> = emptyList(),
+        extraBinds: List<Pair<String, String>> = emptyList(),
+    ): List<String> = buildList {
+        add(proot.absolutePath); add("--kill-on-exit"); add("--link2symlink"); add("-L"); add("--sysvipc"); add("-0")
+        add("-r"); add(rootfs.absolutePath)
+        add("-b"); add("/dev"); add("-b"); add("/proc"); add("-b"); add("/sys")
+        add("-b"); add(projectDir.absolutePath + ":/workspace")
+        add("-b"); add(sdkDir.absolutePath + ":" + sdkRoot)
+        add("-b"); add(gradleDir.absolutePath + ":/opt/gradle")
+        extraBinds.forEach { (host, guest) -> add("-b"); add(host + ":" + guest) }
+        add("-w"); add("/workspace")
+        add("/usr/bin/env"); add("-i")
+        add("HOME=/root"); add("USER=root"); add("TERM=dumb"); add("LANG=C.UTF-8")
+        add("PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
+        extraEnv.forEach { (k, v) -> add("$k=$v") }
+        add("/bin/sh"); add("-c"); add(cmd)
+    }
 
     private val http = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -393,7 +459,33 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             ),
         )
 
-        /** The arm64 aapt2 community build; resolved through the GitHub API (mirror list in v0.8). */
+        /** The arm64 aapt2 community build; resolved through the GitHub API (preset in v0.9). */
         const val GITHUB_AAPT2_API = "https://api.github.com/repos/Llzzy/aarch64-android-builds/releases/latest"
+    }
+}
+
+/**
+ * v0.9 · قائمة مرايا aapt2 الجاهزة · Curated arm64-aapt2 sources.
+ *
+ * Google publishes no linux-arm64 aapt2, so the build needs a community build. Two verified
+ * sources ship as presets: the GitHub API lookup of `Llzzy/aarch64-android-builds` (the v0.8
+ * default, always resolves the latest release) and the stable `releases/latest/download` URL of
+ * `ReVanced/aapt2` (a raw binary asset). A direct URL from Settings wins over both; every
+ * fetched binary is ELF-validated before use regardless of its source.
+ */
+object Aapt2Mirrors {
+    data class Preset(val id: String, val label: String, val url: String, val viaApi: Boolean = false)
+
+    val AUTO = Preset("auto", "aarch64-android-builds", OnDeviceBuild.GITHUB_AAPT2_API, viaApi = true)
+    val REVANCED = Preset("revanced", "ReVanced/aapt2", "https://github.com/ReVanced/aapt2/releases/latest/download/aapt2-arm64-v8a")
+
+    val PRESETS = listOf(AUTO, REVANCED)
+
+    /** The effective preset for a stored setting: blank / "auto" → AUTO, preset id → it, URL → custom, else AUTO. */
+    fun resolve(setting: String): Preset = when {
+        setting.isBlank() || setting.trim() == AUTO.id -> AUTO
+        PRESETS.any { it.id == setting.trim() } -> PRESETS.first { it.id == setting.trim() }
+        setting.trim().startsWith("http") -> Preset("custom", "custom mirror", setting.trim())
+        else -> AUTO
     }
 }

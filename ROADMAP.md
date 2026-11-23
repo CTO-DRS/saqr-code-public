@@ -11,20 +11,21 @@
 - ✅ v0.7 — Templates: Kotlin + Jetpack Compose app (Arabic/RTL) and Arabic IME keyboard.
 - ✅ v0.8 — Hardened build path: SHA-256-pinned resumable downloads, aapt2 mirror + ELF validation, friendly failure hints, crash monitor, Lite Web template (zero dependencies).
 - ✅ v0.8 — Planner stage in team mode, automatic checks fed to the reviewer, separate review/planner cost, MCP servers (Streamable HTTP) as `mcp_*` tools.
+- ✅ v0.9 — On-device **signed release builds** (project keystore, memory-only passwords, AGP v1+v2+v3 signing via generated init script), aapt2 mirror presets (Auto / ReVanced / custom), build-cache management with one-tap reclaim.
+- ✅ v0.9 — **GitHub Device Flow** sign-in (RFC 8628), per-provider reviewer/planner model pickers, and the MCP tools browser (list, inspect, run tools manually).
 
 ## المتبقي · Remaining
 
 Details and step-by-step acceptance criteria: [docs/PLAN.md](docs/PLAN.md).
 
 ### الأولوية 1 · Priority 1
-1. **إثبات البناء على الجهاز · Field-test the on-device builder**: real-device matrix (Snapdragon + MediaTek) across every step — code side shipped in v0.8 (lite template, pinned resumable downloads, aapt2 mirror + ELF check, crash monitor); field numbers pending.
-2. **بناء الإصدار الموقّع على الجهاز · On-device signed release build**: use the project keystore (password prompt) instead of debug-only output.
+1. **إثبات البناء على الجهاز · Field-test the on-device builder**: real-device matrix (Snapdragon + MediaTek) across every step — the code side is complete (lite template, pinned resumable downloads, aapt2 presets + ELF check, crash monitor, signed release, cache reclaim); field numbers pending.
+2. **أدوات وحدة بناء أفضل · Publish the field numbers**: setup time, download size, peak memory and battery in the README, once the device matrix runs.
 
 ### الأولوية 2 · Priority 2
-3. **تطوير فريق الوكلاء · Evolve the agent team**: v0.8 shipped the explicit planner stage, reviewer-consumed lint/test output, separate review/planner cost, and MCP over Streamable HTTP. Remaining: per-provider model pickers and richer MCP transports (stdio via terminal, OAuth).
-4. **GitLab / Gitea UI**: account linking and repository flows in the app UI (the account store already supports other HTTPS hosts).
-5. **زر GitHub Device Flow · Device-flow sign-in button** instead of pasting tokens.
+3. **تطوير فريق الوكلاء · Evolve the agent team**: v0.9 shipped per-provider model pickers and the MCP tools browser. Remaining: richer MCP transports (stdio bridged through the terminal, OAuth for gated servers).
+4. **GitLab / Gitea UI**: account linking works for custom HTTPS hosts; missing the create-repository and PR flows in the UI.
 
 ### الأولوية 3 · Priority 3 (business)
-6. **الدفع · Payments**: Google Play Billing; **Moyasar** (mada, Apple Pay, STC Pay); SAR pricing and a student plan.
-7. Store listings (Play, Huawei AppGallery, Samsung Galaxy Store), Arabic docs and video tutorials.
+5. **الدفع · Payments**: Google Play Billing; **Moyasar** (mada, Apple Pay, STC Pay); SAR pricing and a student plan.
+6. Store listings (Play, Huawei AppGallery, Samsung Galaxy Store), Arabic docs and video tutorials.

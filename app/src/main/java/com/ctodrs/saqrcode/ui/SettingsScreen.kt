@@ -133,7 +133,11 @@ class SettingsUi(
     val mcpServers: List<com.ctodrs.saqrcode.agent.Mcp.Server> = emptyList(),
     val onMcpAdd: (String, String, String) -> String? = { _, _, _ -> null },
     val onMcpRemove: (String) -> Unit = {},
-    /** v0.8 on-device build: direct aapt2 mirror URL (blank = built-in lookup). */
+    /** v0.9: the decrypted auth header of an MCP server (for the tools browser). */
+    val mcpAuthFor: (String) -> String? = { null },
+    /** v0.9: models suggested for the active provider (review/planner pickers). */
+    val suggestedModels: List<String> = emptyList(),
+    /** v0.8/v0.9 on-device build: aapt2 source — blank, a preset id, or a direct URL. */
     val aapt2Mirror: String = "",
     val onAapt2Mirror: (String) -> Unit = {},
 )
@@ -205,6 +209,8 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
             settings.mcpServers = settings.mcpServers.filter { it.name != name }
             settings.setMcpAuth(name, null)
         },
+        mcpAuthFor = { name -> settings.mcpAuth(name) },
+        suggestedModels = com.ctodrs.saqrcode.agent.Providers.byId(settings.activeProvider).suggestedModels,
         aapt2Mirror = settings.aapt2Mirror,
         onAapt2Mirror = { settings.aapt2Mirror = it },
     )
@@ -289,8 +295,9 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 }
             }
             if (ui.activeModel.isNotBlank()) Group { VisionEditor(ui) }
-            // ---- v0.8 MCP servers
+            // ---- v0.8/v0.9 MCP servers
             SectionLabel(stringResource(R.string.mcp_section), Modifier.padding(top = Sp.md))
+            var browsingServer by remember { mutableStateOf<com.ctodrs.saqrcode.agent.Mcp.Server?>(null) }
             if (ui.mcpServers.isNotEmpty()) {
                 Group {
                     Column {
@@ -299,14 +306,29 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                             ListRow(
                                 title = s.name, subtitle = s.url,
                                 icon = Lucide.Plug,
-                                onClick = { ui.onMcpRemove(s.name) },
-                                trailing = { SIcon(Lucide.Trash2, size = 18.dp, tint = Saqr.colors.danger) },
+                                onClick = { browsingServer = s },
+                                trailing = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Tag(stringResource(R.string.mcp_browse), color = c.accentText, dot = false)
+                                        Spacer(Modifier.width(Sp.xs))
+                                        Box(Modifier.size(44.dp).clip(CircleShape).clickable { ui.onMcpRemove(s.name) }, contentAlignment = Alignment.Center) {
+                                            SIcon(Lucide.Trash2, size = 18.dp, tint = Saqr.colors.danger, contentDescription = stringResource(R.string.delete))
+                                        }
+                                    }
+                                },
                             )
                         }
                     }
                 }
             }
             Group { McpSettings(ui) }
+            browsingServer?.let { server ->
+                McpToolsBrowser(
+                    server = server,
+                    auth = ui.mcpAuthFor(server.name),
+                    onDismiss = { browsingServer = null },
+                )
+            }
             // ---- v0.8 on-device build
             SectionLabel(stringResource(R.string.build_section), Modifier.padding(top = Sp.md))
             Group { Aapt2MirrorEditor(ui) }
@@ -404,12 +426,7 @@ private fun ReviewModelEditor(ui: SettingsUi) {
     Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
         LabeledIcon(Lucide.ShieldCheck, stringResource(R.string.review_model))
         Text(stringResource(R.string.review_model_desc), style = Saqr.type.caption, color = c.text3)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SaqrField(text, { text = it; status = null }, Modifier.weight(1f), label = stringResource(R.string.model),
-                placeholder = "claude-haiku-4-5 / gemini-2.5-flash", mono = true)
-            Spacer(Modifier.width(Sp.sm))
-            GhostButton(stringResource(R.string.save), { ui.onReviewModel(text); status = savedText }, icon = Lucide.Save)
-        }
+        ModelPickerField(text, { text = it; status = null }, ui.suggestedModels, onSave = { ui.onReviewModel(text); status = savedText })
         status?.let { Text(it, style = Saqr.type.caption, color = c.text2) }
     }
 }
@@ -424,13 +441,33 @@ private fun PlannerModelEditor(ui: SettingsUi) {
     Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
         LabeledIcon(Lucide.ListTree, stringResource(R.string.planner_model))
         Text(stringResource(R.string.planner_model_desc), style = Saqr.type.caption, color = c.text3)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SaqrField(text, { text = it; status = null }, Modifier.weight(1f), label = stringResource(R.string.model),
-                placeholder = "gemini-2.5-flash / gpt-4o-mini", mono = true)
-            Spacer(Modifier.width(Sp.sm))
-            GhostButton(stringResource(R.string.save), { ui.onPlannerModel(text); status = savedText }, icon = Lucide.Save)
-        }
+        ModelPickerField(text, { text = it; status = null }, ui.suggestedModels, onSave = { ui.onPlannerModel(text); status = savedText })
         status?.let { Text(it, style = Saqr.type.caption, color = c.text2) }
+    }
+}
+
+/**
+ * v0.9: free-text model field with a suggestions menu from the active provider, shared by the
+ * reviewer and planner editors (per-provider pickers instead of typing ids blind).
+ */
+@Composable
+private fun ModelPickerField(value: String, onChange: (String) -> Unit, suggestions: List<String>, onSave: () -> Unit) {
+    val c = Saqr.colors
+    var menu by remember { mutableStateOf(false) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f)) {
+            SaqrField(value, onChange, label = stringResource(R.string.model),
+                placeholder = "claude-haiku-4-5 / gemini-2.5-flash", mono = true, trailing = {
+                    Box(Modifier.size(32.dp).clip(CircleShape).clickable(enabled = suggestions.isNotEmpty()) { menu = true }, contentAlignment = Alignment.Center) {
+                        SIcon(Lucide.ChevronDown, size = 16.dp)
+                    }
+                })
+            DropdownMenu(menu, { menu = false }, Modifier.heightIn(max = 360.dp).background(c.surface2)) {
+                suggestions.forEach { m -> DropdownMenuItem(text = { Text(m, style = Saqr.type.monoSmall, color = c.text1) }, onClick = { onChange(m); menu = false }) }
+            }
+        }
+        Spacer(Modifier.width(Sp.sm))
+        GhostButton(stringResource(R.string.save), onSave, icon = Lucide.Save)
     }
 }
 
@@ -474,25 +511,145 @@ object McpSettings {
     }
 }
 
-/** v0.8: direct aapt2 mirror URL for the on-device build (blank = the built-in lookup). */
+/** v0.8/v0.9: the arm64-aapt2 source — curated presets (Auto lookup / ReVanced) or a direct URL. */
 @Composable
 private fun Aapt2MirrorEditor(ui: SettingsUi) {
     val c = Saqr.colors
-    var text by remember(ui.aapt2Mirror) { mutableStateOf(ui.aapt2Mirror) }
     val savedText = stringResource(R.string.saved)
     var status by remember { mutableStateOf<String?>(null) }
+    val M = com.ctodrs.saqrcode.ondevice.Aapt2Mirrors
+    val preset = remember(ui.aapt2Mirror) { M.resolve(ui.aapt2Mirror) }
+    val options = listOf(M.AUTO.id, M.REVANCED.id, "custom")
+    val selected = when (preset.id) {
+        M.AUTO.id -> 0; M.REVANCED.id -> 1; else -> 2
+    }
+    var customUrl by remember(ui.aapt2Mirror) {
+        mutableStateOf(if (preset.id == "custom") ui.aapt2Mirror else "")
+    }
     Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
         LabeledIcon(Lucide.CloudDownload, stringResource(R.string.aapt2_mirror))
         Text(stringResource(R.string.aapt2_mirror_desc), style = Saqr.type.caption, color = c.text3)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SaqrField(text, { text = it; status = null }, Modifier.weight(1f), label = "URL",
-                placeholder = "https://…/aapt2 (blank = auto)", mono = true,
-                keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri))
-            Spacer(Modifier.width(Sp.sm))
-            GhostButton(stringResource(R.string.save), { ui.onAapt2Mirror(text); status = savedText }, icon = Lucide.Save)
+        Segmented(
+            listOf(stringResource(R.string.aapt2_preset_auto), M.REVANCED.label, stringResource(R.string.aapt2_preset_custom)),
+            selected,
+            { i ->
+                when (options[i]) {
+                    M.AUTO.id -> ui.onAapt2Mirror("")
+                    M.REVANCED.id -> ui.onAapt2Mirror(M.REVANCED.id)
+                    else -> if (customUrl.isNotBlank()) ui.onAapt2Mirror(customUrl)
+                }
+                status = savedText
+            },
+        )
+        if (selected == 2) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SaqrField(customUrl, { customUrl = it; status = null }, Modifier.weight(1f), label = "URL",
+                    placeholder = "https://…/aapt2", mono = true,
+                    keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri))
+                Spacer(Modifier.width(Sp.sm))
+                GhostButton(stringResource(R.string.save), { ui.onAapt2Mirror(customUrl); status = savedText }, icon = Lucide.Save)
+            }
         }
         status?.let { Text(it, style = Saqr.type.caption, color = c.text2) }
     }
+}
+
+/**
+ * v0.9 · مستعرض أدوات MCP · MCP tools browser: lists a server's tools and lets the user run
+ * one manually with hand-edited JSON arguments. Purely a Settings-side helper — the agent's own
+ * tool wiring is untouched.
+ */
+@Composable
+private fun McpToolsBrowser(server: com.ctodrs.saqrcode.agent.Mcp.Server, auth: String?, onDismiss: () -> Unit) {
+    val c = Saqr.colors
+    val scope = rememberCoroutineScope()
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var tools by remember { mutableStateOf<List<com.ctodrs.saqrcode.agent.Mcp.Tool>>(emptyList()) }
+    var openTool by remember { mutableStateOf<String?>(null) }
+    var argsText by remember { mutableStateOf("{}") }
+    var runResult by remember { mutableStateOf<String?>(null) }
+    var running by remember { mutableStateOf(false) }
+
+    fun load() {
+        loading = true; error = null; tools = emptyList()
+        scope.launch {
+            val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val client = com.ctodrs.saqrcode.agent.McpClient(server.copy(authHeader = auth))
+                client.listTools() to client.endpointError
+            }
+            val (list, err) = result
+            if (list == null) error = err ?: "server unreachable"
+            else tools = list
+            loading = false
+        }
+    }
+    androidx.compose.runtime.LaunchedEffect(server.name) { load() }
+
+    fun run(toolName: String) {
+        running = true; runResult = null
+        val parsed = runCatching { org.json.JSONObject(argsText) }.getOrElse { e ->
+            running = false; runResult = "Error: invalid JSON — " + e.message; return
+        }
+        scope.launch {
+            val out = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val client = com.ctodrs.saqrcode.agent.McpClient(server.copy(authHeader = auth))
+                client.callTool(com.ctodrs.saqrcode.agent.Mcp.splitToolName(toolName)?.second ?: toolName, parsed)
+            }
+            runResult = out
+            running = false
+        }
+    }
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = c.surface1,
+        title = { Text(stringResource(R.string.mcp_tools_title, server.name), style = Saqr.type.title3) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                Text(server.url, style = Saqr.type.monoSmall, color = c.text3, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                when {
+                    loading -> Text("…", style = Saqr.type.caption, color = c.text3)
+                    error != null -> Column {
+                        Text(error!!, style = Saqr.type.caption, color = c.danger)
+                        GhostButton(stringResource(R.string.mcp_tools_retry), { load() }, icon = Lucide.RefreshCw)
+                    }
+                    tools.isEmpty() -> Text(stringResource(R.string.mcp_tools_empty), style = Saqr.type.caption, color = c.text3)
+                    else -> tools.forEach { t ->
+                        Column(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2)
+                                .padding(horizontal = Sp.md, vertical = Sp.xs),
+                        ) {
+                            Row(Modifier.fillMaxWidth().clickable {
+                                openTool = if (openTool == t.name) null else t.name
+                                argsText = com.ctodrs.saqrcode.agent.Mcp.sampleArgs(t.inputSchema).toString()
+                                runResult = null
+                            }, verticalAlignment = Alignment.CenterVertically) {
+                                Text(t.name, style = Saqr.type.monoSmall.copy(fontWeight = FontWeight.SemiBold), color = c.accentText, modifier = Modifier.weight(1f))
+                                SIcon(Lucide.ChevronDown, size = 14.dp, tint = c.text3)
+                            }
+                            Text(t.description, style = Saqr.type.caption, color = c.text2, maxLines = if (openTool == t.name) 6 else 2, overflow = TextOverflow.Ellipsis)
+                            if (openTool == t.name) {
+                                Text(com.ctodrs.saqrcode.agent.Mcp.describeSchema(t.inputSchema), style = Saqr.type.caption, color = c.text3)
+                                SaqrField(argsText, { argsText = it; runResult = null }, label = stringResource(R.string.mcp_args),
+                                    placeholder = "{}", mono = true, singleLine = false)
+                                Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalAlignment = Alignment.CenterVertically) {
+                                    GhostButton(stringResource(R.string.mcp_run), { run(t.name) }, icon = Lucide.Play, enabled = !running)
+                                    if (running) Text("…", style = Saqr.type.caption, color = c.text3)
+                                }
+                                runResult?.let {
+                                    Text(it, style = Saqr.type.monoSmall, color = if (it.startsWith("Error:")) c.danger else c.text2, maxLines = 10, overflow = TextOverflow.Ellipsis)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.close), color = c.accentText) }
+        },
+    )
 }
 
 @Composable

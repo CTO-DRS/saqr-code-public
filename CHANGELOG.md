@@ -1,5 +1,28 @@
 # Changelog · سجل التغييرات
 
+## [0.9.0] — 2026-11-24 — Signed release builds, cache control & effortless sign-in · بناء موقّع وإدارة مخزون ودخول بلا رموز
+
+### Field-ready build · بناء جاهز للميدان
+- **Signed release builds on-device:** the Build tab gains an «إصدار موقّع» switch — point it at a keystore inside the project (e.g. `keystore/release.jks`), type the passwords (**kept in memory only** — never persisted, never logged), and the build runs `assembleRelease` signed by AGP (v1+v2+v3) through a generated Groovy init script; the output lands in `dist/app-release.apk`. Release is built without shrinking (R8 on a phone is not realistic) and the keystore path is validated against traversal outside the project.
+  بناء إصدار موقّع على الجهاز بمفتاحك: مفتاح داخل المشروع وكلمات مرور في الذاكرة فقط، والتوقيع بنسخ v1+v2+v3 عبر سكربت init مولّد، والناتج في dist/app-release.apk دون تصغير ليناسب الهاتف.
+- **aapt2 mirror presets:** Settings → On-device build now offers curated sources — «تلقائي» (the v0.8 GitHub-API lookup of `Llzzy/aarch64-android-builds`), the verified **ReVanced/aapt2** stable `releases/latest/download/aapt2-arm64-v8a` URL, or a custom direct URL — every source is still **ELF-validated** before use.
+  مرايا aapt2 جاهزة: تلقائي (بحث GitHub)، أو ReVanced/aapt2 (رابط ثابت لأحدث إصدار)، أو رابط مخصص — وكلها تُفحص ELF قبل الاستخدام.
+- **Build-cache management:** the Build tab shows what each component occupies (Debian rootfs, Android SDK, Gradle, downloads) with one-tap reclaim; reclaiming an environment component drops the ready marker so the next «تجهيز» re-fetches exactly what is missing (finished steps stay skipped).
+  إدارة مخزون البناء: حجم كل مكوّن واسترجاعه بنقرة، مع إعادة «تجهيز» ذكية تجلب الناقص فقط وتتخطى ما أُنجز.
+
+### Effortless sign-in & team polish · دخول أسهل وتحسينات الفريق
+- **GitHub Device Flow sign-in (RFC 8628):** the accounts screen gains «الدخول برمز جهاز» — paste your OAuth App's **public Client ID** once, get a short code, approve in any browser at github.com/login/device; the app polls and links the account (badge «متصل · رمز جهاز»). No more pasting long tokens on a phone.
+  الدخول إلى GitHub برمز الجهاز: تُلصق الـ Client ID العام مرة واحدة، ويظهر رمز قصير تُوافق عليه من أي متصفح، والتطبيق يستكمل الربط تلقائياً — بلا لصق رموز طويلة.
+- **Per-provider model pickers:** the reviewer and planner model fields now carry a suggestions menu from the active provider instead of typing model ids blind.
+  منتقي نموذج المراجع/المخطط يعرض نماذج المزوّد النشط كقائمة مقترحة بدل كتابة الأسماء العمياء.
+- **MCP tools browser:** tap any MCP server in Settings to list its tools live (handshake + `tools/list`), read each tool's schema summary, edit JSON arguments (prefilled from the schema with type-based values) and **run it manually** to see the raw result — a debugging window into what the agent sees.
+  مستعرض أدوات MCP: سرد أدوات كل خادم مباشرة، ووصف وسائطها، وتشغيلها يدوياً بوسائط JSON قابلة للتعديل (معبأة مسبقاً من المخطط).
+
+### Infrastructure · البنية
+- 227 unit tests (200 run in-sandbox; the rest need a device/emulator), including the signing contract (path safety + init-script env-only passwords), aapt2 preset resolution, cache sizing/formatting, and the MCP sampleArgs helper.
+- Bilingual strings for every new surface (values + values-ar); versionCode 9.
+
+
 ## [0.8.0] — 2026-11-23 — Build hardening, planner & MCP · تحصين البناء والمخطط ودعم MCP
 
 ### Hardened on-device build path · تحصين مسار البناء على الجهاز

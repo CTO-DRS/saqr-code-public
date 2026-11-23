@@ -46,6 +46,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.SaqrApp
 import com.ctodrs.saqrcode.data.AccountStore
@@ -77,10 +78,15 @@ class AccountsUi(
     val gitEmail: String,
     /** Validates the token with GitHub and links it; returns the account or the error. */
     val verifyGithub: suspend (token: String) -> Result<GitHubAccount>,
+    /** v0.9: same but marks the account as linked through the OAuth Device Flow. */
+    val verifyDevice: suspend (token: String) -> Result<GitHubAccount> = verifyGithub,
     val onSignOut: () -> Unit,
     val onSaveIdentity: (name: String, email: String) -> Unit,
     val onOpenUrl: (String) -> Unit,
     val loadAvatar: suspend (url: String) -> ImageBitmap? = { null },
+    /** v0.9 Device Flow: the user's OAuth App Client ID (public value). */
+    val clientId: String = "",
+    val onClientId: (String) -> Unit = {},
 )
 
 @Composable
@@ -93,18 +99,8 @@ fun AccountsScreen(onBack: () -> Unit) {
         github = settings.accounts.github,
         gitName = settings.gitName,
         gitEmail = settings.gitEmail,
-        verifyGithub = { raw ->
-            val token = raw.trim()
-            runCatching {
-                require(AccountStore.looksLikeToken(token)) { "That doesn't look like a GitHub token (github_pat_… or ghp_…)." }
-                val me = withContext(Dispatchers.IO) { GitHubApi(token).me() }
-                val acct = GitHubAccount(me.login, me.name, me.avatarUrl, me.id, me.scopes, viaDeviceFlow = false)
-                settings.accounts.saveGitHub(token, acct)
-                settings.githubUser = me.login
-                settings.accountsChanged()
-                acct
-            }.recoverCatching { throw IllegalStateException(Redact.text(it.message ?: it.toString(), token)) }
-        },
+        verifyGithub = { raw -> verifyAccount(settings, raw, viaDeviceFlow = false) },
+        verifyDevice = { raw -> verifyAccount(settings, raw, viaDeviceFlow = true) },
         onSignOut = { settings.accounts.signOutGitHub(); settings.accountsChanged() },
         onSaveIdentity = { n, e -> settings.gitName = n; settings.gitEmail = e },
         onOpenUrl = { runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) } },
@@ -118,8 +114,24 @@ fun AccountsScreen(onBack: () -> Unit) {
                 }.getOrNull()
             }
         },
+        clientId = settings.githubClientId,
+        onClientId = { settings.githubClientId = it },
     )
     AccountsContent(ui, onBack)
+}
+
+/** Shared token verification: shape-check → /user → save. [viaDeviceFlow] only changes the badge. */
+private suspend fun verifyAccount(settings: com.ctodrs.saqrcode.data.SettingsStore, raw: String, viaDeviceFlow: Boolean): Result<GitHubAccount> {
+    val token = raw.trim()
+    return runCatching {
+        require(AccountStore.looksLikeToken(token)) { "That doesn't look like a GitHub token (github_pat_… or ghp_…)." }
+        val me = withContext(Dispatchers.IO) { GitHubApi(token).me() }
+        val acct = GitHubAccount(me.login, me.name, me.avatarUrl, me.id, me.scopes, viaDeviceFlow = viaDeviceFlow)
+        settings.accounts.saveGitHub(token, acct)
+        settings.githubUser = me.login
+        settings.accountsChanged()
+        acct
+    }.recoverCatching { throw IllegalStateException(Redact.text(it.message ?: it.toString(), token)) }
 }
 
 @Composable
@@ -159,6 +171,7 @@ private fun GitHubCard(ui: AccountsUi) {
     var token by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var deviceMode by remember { mutableStateOf(false) }
 
     Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
         if (acct != null) {
@@ -169,7 +182,10 @@ private fun GitHubCard(ui: AccountsUi) {
                     Text(acct.displayName, style = Saqr.type.title3.copy(fontWeight = FontWeight.SemiBold), color = c.text1, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(stringResource(R.string.gh_signed_in_as, acct.login), style = Saqr.type.caption, color = c.text2, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                Tag(stringResource(R.string.connected), color = c.success, dot = true)
+                Tag(
+                    stringResource(if (acct.viaDeviceFlow) R.string.gh_via_device else R.string.connected),
+                    color = c.success, dot = true,
+                )
             }
             acct.scopes?.takeIf { it.isNotBlank() }?.let {
                 Text(stringResource(R.string.gh_scopes, it), style = Saqr.type.monoSmall, color = c.text3)
@@ -178,6 +194,9 @@ private fun GitHubCard(ui: AccountsUi) {
                 GhostButton(stringResource(R.string.gh_profile), { ui.onOpenUrl("https://github.com/${acct.login}") }, icon = Lucide.ExternalLink)
                 GhostButton(stringResource(R.string.gh_sign_out), ui.onSignOut, icon = Lucide.LogOut, tint = c.danger)
             }
+        } else if (deviceMode) {
+            DeviceFlowCard(ui)
+            GhostButton(stringResource(R.string.df_use_token), { deviceMode = false; error = null }, icon = Lucide.KeyRound)
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 LabeledIcon(Lucide.Github, stringResource(R.string.github_account), Modifier.weight(1f))
@@ -208,7 +227,87 @@ private fun GitHubCard(ui: AccountsUi) {
                     busy = false
                 }
             }, icon = Lucide.KeyRound, enabled = !busy && token.isNotBlank())
+            GhostButton(stringResource(R.string.df_use_code), { deviceMode = true; error = null }, icon = Lucide.Smartphone)
         }
+    }
+}
+
+/**
+ * v0.9 · الدخول برمز الجهاز · GitHub OAuth Device Flow (RFC 8628) UI: no token pasting — the
+ * user registers an OAuth App once, pastes its public Client ID, gets a short code, opens
+ * github.com/login/device in any browser, and the app polls until approved.
+ */
+@Composable
+private fun DeviceFlowCard(ui: AccountsUi) {
+    val c = Saqr.colors
+    val scope = rememberCoroutineScope()
+    var clientId by remember(ui.clientId) { mutableStateOf(ui.clientId) }
+    var busy by remember { mutableStateOf(false) }
+    var code by remember { mutableStateOf<com.ctodrs.saqrcode.git.GitHubDeviceFlow.Code?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var job by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.md)).background(c.surface2).padding(Sp.md), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+        Text(stringResource(R.string.df_title), style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1)
+        Text(stringResource(R.string.df_desc), style = Saqr.type.caption, color = c.text2)
+        SaqrField(clientId, { clientId = it; error = null }, label = stringResource(R.string.df_client_id), placeholder = "Iv1.… / Ov23li…", mono = true,
+            keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri))
+        GhostButton(stringResource(R.string.save), { ui.onClientId(clientId) }, icon = Lucide.Save)
+
+        val got = code
+        if (got == null) {
+            PrimaryButton(stringResource(R.string.df_start), {
+                if (busy || clientId.isBlank()) return@PrimaryButton
+                ui.onClientId(clientId)
+                busy = true; error = null
+                job = scope.launch(Dispatchers.IO) {
+                    try {
+                        val flow = com.ctodrs.saqrcode.git.GitHubDeviceFlow()
+                        val got = flow.start(clientId.trim())
+                        withContext(kotlinx.coroutines.Dispatchers.Main) { code = got; busy = false }
+                        var interval = got.interval.toLong().coerceAtLeast(5)
+                        // cancellation lands through delay(), which throws on job?.cancel()
+                        while (true) {
+                            kotlinx.coroutines.delay(interval * 1_000)
+                            when (val p = flow.poll(clientId.trim(), got.deviceCode)) {
+                                is com.ctodrs.saqrcode.git.GitHubDeviceFlow.Poll.Token -> {
+                                    val r = ui.verifyDevice(p.accessToken)
+                                    withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                        r.onFailure { error = it.message ?: it.toString() }
+                                        code = null
+                                        busy = false
+                                    }
+                                    break
+                                }
+                                is com.ctodrs.saqrcode.git.GitHubDeviceFlow.Poll.SlowDown -> interval = p.interval.toLong().coerceAtLeast(5)
+                                is com.ctodrs.saqrcode.git.GitHubDeviceFlow.Poll.Failed -> {
+                                    withContext(kotlinx.coroutines.Dispatchers.Main) { error = p.error; code = null; busy = false }
+                                    break
+                                }
+                                com.ctodrs.saqrcode.git.GitHubDeviceFlow.Poll.Pending -> { /* keep waiting */ }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        withContext(kotlinx.coroutines.Dispatchers.Main) { error = e.message ?: e.toString(); code = null; busy = false }
+                    }
+                }
+            }, icon = Lucide.Smartphone, enabled = !busy && clientId.isNotBlank())
+        } else {
+            Text(stringResource(R.string.df_code_hint), style = Saqr.type.caption, color = c.text2)
+            Text(
+                got.userCode,
+                style = Saqr.type.mono.copy(fontWeight = FontWeight.Bold, fontSize = 24.sp),
+                color = c.accentText,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalAlignment = Alignment.CenterVertically) {
+                PrimaryButton(stringResource(R.string.df_open_browser), { ui.onOpenUrl(got.verificationUri) }, icon = Lucide.ExternalLink)
+                GhostButton(stringResource(R.string.cancel), {
+                    job?.cancel(); code = null; busy = false
+                }, icon = Lucide.X)
+            }
+            if (busy) Text(stringResource(R.string.df_waiting), style = Saqr.type.caption, color = c.text3)
+        }
+        error?.let { Text(it, style = Saqr.type.caption, color = c.danger) }
     }
 }
 

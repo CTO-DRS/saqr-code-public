@@ -101,6 +101,7 @@ object Lucide {
     val LogOut: ImageVector by lazy { stroked("log-out", true, "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 L17 L21 L12 L16 L7", "M21,12L9,12") }
     val Minus: ImageVector by lazy { stroked("minus", false, "M5 12h14") }
     val Package: ImageVector by lazy { stroked("package", false, "M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z", "M12 22V12", "m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7", "m7.5 4.27 9 5.15") }
+    val HardDrive: ImageVector by lazy { stroked("hard-drive", false, "M22 12H2", "M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z", "M6,16L6.01,16", "M10,16L10.01,16") }
     val Bug: ImageVector by lazy { stroked("bug", false, "m8 2 1.88 1.88", "M14.12 3.88 16 2", "M9 7.13v-3.3", "M15 7.13v-3.3", "M12 20a6 6 0 0 0-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3a6 6 0 0 0-6 6Z", "M12 20v-9", "M6.53 9C4.6 8.8 3 7.1 3 5", "M6 13.5C4.16 13.5 2.31 12.28 2 10.5", "M17.47 9c1.93-.2 3.53-1.9 3.53-4", "M18 13.5c1.84 0 3.69-1.22 4-3") }
     val Redo2: ImageVector by lazy { stroked("redo-2", true, "m15 14 5-5-5-5", "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13") }
     val Replace: ImageVector by lazy { stroked("replace", false, "M14 4a2 2 0 0 1 2-2", "M16 10a2 2 0 0 1-2-2", "M20 2a2 2 0 0 1 2 2", "M22 8a2 2 0 0 1-2 2", "m3 7 3 3 3-3", "M6 10V5a3 3 0 0 1 3-3h1", "M4.0,14.0h4.0a2.0,2.0 0 0 1 2.0,2.0v4.0a2.0,2.0 0 0 1 -2.0,2.0h-4.0a2.0,2.0 0 0 1 -2.0,-2.0v-4.0a2.0,2.0 0 0 1 2.0,-2.0Z") }

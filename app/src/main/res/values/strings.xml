@@ -476,10 +476,48 @@
     <string name="mcp_added">Server added — its tools connect at the start of the next turn.</string>
     <string name="build_section">On-device build</string>
     <string name="aapt2_mirror">aapt2 mirror URL</string>
-    <string name="aapt2_mirror_desc">Direct URL of an arm64 aapt2 (file or .tar.gz). Blank = the built-in lookup. The binary is verified before use.</string>
     <string name="build_crash_check">Check crashes</string>
     <string name="build_crash_none">No recent crashes in the log.</string>
     <string name="build_crash_found">%1$s recent crash(es):</string>
     <string name="tpl_lite">Lite Web app</string>
     <string name="tpl_lite_desc">WebView + zero dependencies — the fastest build on weak phones</string>
+
+    <!-- v0.9 · signed release build -->
+    <string name="build_release_title">Signed release</string>
+    <string name="build_release_desc">Builds dist/app-release.apk signed with your keystore (AGP signs v1+v2+v3; release is built without shrinking to fit the phone). Passwords stay in memory and are never saved.</string>
+    <string name="build_release_keystore">Keystore path (inside the project)</string>
+    <string name="build_release_alias">Key alias</string>
+    <string name="build_release_pass">Keystore password</string>
+    <string name="build_release_key_pass">Key password</string>
+    <string name="build_release_found">Keystore found: %1$s</string>
+    <string name="build_release_missing">Keystore not found at %1$s — copy the file into the project first</string>
+
+    <!-- v0.9 · build cache management -->
+    <string name="build_storage_title">Build storage: %1$s</string>
+    <string name="build_storage_reclaim">Reclaim</string>
+
+    <!-- v0.9 · aapt2 presets -->
+    <string name="aapt2_mirror_desc">Where the arm64 aapt2 comes from. Auto looks up the latest release; presets are verified community builds; a direct URL always works. The binary is ELF-verified before use.</string>
+    <string name="aapt2_preset_auto">Auto (lookup)</string>
+    <string name="aapt2_preset_custom">Custom URL</string>
+
+    <!-- v0.9 · MCP tools browser -->
+    <string name="mcp_browse">Tools</string>
+    <string name="mcp_tools_title">Tools of %1$s</string>
+    <string name="mcp_tools_empty">The server exposes no tools.</string>
+    <string name="mcp_tools_retry">Retry</string>
+    <string name="mcp_args">Arguments (JSON)</string>
+    <string name="mcp_run">Run</string>
+
+    <!-- v0.9 · GitHub Device Flow -->
+    <string name="gh_via_device">Connected · device code</string>
+    <string name="df_use_code">Sign in with a device code</string>
+    <string name="df_use_token">Use a personal token instead</string>
+    <string name="df_title">Device code sign-in</string>
+    <string name="df_desc">No token pasting: register an OAuth App once (enable Device Flow), paste its public Client ID here, then approve the request in the browser. Works on phones where copying long tokens is painful.</string>
+    <string name="df_client_id">OAuth App Client ID</string>
+    <string name="df_start">Get a code</string>
+    <string name="df_code_hint">Enter this code at github.com/login/device</string>
+    <string name="df_open_browser">Open github.com/login/device</string>
+    <string name="df_waiting">Waiting for approval…</string>
 </resources>

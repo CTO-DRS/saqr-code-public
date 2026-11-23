@@ -1,44 +1,38 @@
 # Development plan · خطة التطوير
 
-## الوضع بعد 0.8.0 · Where we are after 0.8.0
+## الوضع بعد 0.9.0 · Where we are after 0.9.0
 
-شُحنت في 0.8.0: تحصين مسار البناء (تنزيلات مثبّتة بـ SHA-256 قابلة للاستئناف، مرآة aapt2 مع تحقق ELF، إرشادات فشل ودّية، مراقب أعطال، قالب ويب خفيف بلا اعتماديات)، ومرحلة «مخطط» صريحة في وضع الفريق، وفحوصات تلقائية تُمرَّر للمراجع، وتكلفة المراجع/المخطط منفصلة في العدّاد، ودعم خوادم **MCP** عبر Streamable HTTP كأدوات `mcp_*`.
+شُحنت في 0.9.0: **بناء إصدار موقّع على الجهاز** (مفتاح داخل المشروع، كلمات مرور في الذاكرة فقط، توقيع AGP v1+v2+v3 عبر سكربت init مولّد)، ومرايا aapt2 جاهزة (تلقائي / ReVanced / رابط مخصص)، وإدارة مخزون البناء بأحجام واسترجاع بنقرة، ودخول GitHub برمز الجهاز (RFC 8628)، ومنتقي نماذج المراجع/المخطط من المزوّد النشط، ومستعرض أدوات MCP يعرض أدوات كل خادم ويشغّلها يدوياً.
 
-Shipped in 0.8.0: hardened build path (SHA-256-pinned resumable downloads, aapt2 mirror with ELF validation, friendly failure hints, crash monitor, zero-dependency Lite Web template), the explicit planner stage in team mode, automatic checks fed to the reviewer, separate review/planner cost in the meter, and **MCP** servers over Streamable HTTP exposed as `mcp_*` tools.
+Shipped in 0.9.0: **on-device signed release builds** (project keystore, memory-only passwords, AGP v1+v2+v3 signing through a generated init script), aapt2 mirror presets (Auto / ReVanced / custom URL), build-cache management with per-component sizes and one-tap reclaim, GitHub Device Flow sign-in (RFC 8628), per-provider reviewer/planner model pickers, and an MCP tools browser that lists and manually runs each server's tools.
 
 ---
 
 ## الأولوية 1 · Priority 1 — إثبات البناء ميدانياً · Field-prove the on-device build
 
 ### 1. اختبار ميداني وأرقام · Field-test and publish numbers
-- اختبار على هواتف حقيقية (Snapdragon وMediaTek، 4–8 غيغابايت) لكل خطوة: التنزيل المثبّت، apt داخل proot، sdkmanager، جلب aapt2، وبناء قالب Lite كاملاً ثم قالب Compose.
-- Test on real phones (Snapdragon + MediaTek, 4–8 GB) through every step: pinned downloads, apt in proot, sdkmanager, aapt2 fetch, then a full Lite-template and Compose-template build.
+- اختبار على هواتف حقيقية (Snapdragon وMediaTek، 4–8 غيغابايت) لكل خطوة: التنزيل المثبّت، apt داخل proot، sdkmanager، جلب aapt2 من المرايا، بناء قالب Lite ثم قالب Compose، ثم **إصدار موقّع** بمفتاح حقيقي.
+- Test on real phones (Snapdragon + MediaTek, 4–8 GB) through every step: pinned downloads, apt in proot, sdkmanager, aapt2 presets, then a full Lite-template and Compose-template build, and finally a **signed release** with a real keystore.
 - قياس زمن التجهيز، حجم التنزيل، الذاكرة القصوى والبطارية، ونشر الأرقام في README.
 - Track setup time, download size, peak memory, battery — publish in the README.
-- خيار «بناء الإصدار الموقّع»: توقيع الـ APK بمفتاح المشروع (إدخال كلمة المرور) بدل debug فقط.
-- «Signed release build» option: sign the on-device APK with the project keystore (password prompt) instead of debug-only.
 
 ### 2. مرونة البناء · Build flexibility
-- قائمة مرايا aapt2 كاملة (عدة مستودعات جاهزة) بدلاً من مرآة واحدة + القائمة المدمجة.
-- Full aapt2 mirror presets (several curated sources) beyond the single user URL + built-in lookup.
-- تنظيف تلقائي للمخزونات القديمة (rootfs/SDK/Gradle) وحساب المساحة في التبويب.
-- Cache management in the Build tab (old rootfs/SDK/Gradle, sizes, one-tap reclaim).
+- تنظيف تلقائي للمخزونات القديمة بعد نجاح البناء (خيار «احتفظ بآخر إصدار فقط»).
+- Optional auto-clean of old caches after a successful build («keep only the last APK»).
+- تحقق إضافي: فحص توقيع الـ APK المبني داخل التطبيق (apksigner verify عبر مصدر موثوق) قبل عرض زر التثبيت.
+- Verify the built APK's signature in-app before showing Install.
 
 ## الأولوية 2 · Priority 2 — ذكاء أعمق ودمج أوسع · Deeper agent, wider integrations
 
 ### 3. تطوير فريق الوكلاء · Evolve the agent team
-- اختيار نموذج المراجع/المخطط لكل مزوّد (قوائم مقترحة بدل كتابة الاسم يدوياً).
-- Per-provider reviewer/planner pickers with suggested-model menus instead of free-text ids.
 - MCP: نقل stdio عبر الطرفية للمستخدمين المتقدمين، وOAuth لخوادم تتطلب دخولاً.
 - MCP: stdio transport bridged through the terminal for advanced users; OAuth for servers requiring sign-in.
-- لوحة أدوات MCP في الإعدادات (استعراض أدوات كل خادم واختبارها يدوياً).
-- An MCP tools browser in Settings (list and test each server's tools manually).
+- واجهة اختيار أدوات MCP التي يراها الوكيل (تعطيل أدوات بعينها لكل خادم).
+- Per-server MCP tool allow/deny lists.
 
-### 4. GitLab / Gitea + تسجيل دخول أسهل · GitLab / Gitea + easier sign-in
+### 4. GitLab / Gitea · قوائم المستودعات والطلبات
 - شاشة حسابات تدعم GitLab وGitea بشكل كامل (المخزن يدعمها فعلاً؛ يتبقى واجهة إنشاء المستودعات والدفع).
 - Full GitLab/Gitea account UI (the account store already accepts custom HTTPS hosts; missing: create-repo and PR flows).
-- زر **GitHub Device Flow** بدل لصق الرموز (Client ID اختياري موجود بالفعل).
-- **GitHub Device Flow** button instead of pasting tokens (the optional Client ID setting already exists).
 
 ## الأولوية 3 · Priority 3 — العمل · Business
 

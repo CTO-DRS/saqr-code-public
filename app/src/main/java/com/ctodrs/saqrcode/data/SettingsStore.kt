@@ -104,10 +104,20 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         secure.put("mcp_auth_" + com.ctodrs.saqrcode.agent.Mcp.slugify(serverName), value)
     }
 
-    /** v0.8: direct aapt2 download URL (mirror). Blank = the built-in lookup list. */
+    /** v0.8: direct aapt2 download URL (mirror). Blank/auto = the built-in lookup; a preset id or a direct URL in v0.9. */
     var aapt2Mirror: String
         get() = prefs.getString("aapt2_mirror", "") ?: ""
         set(v) { prefs.edit().putString("aapt2_mirror", v.trim()).apply(); bump() }
+
+    /** v0.9 signed release: keystore path inside the project (non-secret). Passwords are not stored. */
+    var releaseKeystorePath: String
+        get() = prefs.getString("release_ks_path", "keystore/release.jks") ?: "keystore/release.jks"
+        set(v) { prefs.edit().putString("release_ks_path", v.trim()).apply(); bump() }
+
+    /** v0.9 signed release: the key alias inside the keystore (non-secret). */
+    var releaseKeyAlias: String
+        get() = prefs.getString("release_ks_alias", "") ?: ""
+        set(v) { prefs.edit().putString("release_ks_alias", v.trim()).apply(); bump() }
 
     /** v0.7: summarise the oldest context when it grows past the threshold (keeps the meter honest on small models). */
     var autoCompact: Boolean

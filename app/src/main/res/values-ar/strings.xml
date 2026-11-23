@@ -476,10 +476,48 @@
     <string name="mcp_added">أُضيف الخادم — ستتصل أدواته مع بداية الجولة القادمة.</string>
     <string name="build_section">البناء على الجهاز</string>
     <string name="aapt2_mirror">رابط مرآة aapt2</string>
-    <string name="aapt2_mirror_desc">رابط مباشر لملف aapt2 arm64 (ملف أو .tar.gz). اتركه فارغاً للبحث التلقائي. يُفحص الملف قبل استخدامه.</string>
     <string name="build_crash_check">فحص الأعطال</string>
     <string name="build_crash_none">لا أعطال حديثة في السجل.</string>
     <string name="build_crash_found">%1$s عطل/أعطال حديثة:</string>
     <string name="tpl_lite">تطبيق ويب خفيف</string>
     <string name="tpl_lite_desc">WebView بلا أي اعتماديات — أسرع بناء على الهواتف الضعيفة</string>
+
+    <!-- v0.9 · بناء إصدار موقّع -->
+    <string name="build_release_title">إصدار موقّع</string>
+    <string name="build_release_desc">يبني dist/app-release.apk موقّعاً بمفتاحك (توقيع AGP بنسخ v1+v2+v3، وبالإصدار دون تصغير ليناسب الهاتف). كلمات المرور تبقى في الذاكرة ولا تُحفظ أبداً.</string>
+    <string name="build_release_keystore">مسار المفتاح (داخل المشروع)</string>
+    <string name="build_release_alias">اسم المفتاح (alias)</string>
+    <string name="build_release_pass">كلمة مرور المخزن</string>
+    <string name="build_release_key_pass">كلمة مرور المفتاح</string>
+    <string name="build_release_found">وُجد المخزن: %1$s</string>
+    <string name="build_release_missing">لا مخزن في %1$s — انسخ الملف إلى المشروع أولاً</string>
+
+    <!-- v0.9 · إدارة مخزون البناء -->
+    <string name="build_storage_title">تخزين البناء: %1$s</string>
+    <string name="build_storage_reclaim">استرجاع</string>
+
+    <!-- v0.9 · مرايا aapt2 -->
+    <string name="aapt2_mirror_desc">مصدر aapt2 arm64. «تلقائي» يجلب آخر إصدار، والمرايا الجاهزة بناءات مجتمعية مُتحقق منها، والرابط المباشر يعمل دائماً. يُفحص الملف قبل استخدامه.</string>
+    <string name="aapt2_preset_auto">تلقائي</string>
+    <string name="aapt2_preset_custom">رابط مخصص</string>
+
+    <!-- v0.9 · مستعرض أدوات MCP -->
+    <string name="mcp_browse">الأدوات</string>
+    <string name="mcp_tools_title">أدوات %1$s</string>
+    <string name="mcp_tools_empty">لا يعرض الخادم أي أدوات.</string>
+    <string name="mcp_tools_retry">إعادة المحاولة</string>
+    <string name="mcp_args">الوسائط (JSON)</string>
+    <string name="mcp_run">تشغيل</string>
+
+    <!-- v0.9 · الدخول برمز الجهاز -->
+    <string name="gh_via_device">متصل · رمز جهاز</string>
+    <string name="df_use_code">الدخول برمز جهاز</string>
+    <string name="df_use_token">استخدم رمزاً شخصياً بدلاً من ذلك</string>
+    <string name="df_title">الدخول برمز الجهاز</string>
+    <string name="df_desc">بلا لصق رموز: سجّل OAuth App مرة واحدة (فعّل Device Flow)، وألصق الـ Client ID العام هنا، ثم وافق على الطلب من المتصفح. أنسب للهواتف حيث نسخ الرموز الطويلة مزعج.</string>
+    <string name="df_client_id">الـ Client ID لتطبيق OAuth</string>
+    <string name="df_start">احصل على رمز</string>
+    <string name="df_code_hint">أدخل هذا الرمز في github.com/login/device</string>
+    <string name="df_open_browser">افتح github.com/login/device</string>
+    <string name="df_waiting">بانتظار الموافقة…</string>
 </resources>
