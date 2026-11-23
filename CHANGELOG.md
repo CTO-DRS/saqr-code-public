@@ -1,5 +1,33 @@
 # Changelog · سجل التغييرات
 
+## [0.6.0] — 2026-11-23 — Chat history, voice & background agent · سجل المحادثات والصوت والعمل في الخلفية
+
+### Persistent chat history · حفظ سجل المحادثات
+- Every project's conversation is **saved on the phone** (one JSON file per session; attached images stored as files), written ~1 s after each change and when the app pauses. The **last session reopens on app start** and the agent **really resumes**: the model's message list is rebuilt from the saved chat (tool calls and results included; still only the last 2 images keep their pixels).
+  تُحفظ كل محادثة على الهاتف (ملف لكل جلسة وصورها كملفات)، وتُفتح آخر جلسة عند تشغيل التطبيق ويكمل الوكيل فعليًا من السجل المحفوظ.
+- **Sessions** list (chat ⋮ menu and side drawer): new session, open, **rename**, **delete**, **search** (Arabic-aware: ignores diacritics and alef/yaa/taa-marbuta forms), automatic title from the first message. Up to 200 sessions per project, with a warning above 50 MB.
+  قائمة «الجلسات»: جلسة جديدة، فتح، إعادة تسمية، حذف، بحث يفهم العربية، وعنوان تلقائي من أول رسالة. حتى 200 جلسة لكل مشروع مع تنبيه فوق 50 ميغابايت.
+- `ask_user` after a restart now **continues the real turn**: your answer goes back to the model as the tool result instead of a new message. `/clear` and “New chat” keep the old chat in the list.
+  الإجابة على سؤال الوكيل بعد إعادة التشغيل تكمل الجولة نفسها.
+
+### Voice · الصوت
+- **Mic button** in the composer (next to send while the box is empty): live dictation with partial results into the message box; tap again to stop. Language follows the app (Arabic **ar-SA** / English **en-US**); **long-press** switches. Clear messages when no speech service is installed or the microphone is blocked (permission asked with an explanation).
+  زر ميكروفون للإملاء المباشر بالعربية أو الإنجليزية، والضغط المطوّل يبدّل اللغة.
+- **Read aloud** on assistant replies (TextToSpeech, Arabic voice when available; code blocks and markdown are skipped).
+  «اقرأ بصوت» لردود الوكيل مع تخطّي الشيفرة.
+- Settings → Voice: **send after dictation** (off by default) and dictation language.
+  إعداد «الإرسال بعد الإملاء» (مغلق افتراضيًا) ولغة الإملاء.
+
+### Background agent · الوكيل في الخلفية
+- Agent turns now run under a **foreground service** (`AgentService`) and **keep going when you leave the app, swipe it from recents, or lock the screen**. A partial wake lock (60-min safety timeout, re-armed every step) and a Wi-Fi lock are held only while a turn is actually running.
+  تستمر المهام عند مغادرة التطبيق أو إزالته من التطبيقات الأخيرة أو قفل الشاشة، عبر خدمة أمامية وقفل استيقاظ وشبكة أثناء العمل فقط.
+- **Notifications** with the gold Saqr mark: ongoing (project · step · current tool such as “Writing app.kt…”, elapsed time, **Stop** / **Open**); **“Saqr needs your answer”** for git push/commit approvals and `ask_user` (single-choice questions with up to 3 options get **inline answer buttons**); a summary when a task finishes or fails.
+  إشعار مستمر بالخطوة والأداة والوقت مع «إيقاف» و«فتح»، وإشعار «صقر يحتاج ردّك» مع أزرار إجابة مباشرة، وملخص عند الانتهاء أو التعثّر.
+- **Survives being killed**: the service is sticky and state is saved, so if Android kills the process mid-task it restarts and **resumes the interrupted turn from the saved history** (“Resumed after interruption”). After a **reboot**, a “Resume task?” notification offers to continue (nothing runs until you tap).
+  إذا أوقف النظام التطبيق أثناء المهمة يُستأنف العمل من السجل المحفوظ، وبعد إعادة تشغيل الهاتف يظهر إشعار «استئناف المهمة؟».
+- **Battery**: a one-time explanation of OEM battery killers (Infinix/XOS, Xiaomi, …) with shortcuts to allow unrestricted battery use; Settings toggle **Keep running in background** (on by default).
+  شرح لمرة واحدة عن قيود البطارية في هواتف إنفينكس وشاومي وغيرها، وخيار «العمل في الخلفية» (مفعّل افتراضيًا).
+
 ## [0.5.0] — 2026-11-23 — Preview element picker & image → code · منتقي العناصر والصورة إلى كود
 
 ### Preview element picker · منتقي العناصر في المعاينة

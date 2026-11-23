@@ -26,6 +26,15 @@
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
 
+### الجديد في 0.6
+| الميزة | الحالة |
+|---|---|
+| حفظ سجل المحادثات على الهاتف واستعادة آخر جلسة عند التشغيل، مع استئناف فعلي للوكيل | ✅ |
+| قائمة الجلسات: جديدة، فتح، إعادة تسمية، حذف، بحث يفهم العربية، عنوان تلقائي | ✅ |
+| إدخال صوتي بالعربية (ar-SA) والإنجليزية (en-US) مع نتائج مباشرة، و«اقرأ بصوت» للردود | ✅ |
+| الوكيل يعمل في الخلفية (خدمة أمامية) مع إشعارات الخطوة و«صقر يحتاج ردّك» وأزرار إجابة مباشرة | ✅ |
+| استئناف المهمة بعد أن يوقف النظام التطبيق، وعرض «استئناف المهمة؟» بعد إعادة تشغيل الهاتف | ✅ |
+
 ### الجديد في 0.5
 | الميزة | الحالة |
 |---|---|
@@ -63,6 +72,11 @@
 ---
 
 ## English
+
+### New in v0.6
+- **Persistent chat history:** each project's sessions are saved on the phone (JSON per session, images as files); the last session reopens on start and the agent really resumes from the rebuilt history. **Sessions** list with new / rename / delete / Arabic-aware search / auto-titles (200 per project, warning above 50 MB). `ask_user` answered after a restart continues the real turn.
+- **Voice:** mic button with live Arabic (ar-SA) / English (en-US) dictation (long-press to switch), optional send-after-dictation, and **Read aloud** for replies (TextToSpeech, code skipped).
+- **Background agent:** turns run under a foreground service and keep going when you leave the app, swipe it away or lock the screen (wake + Wi-Fi locks only while running). Ongoing notification with step/tool, Stop and Open; “Saqr needs your answer” with inline buttons for small single-choice questions; finish/error summaries. Interrupted turns resume after the process is killed; a “Resume task?” notification after reboot. One-time battery-optimization guide (Infinix/XOS, Xiaomi…) and a “Keep running in background” toggle.
 
 ### New in v0.5
 - **Preview element picker:** tap an element in the web preview, describe the change, and the agent edits the matched source line. Secure local-only bridge (project preview pages only, per-page random token regenerated on navigation).
