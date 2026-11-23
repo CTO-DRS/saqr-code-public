@@ -1,5 +1,41 @@
 # Changelog · سجل التغييرات
 
+## [0.4.0] — 2026-11-23 — Editor, interactive agent & cost control · المحرر والوكيل التفاعلي والتكلفة
+
+### Editor · المحرر
+- **Incremental syntax highlighting** for 12 languages (Kotlin, Java, JS/TS, Python, HTML/XML, CSS, JSON, Markdown, shell, Go, Rust, C-family, Dart), re-tokenising only the edited lines so large files stay smooth.
+  تمييز صيغة تدريجي لـ 12 لغة يعيد تحليل الأسطر المعدّلة فقط.
+- **Find & replace** with case sensitivity and **regex** (with capture groups), match counter, next/previous, replace one / replace all.
+  بحث واستبدال مع دعم التعابير النمطية (Regex).
+- **Undo / redo** with grouped typing history and keyboard shortcuts (Ctrl+Z undo, Ctrl+Y / Ctrl+Shift+Z redo, Ctrl+F find, Ctrl+H replace, F3 / Shift+F3 next/previous, Esc closes).
+  تراجع وإعادة مع اختصارات لوحة المفاتيح.
+
+### Interactive agent · الوكيل التفاعلي
+- New **`ask_user`** tool: the agent asks a question as an **interactive choice card** (single or multiple choice, with a free-text "other" answer) and waits for your pick.
+  أداة `ask_user`: يسألك الوكيل ببطاقة خيارات تفاعلية وينتظر اختيارك.
+- **Quick-reply chips**: when a reply ends with a numbered or bulleted list of options (Western or Arabic-Indic digits), each option becomes a tappable chip above the composer.
+  رقائق رد سريع تظهر تلقائيًا عند سرد خيارات في الرد.
+
+### Checkpoints · نقاط الاستعادة
+- **Checkpoints** replace the old restore points: every agent turn that changes files saves a checkpoint (files touched, created and deleted); browse them in a sheet and **restore** any one, which reverts it and every newer change.
+  نقاط استعادة لكل جولة تعديل، واسترجاع أي نقطة بنقرة.
+
+### Slash commands · أوامر الشرطة المائلة
+- Built-in `/fix`, `/explain`, `/test`, `/review`, `/plan`, `/commit`, `/clear`, `/model`, with **Arabic aliases** (`/اصلح`, `/اشرح`, `/اختبر`, `/راجع`, `/خطة`) and an autocomplete popup in the composer.
+  أوامر جاهزة مع أسماء عربية بديلة وإكمال تلقائي.
+- **Custom commands**: define your own `/name` → prompt template in Settings.
+  أوامر مخصصة تعرّفها بنفسك من الإعدادات.
+
+### Cost control · التحكم بالتكلفة
+- **Token / cost meter**: input and output tokens (including cached input) per turn and per session, with the estimated cost per model; today and this-month totals in Settings.
+  عدّاد الرموز والتكلفة لكل جولة وجلسة، ومجموع اليوم والشهر.
+- **Monthly budget**: warning at 80%, confirmation required before continuing at 100%.
+  ميزانية شهرية: تنبيه عند 80% وتأكيد عند تجاوزها.
+
+### Safety · الأمان
+- **`git_commit` now requires approval**: the agent shows the commit message and waits for your yes before committing (like `git_push`).
+  الإيداع (`git_commit`) أصبح يتطلب موافقتك.
+
 ## [0.3.0] — 2026-11-23 — Git & accounts · Git والحسابات
 
 ### Git engine · محرّك Git

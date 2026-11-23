@@ -1,24 +1,28 @@
-# خارطة الطريق · Roadmap — v0.2
+# خارطة الطريق · Roadmap — after v0.4
 
-## الأولوية 1 · Priority 1
-1. **بناء APK على الجهاز · On-device Gradle APK build**
-   - Debian (glibc) rootfs option next to Alpine; JDK 17 + Android SDK cmdline-tools + build-tools (arm64 aapt2) installed on demand inside proot.
-   - Gradle daemon capped (`-Xmx1g`), incremental builds; "Lite build" path (aapt2 + d8 + kotlinc) for small projects.
-   - Install via `PackageInstaller` session, launch, and stream `logcat` into the app.
-2. **قوالب · Templates**
-   - Kotlin + Jetpack Compose app (Arabic/RTL-ready, i18n strings).
-   - Android **IME keyboard** template (InputMethodService + Arabic layout).
-   - React/Vite, Node/Express, Python/FastAPI.
-   - **Arabic templates:** RTL landing page, Arabic e-commerce storefront, Hijri date utils, prayer-times widget, Saudi VAT invoice.
-3. **طرفية حقيقية · Real terminal**: PTY via JNI + Termux `terminal-view` (colours, Ctrl-C, vim/htop), background foreground-service, multiple sessions.
+## تم · Done
+- ✅ v0.2 — "Falcon" UI redesign, `update_plan`, Markdown, preview pane.
+- ✅ v0.3 — Real terminal (Termux emulator, multiple sessions); Git: pull/clone/branches/merge/diff view, GitHub accounts; agent git tools.
+- ✅ v0.4 — Editor: incremental highlighting (12 languages), find/replace with regex, undo/redo + shortcuts.
+- ✅ v0.4 — `ask_user` interactive choice cards + quick-reply chips.
+- ✅ v0.4 — Checkpoints with restore.
+- ✅ v0.4 — Slash commands with Arabic aliases + custom commands.
+- ✅ v0.4 — Token/cost meter + monthly budget (cost budgets); `git_commit` requires approval.
 
-## الأولوية 2 · Priority 2
-4. **وكيل متعدد العملاء · Multi-agent**: Planner → Coder → Reviewer/Tester; reviewer on a different model; cost/step budgets and loop detector; context compaction; text tool-call parser for weaker models; `ask_user` and `propose_plan` tools.
-5. **المحرر · Editor**: Sora-Editor + TextMate grammars, find/replace, LSP (tsserver, pyright) inside proot.
-6. **Git**: pull/clone/branches/diff view, GitHub OAuth Device Flow (instead of pasted tokens), GitLab/Gitea.
-7. **معاينة الويب · Web preview** with console.
+## المتبقي · Remaining
 
-## الأولوية 3 · Priority 3 (business)
-8. **الدفع · Payments**: Google Play Billing for the Play build; **Moyasar** (mada, Apple Pay, STC Pay) for the web/enterprise plan; SAR pricing and a student plan.
-9. Optional hosted credits through a Saqr proxy (KSA region), audit log, secret scanner before sending context to models.
-10. Store listing (Play, Huawei AppGallery, Samsung Galaxy Store), Arabic docs and video tutorials.
+### الأولوية 1 · Priority 1
+1. **منتقي العناصر في المعاينة · Preview element picker**: tap an element in the web preview to reference it in the chat.
+2. **لقطة شاشة إلى كود · Screenshot-to-code**: attach a screenshot/mockup and have the agent build it.
+3. **إدخال صوتي · Voice input** in the composer (Arabic + English).
+4. **قوالب · Templates**: Kotlin + Jetpack Compose app (Arabic/RTL-ready) and Android **IME keyboard** template (InputMethodService + Arabic layout).
+5. **بناء APK على الجهاز · On-device APK build**: Debian rootfs option, JDK 17 + Android SDK inside proot, "Lite build" path, install via `PackageInstaller`, stream `logcat`.
+
+### الأولوية 2 · Priority 2
+6. **وكيل متعدد العملاء · Multi-agent**: Planner → Coder → Reviewer/Tester, reviewer on a different model, loop detector, context compaction.
+7. **GitLab / Gitea UI**: account linking and repository flows in the app UI (the account store already supports other HTTPS hosts).
+8. **زر GitHub Device Flow · Device-flow sign-in button** instead of pasting tokens.
+
+### الأولوية 3 · Priority 3 (business)
+9. **الدفع · Payments**: Google Play Billing; **Moyasar** (mada, Apple Pay, STC Pay); SAR pricing and a student plan.
+10. Store listings (Play, Huawei AppGallery, Samsung Galaxy Store), Arabic docs and video tutorials.

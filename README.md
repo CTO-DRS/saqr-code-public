@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.2.0 ("Falcon" UI)** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.4.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 
 ---
 
@@ -26,11 +26,24 @@
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
 
+### الجديد في 0.4
+| الميزة | الحالة |
+|---|---|
+| محرر: تمييز صيغة تدريجي لـ 12 لغة، بحث واستبدال مع Regex، تراجع/إعادة واختصارات لوحة المفاتيح | ✅ |
+| أداة `ask_user`: بطاقات خيارات تفاعلية، ورقائق رد سريع عند سرد الخيارات | ✅ |
+| نقاط استعادة لكل جولة تعديل مع استرجاع بنقرة | ✅ |
+| أوامر الشرطة المائلة (`/fix` و`/explain` و`/test` و`/review` و`/plan` و`/commit`…) بأسماء عربية بديلة (`/اصلح` `/اشرح` `/اختبر` `/راجع` `/خطة`) وأوامر مخصصة | ✅ |
+| عدّاد الرموز والتكلفة وميزانية شهرية (تنبيه 80%، تأكيد 100%) | ✅ |
+| الإيداع (`git_commit`) والدفع (`git_push`) يتطلبان موافقتك | ✅ |
+
+### الجديد في 0.3
+محرّك Git كامل عبر JGit (فروع، دمج، سحب ودفع، فروقات)، شاشة التحكم بالمصدر، شاشة حسابات GitHub مع التحقق من الرمز، أدوات Git للوكيل، طرفية Termux حقيقية بجلسات متعددة، وأيقونة "Stoop" وشاشة بداية جديدة.
+
 ### الجديد في 0.2
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `dist/SaqrCode-v0.2.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.4.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -41,6 +54,17 @@
 ---
 
 ## English
+
+### New in v0.4
+- **Editor:** incremental syntax highlighting for 12 languages, find & replace with regex, undo/redo with keyboard shortcuts (Ctrl+Z/Y/F/H, F3).
+- **`ask_user` tool:** interactive single/multiple-choice cards; quick-reply chips when a reply lists options.
+- **Checkpoints:** one per file-changing agent turn; restore any checkpoint with one tap.
+- **Slash commands:** `/fix`, `/explain`, `/test`, `/review`, `/plan`, `/commit`, `/clear`, `/model`, with Arabic aliases (`/اصلح`, `/اشرح`, `/اختبر`, `/راجع`, `/خطة`) and user-defined custom commands.
+- **Token / cost meter** per turn and session, today/month totals, and a **monthly budget** (warn at 80%, confirm at 100%).
+- **`git_commit` now requires approval**, like `git_push`.
+
+### New in v0.3
+Full JGit engine (branches, merge, pull/push, diffs), Source control screen, GitHub Accounts screen with token verification, agent git tools, real Termux terminal with multiple sessions, "Stoop" icon and splash screen.
 
 ### What v0.1 includes
 - **Arabic + English UI** with full RTL, in-app language switch (per-app locales), IBM Plex Sans Arabic, dark Material 3 theme, falcon adaptive icon.
