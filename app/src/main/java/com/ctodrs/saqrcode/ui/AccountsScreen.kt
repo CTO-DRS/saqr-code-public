@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,6 +59,7 @@ import com.ctodrs.saqrcode.ui.components.GlassIconButton
 import com.ctodrs.saqrcode.ui.components.PrimaryButton
 import com.ctodrs.saqrcode.ui.components.SaqrField
 import com.ctodrs.saqrcode.ui.components.SectionLabel
+import com.ctodrs.saqrcode.ui.components.Segmented
 import com.ctodrs.saqrcode.ui.components.Tag
 import com.ctodrs.saqrcode.ui.icons.Lucide
 import com.ctodrs.saqrcode.ui.icons.SIcon
@@ -87,6 +89,12 @@ class AccountsUi(
     /** v0.9 Device Flow: the user's OAuth App Client ID (public value). */
     val clientId: String = "",
     val onClientId: (String) -> Unit = {},
+    /** v0.10 GitLab / Gitea: linked hosts, their API dialect, add / change / remove. */
+    val hosts: List<com.ctodrs.saqrcode.data.HostToken> = emptyList(),
+    val hostKind: (String) -> String = { "" },
+    val onAddHost: (host: String, username: String, token: String) -> String? = { _, _, _ -> null },
+    val onHostKind: (host: String, kind: String) -> Unit = { _, _ -> },
+    val onRemoveHost: (host: String) -> Unit = {},
 )
 
 @Composable
@@ -116,6 +124,17 @@ fun AccountsScreen(onBack: () -> Unit) {
         },
         clientId = settings.githubClientId,
         onClientId = { settings.githubClientId = it },
+        hosts = settings.accounts.hosts(),
+        hostKind = { settings.accounts.hostKind(it) },
+        onAddHost = { h, u, t ->
+            try {
+                settings.accounts.saveHost(h, u, t); settings.accountsChanged(); null
+            } catch (e: Exception) {
+                e.message ?: e.javaClass.simpleName
+            }
+        },
+        onHostKind = { h, k -> settings.accounts.setHostKind(h, k); settings.accountsChanged() },
+        onRemoveHost = { h -> settings.accounts.removeHost(h); settings.accountsChanged() },
     )
     AccountsContent(ui, onBack)
 }
@@ -149,6 +168,9 @@ fun AccountsContent(ui: AccountsUi, onBack: () -> Unit) {
         ) {
             SectionLabel(stringResource(R.string.github), Modifier.padding(top = Sp.xs))
             Group { GitHubCard(ui) }
+
+            SectionLabel(stringResource(R.string.other_hosts), Modifier.padding(top = Sp.md))
+            Group { OtherHostsCard(ui) }
 
             SectionLabel(stringResource(R.string.commit_identity), Modifier.padding(top = Sp.md))
             Group { IdentityCard(ui) }
@@ -342,5 +364,62 @@ private fun IdentityCard(ui: AccountsUi) {
                 Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.saved), style = Saqr.type.caption, color = c.success)
             }
         }
+    }
+}
+
+/**
+ * v0.10 · GitLab / Gitea hosts · Linked HTTPS hosts with a token (GitLab.com, Codeberg,
+ * self-hosted Gitea…). Each host gets an API-dialect pick — Auto (hostname heuristics),
+ * GitLab or Gitea — used by Publish and the MR/PR flow; tokens live encrypted.
+ */
+@Composable
+private fun OtherHostsCard(ui: AccountsUi) {
+    val c = Saqr.colors
+    var host by remember { mutableStateOf("") }
+    var user by remember { mutableStateOf("") }
+    var token by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+        Text(stringResource(R.string.other_hosts_desc), style = Saqr.type.caption, color = c.text2)
+        ui.hosts.forEach { h ->
+            val kind = ui.hostKind(h.host)
+            val auto = com.ctodrs.saqrcode.git.Forge.detect(h.host, kind)
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.md)).background(c.surface2).padding(Sp.md),
+                verticalArrangement = Arrangement.spacedBy(Sp.xs),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    SIcon(Lucide.Globe, size = 14.dp, tint = c.accentText)
+                    Spacer(Modifier.width(Sp.sm))
+                    Text(h.host, style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1, modifier = Modifier.weight(1f))
+                    auto?.let { Tag(it.name.lowercase(), color = c.success, dot = false) }
+                    Text(h.username, style = Saqr.type.monoSmall, color = c.text3)
+                    Box(Modifier.size(34.dp).clip(CircleShape).clickable { ui.onRemoveHost(h.host) }, contentAlignment = Alignment.Center) {
+                        SIcon(Lucide.Trash2, size = 15.dp, tint = c.danger)
+                    }
+                }
+                Text(stringResource(R.string.other_hosts_kind), style = Saqr.type.caption, color = c.text3)
+                Segmented(
+                    listOf(stringResource(R.string.other_hosts_auto), "GitLab", "Gitea"),
+                    when (kind) { "gitlab" -> 1; "gitea" -> 2; else -> 0 },
+                    { i -> ui.onHostKind(h.host, when (i) { 1 -> "gitlab"; 2 -> "gitea"; else -> "" }) },
+                )
+            }
+        }
+        SaqrField(host, { host = it; error = null }, label = stringResource(R.string.other_hosts_host),
+            placeholder = "gitlab.com / codeberg.org / git.example.com", mono = true)
+        SaqrField(user, { user = it; error = null }, label = stringResource(R.string.other_hosts_user),
+            placeholder = "username (GitLab: oauth2 is fine)", mono = true)
+        SaqrField(token, { token = it; error = null }, label = stringResource(R.string.other_hosts_token),
+            placeholder = "glpat-… / token…", visual = PasswordVisualTransformation(),
+            keyboard = KeyboardOptions(keyboardType = KeyboardType.Password), mono = true,
+            isError = error != null, supporting = error)
+        PrimaryButton(stringResource(R.string.other_hosts_add), {
+            val err = ui.onAddHost(host.trim(), user.trim(), token.trim())
+            if (err == null) {
+                host = ""; user = ""; token = ""; error = null
+            } else error = err
+        }, icon = Lucide.Plug, enabled = host.isNotBlank() && token.isNotBlank())
+        Text(stringResource(R.string.other_hosts_scope_note), style = Saqr.type.caption, color = c.text3)
     }
 }

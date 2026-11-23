@@ -520,4 +520,32 @@
     <string name="df_code_hint">أدخل هذا الرمز في github.com/login/device</string>
     <string name="df_open_browser">افتح github.com/login/device</string>
     <string name="df_waiting">بانتظار الموافقة…</string>
+
+    <!-- v0.10 · التحقق من توقيع الـ APK -->
+    <string name="build_verify">تحقق من التوقيع</string>
+    <string name="build_verify_ok">موقّع ✓ (%1$s)</string>
+    <string name="build_verify_bad">التوقيع غير صالح</string>
+    <string name="build_verify_signer">شهادة الموقّع (SHA-256)</string>
+    <string name="build_verify_valid">صالحة حتى %1$s</string>
+    <string name="build_verify_hint">إذا لم يُلمس الملف بعد البناء فلا تثبّته — أعد البناء بدلاً من ذلك.</string>
+
+    <!-- v0.10 · احتفظ بآخر إصدار فقط -->
+    <string name="keep_last_apk">احتفظ بآخر إصدار فقط</string>
+    <string name="keep_last_apk_desc">بعد نجاح البناء، احذف ملفات APK القديمة في dist/ ومخلفات البناء الوسيطة لاستعادة المساحة. البناء القادم يعيد الترجمة من الصفر.</string>
+
+    <!-- v0.10 · GitLab / Gitea -->
+    <string name="git_publish_title">نشر المشروع</string>
+    <string name="git_open_mr">فتح طلب دمج</string>
+    <string name="other_hosts">GitLab / Gitea</string>
+    <string name="other_hosts_desc">اربط أي مستودع Git عبر HTTPS برمز وصول — GitLab.com وCodeberg وGitea وForgejo المستضاف ذاتياً. النشر وطلبات الدمج تعمل كما في GitHub.</string>
+    <string name="other_hosts_kind">نوع الـ API (كيف يتحدث صقر مع هذا المضيف)</string>
+    <string name="other_hosts_auto">تلقائي</string>
+    <string name="other_hosts_host">المضيف</string>
+    <string name="other_hosts_user">اسم المستخدم</string>
+    <string name="other_hosts_token">الرمز</string>
+    <string name="other_hosts_add">اربط المضيف</string>
+    <string name="other_hosts_scope_note">الرموز محفوظة مشفّرة. رمز GitLab يحتاج صلاحية api، ورمز Gitea يحتاج صلاحية repo.</string>
+
+    <!-- v0.10 · السماح/المنع لأدوات MCP -->
+    <string name="mcp_tool_hidden">مخفية عن الوكيل — لن يراها ولا يستدعيها أبداً.</string>
 </resources>

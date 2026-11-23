@@ -104,6 +104,27 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         secure.put("mcp_auth_" + com.ctodrs.saqrcode.agent.Mcp.slugify(serverName), value)
     }
 
+    /** v0.10: MCP tools hidden from the agent, keyed by server slug → raw tool names. */
+    var mcpDisabledTools: Map<String, Set<String>>
+        get() = com.ctodrs.saqrcode.agent.Mcp.decodeDisabled(prefs.getString("mcp_disabled", null))
+        set(v) { prefs.edit().putString("mcp_disabled", com.ctodrs.saqrcode.agent.Mcp.encodeDisabled(v)).apply(); bump() }
+
+    fun setMcpToolDisabled(serverName: String, rawTool: String, disabled: Boolean) {
+        val slug = com.ctodrs.saqrcode.agent.Mcp.slugify(serverName)
+        val cur = mcpDisabledTools
+        val forServer = cur[slug].orEmpty().toMutableSet()
+        if (disabled) forServer.add(rawTool) else forServer.remove(rawTool)
+        mcpDisabledTools = if (forServer.isEmpty()) cur - slug else cur + (slug to forServer)
+    }
+
+    fun mcpToolDisabled(serverName: String, rawTool: String): Boolean =
+        mcpDisabledTools[com.ctodrs.saqrcode.agent.Mcp.slugify(serverName)]?.contains(rawTool) == true
+
+    /** v0.10: after a successful build, delete old APKs in dist/ and the build intermediates. */
+    var keepLastApk: Boolean
+        get() = prefs.getBoolean("keep_last_apk", false)
+        set(v) { prefs.edit().putBoolean("keep_last_apk", v).apply(); bump() }
+
     /** v0.8: direct aapt2 download URL (mirror). Blank/auto = the built-in lookup; a preset id or a direct URL in v0.9. */
     var aapt2Mirror: String
         get() = prefs.getString("aapt2_mirror", "") ?: ""

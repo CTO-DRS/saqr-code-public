@@ -53,6 +53,17 @@ class AccountStore(private val kv: KeyValue) : CredentialResolver {
     fun hosts(): List<HostToken> = kv.get(HOSTS).orEmpty().split(',').filter { it.isNotBlank() }
         .mapNotNull { h -> kv.get(HOST_USER + h)?.let { HostToken(h, it) } }
 
+    /** v0.10: API dialect per host — "" (auto), "gitlab" or "gitea". */
+    fun hostKind(host: String): String {
+        val h = normalizeHost(host) ?: return ""
+        return kv.get(HOST_KIND + h) ?: ""
+    }
+
+    fun setHostKind(host: String, kind: String) {
+        val h = normalizeHost(host) ?: return
+        kv.put(HOST_KIND + h, kind.trim().lowercase().takeIf { it == "gitlab" || it == "gitea" })
+    }
+
     fun saveHost(hostOrUrl: String, username: String, token: String) {
         val h = normalizeHost(hostOrUrl) ?: throw IllegalArgumentException("Invalid host: $hostOrUrl")
         require(h != "github.com") { "Use the GitHub account section for github.com." }
@@ -102,6 +113,7 @@ class AccountStore(private val kv: KeyValue) : CredentialResolver {
         private const val HOSTS = "acct_hosts"
         private const val HOST_TOKEN = "acct_host_token:"
         private const val HOST_USER = "acct_host_user:"
+        private const val HOST_KIND = "acct_host_kind:"
         const val LEGACY_TOKEN = "github_token"
 
         /** "https://GitLab.com/x/y.git" → "gitlab.com"; "git.example.com:3000" kept with port. */

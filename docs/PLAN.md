@@ -1,10 +1,10 @@
 # Development plan · خطة التطوير
 
-## الوضع بعد 0.9.0 · Where we are after 0.9.0
+## الوضع بعد 0.10.0 · Where we are after 0.10.0
 
-شُحنت في 0.9.0: **بناء إصدار موقّع على الجهاز** (مفتاح داخل المشروع، كلمات مرور في الذاكرة فقط، توقيع AGP v1+v2+v3 عبر سكربت init مولّد)، ومرايا aapt2 جاهزة (تلقائي / ReVanced / رابط مخصص)، وإدارة مخزون البناء بأحجام واسترجاع بنقرة، ودخول GitHub برمز الجهاز (RFC 8628)، ومنتقي نماذج المراجع/المخطط من المزوّد النشط، ومستعرض أدوات MCP يعرض أدوات كل خادم ويشغّلها يدوياً.
+شُحنت في 0.10.0: **التحقق من توقيع الـ APK داخل التطبيق** (مخطط v2/v3 كامل مع بصمة شهادة الموقّع قبل زر التثبيت)، وخيار «احتفظ بآخر إصدار فقط» الذي ينظف APKs القديمة ومخلفات البناء بعد كل نجاح، وسماح/منع أدوات MCP لكل خادم (أدوات مخفية لا يراها الوكيل ولا يستدعيها)، ودعم GitLab وGitea من البداية للنهاية (ربط المضيفين بنوع API، وإنشاء المستودعات، وفتح طلبات الدمج/السحب من تبويب Git).
 
-Shipped in 0.9.0: **on-device signed release builds** (project keystore, memory-only passwords, AGP v1+v2+v3 signing through a generated init script), aapt2 mirror presets (Auto / ReVanced / custom URL), build-cache management with per-component sizes and one-tap reclaim, GitHub Device Flow sign-in (RFC 8628), per-provider reviewer/planner model pickers, and an MCP tools browser that lists and manually runs each server's tools.
+Shipped in 0.10.0: **in-app APK signature verification** (full v2/v3 with the signer's SHA-256 fingerprint before Install), the «keep only the last APK» auto-clean after successful builds, per-server MCP tool allow/deny (hidden tools never reach the agent), and end-to-end GitLab/Gitea support (host linking with an API dialect, create-repository publish, MR/PR from the Git tab).
 
 ---
 
@@ -27,12 +27,12 @@ Shipped in 0.9.0: **on-device signed release builds** (project keystore, memory-
 ### 3. تطوير فريق الوكلاء · Evolve the agent team
 - MCP: نقل stdio عبر الطرفية للمستخدمين المتقدمين، وOAuth لخوادم تتطلب دخولاً.
 - MCP: stdio transport bridged through the terminal for advanced users; OAuth for servers requiring sign-in.
-- واجهة اختيار أدوات MCP التي يراها الوكيل (تعطيل أدوات بعينها لكل خادم).
-- Per-server MCP tool allow/deny lists.
+- ~~واجهة اختيار أدوات MCP~~ — شُحنت في 0.10 (منع/سماح لكل خادم من مستعرض الأدوات).
+- ~~Per-server MCP tool allow/deny lists~~ — shipped in 0.10 (eye toggle in the tools browser).
 
 ### 4. GitLab / Gitea · قوائم المستودعات والطلبات
-- شاشة حسابات تدعم GitLab وGitea بشكل كامل (المخزن يدعمها فعلاً؛ يتبقى واجهة إنشاء المستودعات والدفع).
-- Full GitLab/Gitea account UI (the account store already accepts custom HTTPS hosts; missing: create-repo and PR flows).
+- ~~شاشة حسابات تدعم GitLab وGitea~~ — شُحنت في 0.10: ربط المضيفين وإنشاء المستودعات وطلبات الدمج.
+- ~~Full GitLab/Gitea account UI~~ — shipped in 0.10: host linking with API dialect, create-repo publish, MR/PR flows.
 
 ## الأولوية 3 · Priority 3 — العمل · Business
 

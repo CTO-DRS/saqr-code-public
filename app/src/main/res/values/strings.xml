@@ -520,4 +520,32 @@
     <string name="df_code_hint">Enter this code at github.com/login/device</string>
     <string name="df_open_browser">Open github.com/login/device</string>
     <string name="df_waiting">Waiting for approval…</string>
+
+    <!-- v0.10 · APK signature verification -->
+    <string name="build_verify">Verify signature</string>
+    <string name="build_verify_ok">Signed ✓ (%1$s)</string>
+    <string name="build_verify_bad">Signature INVALID</string>
+    <string name="build_verify_signer">Signer certificate (SHA-256)</string>
+    <string name="build_verify_valid">Valid until %1$s</string>
+    <string name="build_verify_hint">If the file was not touched after the build, do not install it — rebuild instead.</string>
+
+    <!-- v0.10 · keep only the last APK -->
+    <string name="keep_last_apk">Keep only the last APK</string>
+    <string name="keep_last_apk_desc">After a successful build, delete previous APKs in dist/ and the build intermediates to reclaim storage. The next build re-compiles from scratch.</string>
+
+    <!-- v0.10 · GitLab / Gitea -->
+    <string name="git_publish_title">Publish project</string>
+    <string name="git_open_mr">Open merge request</string>
+    <string name="other_hosts">GitLab / Gitea</string>
+    <string name="other_hosts_desc">Link any HTTPS Git host with a token — GitLab.com, Codeberg, self-hosted Gitea or Forgejo. Publishing and MRs work like on GitHub.</string>
+    <string name="other_hosts_kind">API type (how Saqr talks to this host)</string>
+    <string name="other_hosts_auto">Auto</string>
+    <string name="other_hosts_host">Host</string>
+    <string name="other_hosts_user">Username</string>
+    <string name="other_hosts_token">Token</string>
+    <string name="other_hosts_add">Link host</string>
+    <string name="other_hosts_scope_note">Tokens are stored encrypted. GitLab token needs api scope; Gitea needs repo scope.</string>
+
+    <!-- v0.10 · MCP tool allow/deny -->
+    <string name="mcp_tool_hidden">Hidden from the agent — it will never see or call this tool.</string>
 </resources>

@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.9.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.10.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 
 ---
 
@@ -25,6 +25,14 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.10
+| الميزة | الحالة |
+|---|---|
+| التحقق من توقيع الـ APK داخل التطبيق (v2/v3 كامل، ببصمة شهادة الموقّع SHA-256 ومالكها وصلاحيتها) قبل زر التثبيت | ✅ |
+| «احتفظ بآخر إصدار فقط»: بعد نجاح البناء تُحذف ملفات APK القديمة ومخلفات البناء الوسيطة تلقائياً | ✅ |
+| سماح/منع أدوات MCP لكل خادم: عين تُخفي الأداة عن الوكيل نهائياً | ✅ |
+| GitLab وGitea بالكامل: ربط المضيفين وإنشاء المستودعات وفتح طلبات الدمج/السحب من تبويب Git | ✅ |
 
 ### الجديد في 0.9
 | الميزة | الحالة |
@@ -92,7 +100,7 @@
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `SaqrCode-v0.9.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.10.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -103,6 +111,12 @@
 ---
 
 ## English
+
+### New in v0.10
+- **In-app APK signature verification:** a from-scratch implementation of APK Signature Scheme v2/v3 verification (no apksigner download) — the Build tab's «تحقق من التوقيع» checks the signature with the embedded key (RSA PSS/PKCS1, ECDSA, DSA), recomputes the chunked content digests, and shows the signer certificate's SHA-256 fingerprint, subject and expiry before you tap Install; any modification after the build is rejected loudly.
+- **Keep only the last APK:** an on-device-build setting that cleans previous APKs in `dist/` and the heaviest build leftovers (intermediates, tmp, project `.gradle`) after every successful build, logging the reclaimed size.
+- **MCP per-server tool allow/deny:** an eye toggle in the tools browser hides tools from the agent — hidden tools are removed from its spec list and refused even if called anyway.
+- **GitLab & Gitea end-to-end:** link any HTTPS host with a token (Auto/GitLab/Gitea dialect pick with hostname auto-detection), publish projects to GitLab/Codeberg/self-hosted Gitea from the Git tab, and open merge requests / pull requests on the origin's forge automatically.
 
 ### New in v0.9
 - **Signed release builds on-device:** the Build tab has an «إصدار موقّع» switch — point it at a keystore inside the project, type the passwords (memory only, never persisted), and the build runs `assembleRelease` signed by AGP (v1+v2+v3) through a generated init script; output lands in `dist/app-release.apk` (release is built without shrinking to fit the phone).

@@ -13,6 +13,7 @@
 - ✅ v0.8 — Planner stage in team mode, automatic checks fed to the reviewer, separate review/planner cost, MCP servers (Streamable HTTP) as `mcp_*` tools.
 - ✅ v0.9 — On-device **signed release builds** (project keystore, memory-only passwords, AGP v1+v2+v3 signing via generated init script), aapt2 mirror presets (Auto / ReVanced / custom), build-cache management with one-tap reclaim.
 - ✅ v0.9 — **GitHub Device Flow** sign-in (RFC 8628), per-provider reviewer/planner model pickers, and the MCP tools browser (list, inspect, run tools manually).
+- ✅ v0.10 — **In-app APK signature verification** (v2/v3, signer fingerprint), «keep only the last APK» auto-clean, MCP per-server tool allow/deny, and GitLab/Gitea account + create-repo + MR/PR flows.
 
 ## المتبقي · Remaining
 
@@ -23,8 +24,8 @@ Details and step-by-step acceptance criteria: [docs/PLAN.md](docs/PLAN.md).
 2. **أدوات وحدة بناء أفضل · Publish the field numbers**: setup time, download size, peak memory and battery in the README, once the device matrix runs.
 
 ### الأولوية 2 · Priority 2
-3. **تطوير فريق الوكلاء · Evolve the agent team**: v0.9 shipped per-provider model pickers and the MCP tools browser. Remaining: richer MCP transports (stdio bridged through the terminal, OAuth for gated servers).
-4. **GitLab / Gitea UI**: account linking works for custom HTTPS hosts; missing the create-repository and PR flows in the UI.
+3. **تطوير فريق الوكلاء · Evolve the agent team**: v0.10 shipped per-server MCP tool allow/deny. Remaining: richer MCP transports (stdio bridged through the terminal, OAuth for gated servers).
+4. **GitLab / Gitea UI**: ✅ shipped in v0.10 (link, publish, MR/PR). Remaining polish: issue list & CI status views.
 
 ### الأولوية 3 · Priority 3 (business)
 5. **الدفع · Payments**: Google Play Billing; **Moyasar** (mada, Apple Pay, STC Pay); SAR pricing and a student plan.

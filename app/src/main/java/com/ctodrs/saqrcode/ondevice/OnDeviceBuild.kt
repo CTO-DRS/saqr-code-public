@@ -68,6 +68,9 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
     fun cacheComponents(): List<BuildCache.Entry> =
         BuildCache.components(context.filesDir, context.cacheDir).filter { it.id != "linux-home" }
 
+    /** v0.10: «keep only the last APK» — auto-cleaned after a successful build when on. */
+    var keepLastApk: Boolean = false
+
     /**
      * v0.9: deletes a cache component. Environment components (rootfs / SDK / Gradle) also drop
      * the ready marker so the tab returns to NOT_SETUP and the next Prepare re-fetches only what
@@ -299,10 +302,32 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             _apk.value = target
             _phase.value = Phase.BUILT
             addLog("✓ APK ready: dist/" + target.name + " (" + target.length() / 1024 + " KB)")
+            if (keepLastApk) autoClean(target)
             true
         } catch (e: Exception) {
             failWithHints("Build", e)
             false
+        }
+    }
+
+    /**
+     * v0.10 · «احتفظ بآخر إصدار فقط» · keep-only-the-last-APK cleanup after a successful build:
+     * previous APKs in dist/ go, then the heaviest build leftovers (intermediates, tmp, the
+     * project's .gradle cache) — the outputs dir itself survives so the installed APK path stays.
+     * Logs the reclaimed size; never fails the build.
+     */
+    private fun autoClean(freshApk: File) {
+        try {
+            val stale = BuildCache.staleApks(File(projectDir, "dist"), freshApk)
+            val intermediates = BuildCache.clearableIntermediates(projectDir).filter { it.exists() }
+            val freedBytes = BuildCache.freedBy(stale + intermediates) + stale.sumOf { it.length() }
+            stale.forEach { it.delete() }
+            intermediates.forEach { it.deleteRecursively() }
+            if (freedBytes > 0) {
+                addLog("✓ cleaned " + BuildCache.formatBytes(freedBytes) + " (old APKs + build intermediates) — keep only the last APK")
+            }
+        } catch (e: Exception) {
+            addLog("! auto-clean skipped: " + (e.message ?: e.javaClass.simpleName))
         }
     }
 

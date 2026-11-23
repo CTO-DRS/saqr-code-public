@@ -63,13 +63,17 @@ fun BuildPane(ws: Workspace) {
     val ctx = LocalContext.current
     val settings = SaqrApp.instance.settings
     val build = remember(ws.name) {
-        OnDeviceBuild(ctx.applicationContext, ws.dir).also { it.aapt2Mirror = settings.aapt2Mirror }
+        OnDeviceBuild(ctx.applicationContext, ws.dir).also {
+            it.aapt2Mirror = settings.aapt2Mirror
+            it.keepLastApk = settings.keepLastApk
+        }
     }
     val phase by build.phase.collectAsState()
     val logs by build.log.collectAsState()
     val line by build.progressLine.collectAsState()
     val apk by build.apk.collectAsState()
     var crashes by remember { mutableStateOf<List<String>?>(null) }
+    var verify by remember { mutableStateOf<com.ctodrs.saqrcode.ondevice.ApkVerify.Result?>(null) }
     var storageTick by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -140,6 +144,40 @@ fun BuildPane(ws: Workspace) {
                         Text(stringResource(R.string.build_crash_none), style = Saqr.type.caption, color = c.success)
                     } else {
                         Text(stringResource(R.string.build_crash_found, list.size.toString()), style = Saqr.type.caption, color = c.danger)
+                    }
+                }
+            }
+            // ---- v0.10: verify the built APK's signature in-app before Install
+            Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalAlignment = Alignment.CenterVertically) {
+                GhostButton(stringResource(R.string.build_verify), {
+                    verify = com.ctodrs.saqrcode.ondevice.ApkVerify.verify(apk!!)
+                }, icon = Lucide.ShieldCheck)
+                verify?.let {
+                    if (it.ok) {
+                        Text(stringResource(R.string.build_verify_ok, it.scheme ?: "v2"), style = Saqr.type.caption, color = c.success)
+                    } else {
+                        Text(stringResource(R.string.build_verify_bad), style = Saqr.type.caption, color = c.danger)
+                    }
+                }
+            }
+            verify?.let {
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.lg))
+                        .background(c.surface1).border(1.dp, c.border, RoundedCornerShape(Radius.lg)).padding(Sp.md),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    if (it.ok) {
+                        Text(stringResource(R.string.build_verify_signer), style = Saqr.type.label, color = c.text1)
+                        it.fingerprintLine?.let { fp ->
+                            Text(fp, style = Saqr.type.monoMicro, color = c.accentText, maxLines = 2)
+                        }
+                        it.subject?.let { s -> Text(s, style = Saqr.type.caption, color = c.text2, maxLines = 2) }
+                        it.validUntil?.let { d ->
+                            Text(stringResource(R.string.build_verify_valid, d), style = Saqr.type.caption, color = c.text2)
+                        }
+                    } else {
+                        Text(it.error ?: "", style = Saqr.type.caption, color = c.danger)
+                        Text(stringResource(R.string.build_verify_hint), style = Saqr.type.caption, color = c.text3)
                     }
                 }
             }

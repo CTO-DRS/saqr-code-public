@@ -69,6 +69,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.SaqrApp
 import com.ctodrs.saqrcode.git.ChangeKind
+import com.ctodrs.saqrcode.git.Forge
 import com.ctodrs.saqrcode.git.GitBranch
 import com.ctodrs.saqrcode.git.GitCommitInfo
 import com.ctodrs.saqrcode.git.GitController
@@ -159,11 +160,31 @@ fun GitScreen(ws: Workspace, onAccounts: () -> Unit = {}) {
         ),
     )
     diff?.let { (title, text) -> DiffViewerDialog(title, text) { diff = null } }
-    if (publish) PublishDialog(ws.name, onDismiss = { publish = false }) { name, priv, desc -> publish = false; ctl.publishToGitHub(name, priv, desc) }
+    if (publish) PublishDialog(ws.name, settings.accounts, onDismiss = { publish = false }) { host, name, priv, desc ->
+        publish = false
+        if (host == "github.com") ctl.publishToGitHub(name, priv, desc) else ctl.publishToForge(host, name, priv, desc)
+    }
     if (pr) PullRequestDialog(
         branch = ctl.status.branch ?: "", bases = ctl.branches.filter { !it.remote }.map { it.shortName },
+        forgeHost = ForgeHost.of(ctl.originUrl, settings.accounts),
         onDismiss = { pr = false },
-    ) { title, base, body -> pr = false; ctl.openPullRequest(title, base, body) }
+    ) { title, base, body ->
+        pr = false
+        val host = ForgeHost.of(ctl.originUrl, settings.accounts)
+        if (host == null) ctl.openPullRequest(title, base, body) else ctl.openForgePullRequest(host, title, base, body)
+    }
+}
+
+/** v0.10: the forge host of origin, when it is not GitHub and has a token — null = GitHub. */
+object ForgeHost {
+    fun of(originUrl: String?, accounts: com.ctodrs.saqrcode.data.AccountStore): String? {
+        if (originUrl == null) return null
+        val h = com.ctodrs.saqrcode.data.AccountStore.normalizeHost(originUrl) ?: return null
+        if (h == "github.com") return null
+        val kind = Forge.detect(h, accounts.hostKind(h)) ?: return null
+        if (accounts.forUrl("https://$h") == null) return null
+        return h
+    }
 }
 
 @Composable
@@ -674,17 +695,30 @@ private fun RemoteDialog(onDismiss: () -> Unit, onOk: (String, String) -> Unit) 
 }
 
 @Composable
-fun PublishDialog(projectName: String, onDismiss: () -> Unit, onOk: (String, Boolean, String?) -> Unit) {
+fun PublishDialog(
+    projectName: String,
+    accounts: com.ctodrs.saqrcode.data.AccountStore,
+    onDismiss: () -> Unit,
+    onOk: (String, String, Boolean, String?) -> Unit,
+) {
     val c = Saqr.colors
+    val forgeHosts = remember { accounts.hosts().map { it.host } }
+    var host by remember { mutableStateOf(if (forgeHosts.isEmpty()) "github.com" else "github.com") }
     var name by remember { mutableStateOf(projectName.lowercase()) }
     var private by remember { mutableStateOf(true) }
     var desc by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss, containerColor = c.surface1,
-        icon = { SIcon(Lucide.Github, size = 24.dp, tint = c.accentText) },
-        title = { Text(stringResource(R.string.git_publish_github), style = Saqr.type.title2) },
+        icon = { SIcon(if (host == "github.com") Lucide.Github else Lucide.Globe, size = 24.dp, tint = c.accentText) },
+        title = { Text(stringResource(R.string.git_publish_title), style = Saqr.type.title2) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+                // v0.10: pick GitHub or one of the linked forge hosts (GitLab / Gitea).
+                Segmented(
+                    listOf("GitHub") + forgeHosts,
+                    if (host == "github.com") 0 else 1 + forgeHosts.indexOf(host),
+                    onSelect = { i -> host = if (i == 0) "github.com" else forgeHosts[i - 1] },
+                )
                 SaqrField(name, { name = it }, label = stringResource(R.string.git_repo_name), mono = true)
                 SaqrField(desc, { desc = it }, label = stringResource(R.string.git_repo_desc))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -695,13 +729,19 @@ fun PublishDialog(projectName: String, onDismiss: () -> Unit, onOk: (String, Boo
                 }
             }
         },
-        confirmButton = { TextButton(enabled = name.isNotBlank(), onClick = { onOk(name.trim(), private, desc.ifBlank { null }) }) { Text(stringResource(R.string.git_publish), color = c.accentText) } },
+        confirmButton = { TextButton(enabled = name.isNotBlank(), onClick = { onOk(host, name.trim(), private, desc.ifBlank { null }) }) { Text(stringResource(R.string.git_publish), color = c.accentText) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
     )
 }
 
 @Composable
-private fun PullRequestDialog(branch: String, bases: List<String>, onDismiss: () -> Unit, onOk: (String, String, String?) -> Unit) {
+private fun PullRequestDialog(
+    branch: String,
+    bases: List<String>,
+    forgeHost: String?,
+    onDismiss: () -> Unit,
+    onOk: (String, String, String?) -> Unit,
+) {
     val c = Saqr.colors
     var title by remember { mutableStateOf(branch.substringAfterLast('/').replace('-', ' ').replaceFirstChar { it.uppercase() }) }
     var base by remember { mutableStateOf(bases.firstOrNull { it == "main" } ?: bases.firstOrNull { it == "master" } ?: bases.firstOrNull { it != branch } ?: "main") }
@@ -709,7 +749,7 @@ private fun PullRequestDialog(branch: String, bases: List<String>, onDismiss: ()
     AlertDialog(
         onDismissRequest = onDismiss, containerColor = c.surface1,
         icon = { SIcon(Lucide.GitPullRequest, size = 24.dp, tint = c.accentText) },
-        title = { Text(stringResource(R.string.git_open_pr), style = Saqr.type.title2) },
+        title = { Text(stringResource(if (forgeHost == null) R.string.git_open_pr else R.string.git_open_mr), style = Saqr.type.title2) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {

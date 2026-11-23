@@ -75,4 +75,21 @@ object BuildCache {
 
     /** Sum of every component — the headline number of the storage card. */
     fun total(entries: List<Entry>): Long = entries.sumOf { it.sizeBytes }
+
+    /**
+     * v0.10 · «احتفظ بآخر إصدار فقط» · keep only the last APK: everything in [dist]
+     * except the fresh [keep] file, i.e. the previous APKs of older builds.
+     */
+    fun staleApks(dist: File, keep: File): List<File> =
+        dist.listFiles()?.filter { it.isFile && it.name.endsWith(".apk") && it.path != keep.path } ?: emptyList()
+
+    /** The two heaviest build leftovers that can go after a successful build (not the outputs). */
+    fun clearableIntermediates(projectDir: File): List<File> = listOf(
+        File(projectDir, "app/build/intermediates"),
+        File(projectDir, "app/build/tmp"),
+        File(projectDir, ".gradle"),
+    )
+
+    /** v0.10: bytes reclaimed by removing [files] — measured before deletion for the log. */
+    fun freedBy(files: List<File>): Long = files.sumOf { dirSize(it) }
 }

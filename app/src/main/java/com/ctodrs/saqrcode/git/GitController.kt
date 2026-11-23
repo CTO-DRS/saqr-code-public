@@ -123,6 +123,28 @@ class GitController(val dir: File, private val settings: SettingsStore, homeDir:
         null
     }
 
+    /**
+     * v0.10: same publish flow for GitLab / Gitea hosts stored in Accounts. The API dialect
+     * comes from the per-host pick (or auto-detection); the token comes from the account store.
+     */
+    fun publishToForge(host: String, name: String, private: Boolean, description: String?) = op("publish") {
+        val kind = Forge.detect(host, settings.accounts.hostKind(host))
+            ?: throw GitException("Pick GitLab or Gitea for $host in Settings → Accounts (auto-detect failed).")
+        val cred = settings.accounts.forUrl("https://$host")
+            ?: throw GitException("No token saved for $host (Settings → Accounts).")
+        val repo = when (kind) {
+            Forge.Kind.GITLAB -> GitLabApi(host, cred.token).createRepo(name, private, description)
+            Forge.Kind.GITEA -> GiteaApi(host, cred.token).createRepo(name, private, description)
+        }
+        if (!isRepo(dir)) init(dir)
+        if (status(dir, false).hasCommits.not()) { stageAll(dir); commit(dir, "Initial commit", settings.gitName, settings.gitEmail) }
+        setRemote(dir, "origin", repo.cloneUrl)
+        val p = push(dir)
+        if (!p.ok) throw GitException(p.lines.joinToString("\n"))
+        toast = GitToast("✓ ${repo.fullName}", link = repo.htmlUrl)
+        null
+    }
+
     fun openPullRequest(title: String, base: String, body: String?) = op("pr") {
         val token = settings.accounts.githubToken() ?: throw GitException("Link your GitHub account first (Settings → Accounts).")
         val (owner, repo) = GitService.githubSlug(remoteUrl(dir)) ?: throw GitException("origin is not a GitHub repository.")
@@ -132,6 +154,29 @@ class GitController(val dir: File, private val settings: SettingsStore, homeDir:
         if (!p.ok) throw GitException(p.lines.joinToString("\n"))
         val pr = GitHubApi(token).createPull(owner, repo, title, branch, base, body)
         toast = GitToast("✓ PR #${pr.number}", link = pr.htmlUrl)
+        null
+    }
+
+    /**
+     * v0.10: MR / PR on the forge that owns origin — GitLab merge request or Gitea pull
+     * request. [host] must match origin's host; the repo path is read from the remote URL.
+     */
+    fun openForgePullRequest(host: String, title: String, base: String, body: String?) = op("pr") {
+        val url = remoteUrl(dir) ?: throw GitException("No origin remote.")
+        val kind = Forge.detect(host, settings.accounts.hostKind(host))
+            ?: throw GitException("Pick GitLab or Gitea for $host in Settings → Accounts.")
+        val cred = settings.accounts.forUrl("https://$host")
+            ?: throw GitException("No token saved for $host (Settings → Accounts).")
+        val path = Forge.repoPath(url) ?: throw GitException("origin is not a $host repository: $url")
+        val branch = status(dir, false).branch ?: throw GitException("No branch")
+        require(branch != base) { "Switch to a feature branch first (current: $branch)." }
+        val p = push(dir, branch = branch)
+        if (!p.ok) throw GitException(p.lines.joinToString("\n"))
+        val pr = when (kind) {
+            Forge.Kind.GITLAB -> GitLabApi(host, cred.token).openPull(path, title, branch, base, body)
+            Forge.Kind.GITEA -> GiteaApi(host, cred.token).openPull(path, title, branch, base, body)
+        }
+        toast = GitToast("✓ MR/PR #${pr.number}", link = pr.htmlUrl)
         null
     }
 

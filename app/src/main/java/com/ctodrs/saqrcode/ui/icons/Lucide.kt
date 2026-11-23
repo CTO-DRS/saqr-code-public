@@ -28,6 +28,7 @@ object Lucide {
     val EllipsisVertical: ImageVector by lazy { stroked("ellipsis-vertical", false, "M11.0,12.0a1.0,1.0 0 1,0 2.0,0a1.0,1.0 0 1,0 -2.0,0", "M11.0,5.0a1.0,1.0 0 1,0 2.0,0a1.0,1.0 0 1,0 -2.0,0", "M11.0,19.0a1.0,1.0 0 1,0 2.0,0a1.0,1.0 0 1,0 -2.0,0") }
     val ExternalLink: ImageVector by lazy { stroked("external-link", true, "M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6") }
     val Eye: ImageVector by lazy { stroked("eye", false, "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0", "M9.0,12.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0") }
+    val EyeOff: ImageVector by lazy { stroked("eye-off", false, "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.153", "M14.084 14.158a3 3 0 0 1-4.242-4.242", "M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143", "m2 1 8 8", "m22 22-6-6") }
     val FileCode: ImageVector by lazy { stroked("file-code", false, "M10 12.5 8 15l2 2.5", "m14 12.5 2 2.5-2 2.5", "M14 2v4a2 2 0 0 0 2 2h4", "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z") }
     val FilePlus: ImageVector by lazy { stroked("file-plus", false, "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", "M14 2v4a2 2 0 0 0 2 2h4", "M9 15h6", "M12 18v-6") }
     val FileText: ImageVector by lazy { stroked("file-text", true, "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", "M14 2v4a2 2 0 0 0 2 2h4", "M10 9H8", "M16 13H8", "M16 17H8") }

@@ -65,6 +65,34 @@ object Mcp {
         }
     }.getOrDefault(emptyList())
 
+    /**
+     * v0.10 · per-server tool allow/deny: the user hides specific tools from the agent.
+     * Stored as `{ "<server-slug>": ["raw-tool", …] }`; missing server = everything visible.
+     */
+    fun encodeDisabled(map: Map<String, Set<String>>): String = JSONObject().apply {
+        map.forEach { (k, tools) -> if (tools.isNotEmpty()) put(k, JSONArray(tools.toList())) }
+    }.toString()
+
+    fun decodeDisabled(json: String?): Map<String, Set<String>> = runCatching {
+        val o = JSONObject(json ?: return emptyMap())
+        val out = HashMap<String, Set<String>>()
+        o.keys().forEach { k ->
+            val arr = o.optJSONArray(k) ?: return@forEach
+            val tools = (0 until arr.length()).mapNotNull { i -> arr.optString(i).ifBlank { null } }.toSet()
+            if (tools.isNotEmpty()) out[k] = tools
+        }
+        out
+    }.getOrDefault(emptyMap())
+
+    /** v0.10: tools of one server the agent still sees, minus the disabled raw names. */
+    fun filterTools(tools: List<Tool>, disabledRawNames: Set<String>): List<Tool> {
+        if (disabledRawNames.isEmpty()) return tools
+        return tools.filter { t ->
+            val raw = splitToolName(t.name)?.second ?: t.name
+            raw !in disabledRawNames
+        }
+    }
+
     // ---------------------------------------------------------------- protocol (pure)
 
     /** JSON-RPC request body for `initialize` (streamable HTTP requires the capability handshake). */

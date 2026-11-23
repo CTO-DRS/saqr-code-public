@@ -135,11 +135,17 @@ class SettingsUi(
     val onMcpRemove: (String) -> Unit = {},
     /** v0.9: the decrypted auth header of an MCP server (for the tools browser). */
     val mcpAuthFor: (String) -> String? = { null },
+    /** v0.10: per-server MCP tool allow/deny — is (server, rawTool) hidden from the agent. */
+    val mcpToolDisabled: (server: String, rawTool: String) -> Boolean = { _, _ -> false },
+    val onMcpToolDisabled: (server: String, rawTool: String, disabled: Boolean) -> Unit = { _, _, _ -> },
     /** v0.9: models suggested for the active provider (review/planner pickers). */
     val suggestedModels: List<String> = emptyList(),
     /** v0.8/v0.9 on-device build: aapt2 source — blank, a preset id, or a direct URL. */
     val aapt2Mirror: String = "",
     val onAapt2Mirror: (String) -> Unit = {},
+    /** v0.10: «keep only the last APK» — auto-clean after a successful build. */
+    val keepLastApk: Boolean = false,
+    val onKeepLastApk: (Boolean) -> Unit = {},
 )
 
 @Composable
@@ -210,9 +216,13 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
             settings.setMcpAuth(name, null)
         },
         mcpAuthFor = { name -> settings.mcpAuth(name) },
+        mcpToolDisabled = { s, t -> settings.mcpToolDisabled(s, t) },
+        onMcpToolDisabled = { s, t, d -> settings.setMcpToolDisabled(s, t, d) },
         suggestedModels = com.ctodrs.saqrcode.agent.Providers.byId(settings.activeProvider).suggestedModels,
         aapt2Mirror = settings.aapt2Mirror,
         onAapt2Mirror = { settings.aapt2Mirror = it },
+        keepLastApk = settings.keepLastApk,
+        onKeepLastApk = { settings.keepLastApk = it },
     )
     if (showBattery) BatteryDialog(onDismiss = { showBattery = false })
     SettingsContent(ui, onBack)
@@ -326,12 +336,22 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 McpToolsBrowser(
                     server = server,
                     auth = ui.mcpAuthFor(server.name),
+                    disabledFor = { raw -> ui.mcpToolDisabled(server.name, raw) },
+                    onToggleTool = { raw, d -> ui.onMcpToolDisabled(server.name, raw, d) },
                     onDismiss = { browsingServer = null },
                 )
             }
             // ---- v0.8 on-device build
             SectionLabel(stringResource(R.string.build_section), Modifier.padding(top = Sp.md))
             Group { Aapt2MirrorEditor(ui) }
+            Group {
+                Column {
+                    ListRow(
+                        title = stringResource(R.string.keep_last_apk), subtitle = stringResource(R.string.keep_last_apk_desc), icon = Lucide.HardDrive,
+                        trailing = { SaqrSwitch(ui.keepLastApk, ui.onKeepLastApk) },
+                    )
+                }
+            }
             Group {
                 Column {
                     ListRow(
@@ -560,7 +580,13 @@ private fun Aapt2MirrorEditor(ui: SettingsUi) {
  * tool wiring is untouched.
  */
 @Composable
-private fun McpToolsBrowser(server: com.ctodrs.saqrcode.agent.Mcp.Server, auth: String?, onDismiss: () -> Unit) {
+private fun McpToolsBrowser(
+    server: com.ctodrs.saqrcode.agent.Mcp.Server,
+    auth: String?,
+    disabledFor: (String) -> Boolean = { false },
+    onToggleTool: (String, Boolean) -> Unit = { _, _ -> },
+    onDismiss: () -> Unit,
+) {
     val c = Saqr.colors
     val scope = rememberCoroutineScope()
     var loading by remember { mutableStateOf(true) }
@@ -616,6 +642,8 @@ private fun McpToolsBrowser(server: com.ctodrs.saqrcode.agent.Mcp.Server, auth: 
                     }
                     tools.isEmpty() -> Text(stringResource(R.string.mcp_tools_empty), style = Saqr.type.caption, color = c.text3)
                     else -> tools.forEach { t ->
+                        val raw = com.ctodrs.saqrcode.agent.Mcp.splitToolName(t.name)?.second ?: t.name
+                        val disabled = disabledFor(raw)
                         Column(
                             Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2)
                                 .padding(horizontal = Sp.md, vertical = Sp.xs),
@@ -625,8 +653,21 @@ private fun McpToolsBrowser(server: com.ctodrs.saqrcode.agent.Mcp.Server, auth: 
                                 argsText = com.ctodrs.saqrcode.agent.Mcp.sampleArgs(t.inputSchema).toString()
                                 runResult = null
                             }, verticalAlignment = Alignment.CenterVertically) {
-                                Text(t.name, style = Saqr.type.monoSmall.copy(fontWeight = FontWeight.SemiBold), color = c.accentText, modifier = Modifier.weight(1f))
+                                Text(
+                                    t.name,
+                                    style = Saqr.type.monoSmall.copy(fontWeight = FontWeight.SemiBold),
+                                    color = if (disabled) c.text3 else c.accentText,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                // v0.10: hide/show this tool for the agent (allow/deny per server).
+                                Box(Modifier.size(34.dp).clip(CircleShape).clickable { onToggleTool(raw, !disabled) }, contentAlignment = Alignment.Center) {
+                                    SIcon(if (disabled) Lucide.EyeOff else Lucide.Eye, size = 15.dp, tint = if (disabled) c.text3 else c.text2)
+                                }
+                                Spacer(Modifier.width(Sp.xs))
                                 SIcon(Lucide.ChevronDown, size = 14.dp, tint = c.text3)
+                            }
+                            if (disabled) {
+                                Text(stringResource(R.string.mcp_tool_hidden), style = Saqr.type.caption, color = c.text3)
                             }
                             Text(t.description, style = Saqr.type.caption, color = c.text2, maxLines = if (openTool == t.name) 6 else 2, overflow = TextOverflow.Ellipsis)
                             if (openTool == t.name) {

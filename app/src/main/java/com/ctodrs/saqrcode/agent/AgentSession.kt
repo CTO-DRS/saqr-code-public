@@ -795,8 +795,18 @@ class AgentSession(
                 )
                 continue
             }
+            // v0.10: the user may hide specific tools of this server from the agent.
+            val visible = Mcp.filterTools(tools, settings.mcpDisabledTools[s.slug].orEmpty())
+            val hidden = tools.size - visible.size
+            if (hidden > 0) {
+                items += ChatItem.Notice(
+                    "MCP “${s.name}”: $hidden tool(s) hidden by you (Settings → MCP).",
+                    isError = false, kind = ChatItem.Notice.Kind.MCP,
+                )
+            }
+            if (visible.isEmpty()) continue
             mcpClients += s to cl
-            mcpSpecs = mcpSpecs + tools.map { ToolSpec(it.name, it.description, it.inputSchema) }
+            mcpSpecs = mcpSpecs + visible.map { ToolSpec(it.name, it.description, it.inputSchema) }
             anyOk = true
         }
         if (anyOk) markDirty()
@@ -808,6 +818,10 @@ class AgentSession(
             ?: return@withContext "Error: malformed MCP tool name '$full' (expected mcp_<server>_<tool>)"
         val cl = mcpClients.firstOrNull { it.first.slug == slug }?.second
             ?: return@withContext "Error: MCP server '$slug' is not connected this turn. Tell the user to check Settings → MCP servers."
+        // v0.10 defense in depth: a tool hidden by the user is refused even if the model calls it.
+        if (tool in settings.mcpDisabledTools[slug].orEmpty()) {
+            return@withContext "Error: tool '$tool' is disabled by the user for this MCP server. Do not retry it."
+        }
         cl.callTool(tool, a)
     }
 

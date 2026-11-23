@@ -1,5 +1,26 @@
 # Changelog · سجل التغييرات
 
+## [0.10.0] — 2026-11-24 — Trust the APK, control the tools, own the forge · التحقق من التوقيع والتحكم بالأدوات ودعم GitLab/Gitea
+
+### Build flexibility · مرونة البناء
+- **In-app APK signature verification:** the Build tab gains «تحقق من التوقيع» — a from-scratch implementation of APK Signature Scheme v2/v3 verification (no apksigner download): it locates the APK Signing Block, checks the signature over `signed-data` with the embedded key (RSA PSS/PKCS1, ECDSA, DSA), recomputes the chunked content digests (1 MB chunks, 0xa5/0x5a framing, EoCD Central-Directory offset patched to the block start) and shows the signer certificate SHA-256 fingerprint, subject and expiry — so the user confirms it is *their* key before tapping Install. A modified APK fails loudly («APK contents do NOT match the signed digest»).
+  التحقق من توقيع الـ APK داخل التطبيق نفسه: تحقق v2/v3 كامل بلا أدوات خارجية مع بصمة شهادة الموقّع SHA-256 ومالكها وصلاحيتها، وأي تعديل على الملف بعد البناء يُكتشف ويُرفض.
+- **Keep only the last APK:** a Settings switch (also surfaced per-project) that, after every successful build, deletes the previous APKs in `dist/` plus the heaviest build leftovers (`app/build/intermediates`, `app/build/tmp`, the project `.gradle` cache) and logs the reclaimed size — one-tap storage hygiene for phones.
+  «احتفظ بآخر إصدار فقط»: بعد نجاح كل بناء تُحذف ملفات APK القديمة ومخلفات البناء الوسيطة ويسجل المقدار المستعاد.
+
+### Agent tool control · التحكم بأدوات الوكيل
+- **MCP per-server tool allow/deny:** the tools browser gains an eye toggle per tool — hidden tools never reach the agent's spec list, a hidden tool is refused even if the model calls it anyway (defense in depth), and the turn notes how many tools were hidden. Stored encrypted-free in prefs as `{server-slug: [tools]}`.
+  سماح/منع لكل أداة MCP لكل خادم: عين تُخفي الأداة عن الوكيل، فلا تظهر في قائمة أدواته، ويُرفض استدعاؤها حتى لو حاولها النموذج.
+
+### Forge parity · تكافؤ المنصات
+- **GitLab & Gitea end-to-end:** the Accounts screen gains a «GitLab / Gitea» card — link any HTTPS host (GitLab.com, Codeberg, self-hosted Gitea/Forgejo) with a token and pick its API dialect (Auto / GitLab / Gitea, with hostname auto-detection). The Git tab's Publish dialog now offers GitHub **and** every linked host (create repository + first push), and the PR flow opens a real **GitLab merge request** or **Gitea pull request** on the origin's forge automatically.
+  دعم GitLab وGitea من البداية للنهاية: ربط أي مضيف HTTPS برمز واختيار نوع الـ API، والنشر ينشئ مستودعاً على المنصة المختارة، وطلب الدمج/السحب يُفتح على منصة origin تلقائياً.
+
+### Infrastructure · البنية
+- 243 unit tests; the v0.10 suite builds synthetic v2/v3-signed APKs on the JVM (keytool RSA + EC keys) and exercises the verifier end-to-end: accept, v3-preferred, ECDSA, tampered contents, corrupted signature, wrong signing key, unsigned zip — plus forge detection/URL parsing, GitLab project-id encoding, MCP disabled-tools round-trip/filter, and the keep-last-APK helpers.
+- Bilingual strings for every new surface (values + values-ar, 20 pairs); versionCode 10.
+
+
 ## [0.9.0] — 2026-11-24 — Signed release builds, cache control & effortless sign-in · بناء موقّع وإدارة مخزون ودخول بلا رموز
 
 ### Field-ready build · بناء جاهز للميدان
