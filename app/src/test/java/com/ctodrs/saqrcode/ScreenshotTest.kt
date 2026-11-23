@@ -216,6 +216,25 @@ class ScreenshotTest {
         onApproveAll = {},
     )
 
+    private fun askItems(): List<ChatItem> {
+        val req = com.ctodrs.saqrcode.agent.AskUserTool.parse(org.json.JSONObject("""
+            {"title":"A few choices before I start","questions":[
+              {"id":"platform","prompt":"Where should it run?","kind":"single","allow_other":true,"options":[
+                {"id":"web","label":"Web","description":"Runs in any browser, easiest to share","recommended":true},
+                {"id":"android","label":"Android","description":"Native app with Jetpack Compose"}]},
+              {"id":"extras","prompt":"Extras","kind":"multi","options":[{"id":"auth","label":"Login"},{"id":"dark","label":"Dark mode","recommended":true}]},
+              {"id":"tests","prompt":"Write tests?","kind":"confirm","default":true}]}"""))!!
+        return listOf(
+            ChatItem.User("Build me a habit tracker"),
+            assistant("Before I start, a couple of decisions shape the whole project:"),
+            ChatItem.AskUser(req, ""),
+        )
+    }
+
+    @Test fun chatAskUser() = shot("chat-ask-user") { ChatScreenShot(askItems(), running = true) }
+
+    @Test fun chatAskUserLight() = shot("chat-ask-user-light", theme = "light") { ChatScreenShot(askItems(), running = true) }
+
     @Test fun settings() = shot("settings") { SettingsContent(settingsUi(), {}) }
 
     @Test fun settingsProvider() = shot("settings-provider") { SettingsContent(settingsUi(), {}, initiallyExpanded = "anthropic") }

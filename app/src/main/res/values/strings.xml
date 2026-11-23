@@ -254,4 +254,19 @@
     <string name="editor_undo">Undo</string>
     <string name="editor_redo">Redo</string>
     <string name="editor_find">Find &amp; replace</string>
+    <!-- ask_user cards -->
+    <string name="ask_default_title">A few choices before I start</string>
+    <string name="ask_submit">Approve</string>
+    <string name="ask_skip">Skip — let Saqr decide</string>
+    <string name="ask_recommended">Recommended</string>
+    <string name="ask_other">Other…</string>
+    <string name="ask_other_hint">Type your answer</string>
+    <string name="ask_text_hint">Your answer</string>
+    <string name="ask_yes">Yes</string>
+    <string name="ask_no">No</string>
+    <string name="ask_optional">Optional</string>
+    <string name="ask_multi_hint">Choose all that apply</string>
+    <string name="ask_answered">Answered</string>
+    <string name="ask_skipped">Skipped — Saqr will choose</string>
+    <string name="ask_dismissed">Dismissed</string>
 </resources>

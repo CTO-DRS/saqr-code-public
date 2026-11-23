@@ -14,6 +14,7 @@ object Tools {
     const val RUN = "run_command"
     const val SEARCH = "search"
     const val PLAN = "update_plan"
+    const val ASK = "ask_user"
     const val GIT_STATUS = "git_status"
     const val GIT_DIFF = "git_diff"
     const val GIT_LOG = "git_log"
@@ -69,6 +70,7 @@ object Tools {
                         .put("title", p("string", "Short step title in the user's language"))
                         .put("status", JSONObject().put("type", "string").put("enum", JSONArray(listOf("pending", "in_progress", "done")))))
                     .put("required", JSONArray(listOf("title", "status"))))), listOf("items"))),
+        AskUserTool.spec,
     ) + GitTools.specs
 
     private val IGNORED_DIRS = setOf(".git", "node_modules", "build", ".gradle", "__pycache__", ".venv", "dist", ".saqr")

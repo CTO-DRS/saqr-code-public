@@ -254,4 +254,19 @@
     <string name="editor_undo">تراجع</string>
     <string name="editor_redo">إعادة</string>
     <string name="editor_find">بحث واستبدال</string>
+    <!-- ask_user cards -->
+    <string name="ask_default_title">بعض الاختيارات قبل أن أبدأ</string>
+    <string name="ask_submit">اعتماد</string>
+    <string name="ask_skip">تخطَّ — دع صقر يقرّر</string>
+    <string name="ask_recommended">مُوصى به</string>
+    <string name="ask_other">غير ذلك…</string>
+    <string name="ask_other_hint">اكتب إجابتك</string>
+    <string name="ask_text_hint">إجابتك</string>
+    <string name="ask_yes">نعم</string>
+    <string name="ask_no">لا</string>
+    <string name="ask_optional">اختياري</string>
+    <string name="ask_multi_hint">اختر كل ما ينطبق</string>
+    <string name="ask_answered">تمت الإجابة</string>
+    <string name="ask_skipped">تم التخطي — سيختار صقر</string>
+    <string name="ask_dismissed">أُلغي</string>
 </resources>

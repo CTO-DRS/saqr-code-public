@@ -144,6 +144,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                                 onSend = { ws.agent.send(input); input = "" }, onStop = { ws.agent.stop() },
                                 onDecide = { a, ok -> ws.agent.decide(a, ok) },
                                 onPickModel = { settings.setModel(def.id, it) }, onManageProviders = onSettings, topInset = top,
+                                onAnswer = { a, skip -> ws.agent.answer(a, skip) },
                             )
                         }
                     }

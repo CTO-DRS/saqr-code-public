@@ -68,6 +68,7 @@ import com.ctodrs.saqrcode.agent.ChatItem
 import com.ctodrs.saqrcode.agent.Diff
 import com.ctodrs.saqrcode.agent.FileChange
 import com.ctodrs.saqrcode.agent.PlanItem
+import com.ctodrs.saqrcode.agent.QuickReplies
 import com.ctodrs.saqrcode.agent.Tools
 import com.ctodrs.saqrcode.ui.components.DiffChip
 import com.ctodrs.saqrcode.ui.components.EmptyState
@@ -118,6 +119,7 @@ fun ChatContent(
     topInset: androidx.compose.ui.unit.Dp,
     listState: LazyListState = rememberLazyListState(),
     autoScroll: Boolean = true,
+    onAnswer: (ChatItem.AskUser, Boolean) -> Unit = { _, _ -> },
 ) {
     val c = Saqr.colors
     val last = state.items.lastOrNull()
@@ -141,12 +143,13 @@ fun ChatContent(
                     contentPadding = PaddingValues(start = Sp.lg, end = Sp.lg, top = topInset + Sp.sm, bottom = Sp.lg),
                 ) {
                     items(state.items, key = { it.key }) { item ->
-                        Box(Modifier.padding(vertical = spacingFor(item))) { ChatRow(item, onDecide) }
+                        Box(Modifier.padding(vertical = spacingFor(item))) { ChatRow(item, onDecide, onAnswer) }
                     }
                     val showWorking = state.running && when (last) {
                         is ChatItem.Assistant -> !last.streaming
                         is ChatItem.Tool -> last.result != null
                         is ChatItem.Approval -> last.decision != null
+                        is ChatItem.AskUser -> last.status != ChatItem.AskUser.Status.PENDING
                         else -> true
                     }
                     if (showWorking) item(key = "working") {
@@ -160,6 +163,9 @@ fun ChatContent(
                 .background(Brush.verticalGradient(listOf(Color.Transparent, c.bg))))
         }
         if (state.items.isNotEmpty()) StepMeter(state)
+        val replyText = if (!state.running) (last as? ChatItem.Assistant)?.takeIf { !it.streaming }?.text else null
+        val quick = remember(replyText) { replyText?.let { QuickReplies.detect(it) }.orEmpty() }
+        if (quick.isNotEmpty() && state.ready) QuickReplyChips(quick) { onInput(it) }
         Composer(state, input, onInput, onSend, onStop, onPickModel, onManageProviders)
     }
 }
@@ -167,13 +173,14 @@ fun ChatContent(
 private fun spacingFor(item: ChatItem) = when (item) {
     is ChatItem.Tool -> 0.dp
     is ChatItem.Approval -> if (item.decision == null) 8.dp else 0.dp
+    is ChatItem.AskUser -> if (item.status == ChatItem.AskUser.Status.PENDING) 8.dp else 4.dp
     is ChatItem.User -> 10.dp
     is ChatItem.Notice -> 8.dp
     is ChatItem.Assistant -> 6.dp
 }
 
 @Composable
-fun ChatRow(item: ChatItem, onDecide: (ChatItem.Approval, Boolean) -> Unit) {
+fun ChatRow(item: ChatItem, onDecide: (ChatItem.Approval, Boolean) -> Unit, onAnswer: (ChatItem.AskUser, Boolean) -> Unit = { _, _ -> }) {
     when (item) {
         is ChatItem.User -> UserBubble(item.text)
         is ChatItem.Assistant -> if (item.text.isBlank() && item.streaming) WorkingRow() else MarkdownText(item.text)
@@ -181,6 +188,7 @@ fun ChatRow(item: ChatItem, onDecide: (ChatItem.Approval, Boolean) -> Unit) {
         is ChatItem.Approval -> if (item.decision == null) ApprovalCard(item, onDecide)
             else if (item.action != null) ActionDecisionRow(item)
             else Column { item.changes.forEach { ChangeRow(it, item.decision == true, item.durationMs) } }
+        is ChatItem.AskUser -> AskUserCard(item, onAnswer)
         is ChatItem.Notice -> NoticeCard(item)
     }
 }

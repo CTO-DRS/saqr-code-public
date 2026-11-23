@@ -53,6 +53,16 @@ sealed class ChatItem {
         var durationMs by mutableLongStateOf(-1L)
         val deferred = CompletableDeferred<Boolean>()
     }
+    /** An `ask_user` card. While [status] is PENDING the agent loop waits on [deferred]. */
+    class AskUser(val request: AskRequest, val argsJson: String, val restored: Boolean = false) : ChatItem() {
+        enum class Status { PENDING, ANSWERED, SKIPPED, CANCELLED }
+        var answers by mutableStateOf(AskUserTool.initialAnswers(request))
+        var status by mutableStateOf(Status.PENDING)
+        var durationMs by mutableLongStateOf(-1L)
+        val deferred = CompletableDeferred<String>()
+        val canSubmit get() = AskUserTool.canSubmit(request, answers)
+        fun update(q: AskQuestion, a: AskAnswer) { if (status == Status.PENDING) answers = answers + (q.id to a) }
+    }
     class Notice(val text: String, val isError: Boolean = false, val kind: Kind = if (isError) Kind.ERROR else Kind.INFO) : ChatItem() {
         enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED }
     }
@@ -73,6 +83,7 @@ class AgentSession(
     private val settings: SettingsStore,
     private val linux: LinuxEnv,
     private val git: GitService = GitService(null, settings.accounts),
+    pendingAskFile: File = File(snapshotRoot.parentFile ?: snapshotRoot, "pending_ask/$projectName.json"),
 ) {
     val items = mutableStateListOf<ChatItem>()
     var running by mutableStateOf(false); private set
@@ -87,9 +98,20 @@ class AgentSession(
     private val touched = LinkedHashSet<String>()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var job: Job? = null
+    private val pendingAsk = PendingAskStore(pendingAskFile)
+
+    init {
+        // The app was killed while a question was open: show the card again. Its answers are
+        // sent as a normal message, since the loop that asked no longer exists.
+        pendingAsk.load()?.let { items += ChatItem.AskUser(it, "", restored = true) }
+    }
 
     fun send(text: String) {
         if (running || text.isBlank()) return
+        // typing instead of answering a card restored after a restart dismisses it
+        items.filterIsInstance<ChatItem.AskUser>().filter { it.restored && it.status == ChatItem.AskUser.Status.PENDING }.forEach {
+            it.status = ChatItem.AskUser.Status.CANCELLED; pendingAsk.clear()
+        }
         items += ChatItem.User(text.trim())
         history += Msg.User(text.trim())
         running = true
@@ -100,6 +122,9 @@ class AgentSession(
             catch (e: Exception) { items += ChatItem.Notice(e.message ?: e.toString(), isError = true) }
             finally {
                 items.filterIsInstance<ChatItem.Approval>().filter { it.decision == null }.forEach { it.deferred.cancel() }
+                items.filterIsInstance<ChatItem.AskUser>().filter { it.status == ChatItem.AskUser.Status.PENDING && !it.restored }.forEach {
+                    it.status = ChatItem.AskUser.Status.CANCELLED; it.deferred.cancel(); pendingAsk.clear()
+                }
                 items.filterIsInstance<ChatItem.Assistant>().forEach { it.streaming = false }
                 items.filterIsInstance<ChatItem.Tool>().filter { it.result == null }.forEach {
                     it.ok = false; it.result = "(stopped)"; it.durationMs = System.currentTimeMillis() - it.createdAt
@@ -112,13 +137,36 @@ class AgentSession(
     fun stop() { job?.cancel() }
 
     fun clear() {
-        stop(); items.clear(); history.clear(); touched.clear(); plan.clear(); step = 0; contextTokens = 0
+        stop(); pendingAsk.clear(); items.clear(); history.clear(); touched.clear(); plan.clear(); step = 0; contextTokens = 0
     }
 
     fun decide(item: ChatItem.Approval, approve: Boolean) {
         if (item.decision != null) return
         item.decision = approve
         item.deferred.complete(approve)
+    }
+
+    /** Submit ([skip] = false) or skip an `ask_user` card. */
+    fun answer(item: ChatItem.AskUser, skip: Boolean) {
+        if (item.status != ChatItem.AskUser.Status.PENDING) return
+        if (!skip && !item.canSubmit) return
+        item.status = if (skip) ChatItem.AskUser.Status.SKIPPED else ChatItem.AskUser.Status.ANSWERED
+        item.durationMs = System.currentTimeMillis() - item.createdAt
+        pendingAsk.clear()
+        if (item.restored) {
+            send(AskUserTool.asUserMessage(item.request, if (skip) null else item.answers))
+        } else {
+            item.deferred.complete(if (skip) AskUserTool.skipped() else AskUserTool.serialize(item.request, item.answers))
+        }
+    }
+
+    private suspend fun askUser(a: JSONObject?): String {
+        val req = AskUserTool.parse(a)
+            ?: return "Error: ask_user needs a non-empty `questions` array; each question needs `id`, `prompt` and `kind`."
+        val card = ChatItem.AskUser(req, a.toString())
+        items += card
+        withContext(Dispatchers.IO) { pendingAsk.save(card.argsJson) }
+        return card.deferred.await()
     }
 
     private fun client(): LlmClient {
@@ -224,6 +272,7 @@ class AgentSession(
         for ((c, a) in parsed) {
             if (c.name in Tools.MUTATING) continue
             if (c.name == Tools.PLAN) { results[c.id] = updatePlan(a); continue }
+            if (c.name == Tools.ASK) { results[c.id] = askUser(a); continue }
             val args = a ?: JSONObject()
             val item = ChatItem.Tool(c.name, Tools.summarizeArgs(c.name, args))
             items += item
@@ -327,6 +376,7 @@ You operate on the user's project through tools. The project root is the current
 - ZERO LAZY CODE: never write placeholders such as "// ...rest unchanged" or "TODO: implement". Write complete, working files. Split very large files into several smaller files.
 - Group related file changes in the same turn: changes touching 2+ files are shown to the user as one plan for approval. If the user rejects, stop and ask what they want.
 - Verify when practical by running commands (tests, linters, `node file.js`, `python3 file.py`).
+- When a decision from the user materially changes the work (stack/platform choice, design direction, scope) and you can't infer it, call ask_user instead of asking in prose: at most ~4 short questions, each with a recommended option and sensible defaults, written in the user's language. Don't ask about things you can decide yourself or discover from the code. If the answer is {"skipped":true}, go with your recommended defaults.
 - For tasks with 3+ distinct steps, call update_plan first with a short step list, then update it as steps finish (statuses: pending, in_progress, done).
 - If the user mentions a file as @path, read it before answering.
 - Be concise. When done, give a short summary of what changed and how to run it. Do not paste whole files back to the user.
