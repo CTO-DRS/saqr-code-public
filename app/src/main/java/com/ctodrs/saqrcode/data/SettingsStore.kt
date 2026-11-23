@@ -82,6 +82,33 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("review_model", "") ?: ""
         set(v) { prefs.edit().putString("review_model", v.trim()).apply(); bump() }
 
+    /** v0.8 team mode: run lint/tests after each batch and feed the output to the reviewer. */
+    var reviewAutoTests: Boolean
+        get() = prefs.getBoolean("review_auto_tests", true)
+        set(v) { prefs.edit().putBoolean("review_auto_tests", v).apply(); bump() }
+
+    /** v0.8 team mode: the planner model id. Blank = the same model as the coder. */
+    var plannerModel: String
+        get() = prefs.getString("planner_model", "") ?: ""
+        set(v) { prefs.edit().putString("planner_model", v.trim()).apply(); bump() }
+
+    /** v0.8: MCP servers (name + URL); their auth headers live in [SecureStore]. */
+    var mcpServers: List<com.ctodrs.saqrcode.agent.Mcp.Server>
+        get() = com.ctodrs.saqrcode.agent.Mcp.decodeConfig(prefs.getString("mcp_servers", null))
+        set(v) { prefs.edit().putString("mcp_servers", com.ctodrs.saqrcode.agent.Mcp.encodeConfig(v)).apply(); bump() }
+
+    /** v0.8: auth header value for an MCP server ("Bearer …" or any header text), encrypted. */
+    fun mcpAuth(serverName: String): String? = secure.get("mcp_auth_" + com.ctodrs.saqrcode.agent.Mcp.slugify(serverName))
+
+    fun setMcpAuth(serverName: String, value: String?) {
+        secure.put("mcp_auth_" + com.ctodrs.saqrcode.agent.Mcp.slugify(serverName), value)
+    }
+
+    /** v0.8: direct aapt2 download URL (mirror). Blank = the built-in lookup list. */
+    var aapt2Mirror: String
+        get() = prefs.getString("aapt2_mirror", "") ?: ""
+        set(v) { prefs.edit().putString("aapt2_mirror", v.trim()).apply(); bump() }
+
     /** v0.7: summarise the oldest context when it grows past the threshold (keeps the meter honest on small models). */
     var autoCompact: Boolean
         get() = prefs.getBoolean("auto_compact", true)

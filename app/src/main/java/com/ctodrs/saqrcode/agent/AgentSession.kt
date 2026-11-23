@@ -83,8 +83,8 @@ sealed class ChatItem {
         fun update(q: AskQuestion, a: AskAnswer) { if (status == Status.PENDING) answers = answers + (q.id to a) }
     }
     class Notice(val text: String, val isError: Boolean = false, val kind: Kind = if (isError) Kind.ERROR else Kind.INFO, val count: Int = -1) : ChatItem() {
-        /** INTERRUPTED: a turn was cut off (app killed / phone off) and can be resumed; RESUMED: it was. COMPACTED: v0.7 context compaction; LOOP: v0.7 loop detector stopped the turn. */
-        enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED, INTERRUPTED, RESUMED, COMPACTED, LOOP }
+        /** INTERRUPTED: a turn was cut off (app killed / phone off) and can be resumed; RESUMED: it was. COMPACTED: v0.7 context compaction; LOOP: v0.7 loop detector stopped the turn. PLANNED: v0.8 planner produced a task plan; MCP: v0.8 MCP server connection problem. */
+        enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED, INTERRUPTED, RESUMED, COMPACTED, LOOP, PLANNED, MCP }
     }
 
     /** v0.7 team mode: the reviewer's verdict on an applied batch (running → ok / issues / failed). */
@@ -152,6 +152,15 @@ class AgentSession(
     private val loopPrints = ArrayList<String>()
     private var loopNudged = false
 
+    // ---- v0.8 planner / MCP / review cost
+    /** MCP tools discovered for the current turn (empty in single mode or when no server). */
+    private var mcpSpecs: List<ToolSpec> = emptyList()
+    private var mcpClients: List<Pair<Mcp.Server, McpClient>> = emptyList()
+    /** v0.8: the reviewer's own token spend, per model — shown separately in the meter. */
+    val reviewUsage = mutableStateMapOf<String, Usage>()
+    /** v0.8: the planner's own token spend, per model. */
+    val plannerUsage = mutableStateMapOf<String, Usage>()
+
     // ---- v0.6 sessions
     var sessionId by mutableStateOf(SessionStore.newId()); private set
     var sessionTitle by mutableStateOf(""); private set
@@ -193,6 +202,7 @@ class AgentSession(
         sessionUsage.clear(); sessionUsage.putAll(d.usage)
         step = 0; contextTokens = 0; currentUser = null; pendingNote = null; usageVersion++
         pendingReview = null; reviewRounds = 0; loopPrints.clear(); loopNudged = false
+        reviewUsage.clear(); plannerUsage.clear(); mcpSpecs = emptyList(); mcpClients = emptyList()
         // checkpoints that no longer exist lose their "Restore to here"
         val cps = runCatching { checkpoints.list().map { it.id }.toSet() }.getOrDefault(emptySet())
         items.filterIsInstance<ChatItem.User>().forEach { if (it.checkpointId != null && it.checkpointId !in cps) it.checkpointId = null }
@@ -253,6 +263,7 @@ class AgentSession(
         pendingAsk.clear(); items.clear(); history.clear(); touched.clear(); plan.clear(); step = 0; contextTokens = 0
         sessionUsage.clear(); currentUser = null; pendingNote = null; usageVersion++; interrupted = false
         pendingReview = null; reviewRounds = 0; loopPrints.clear(); loopNudged = false
+        reviewUsage.clear(); plannerUsage.clear(); mcpSpecs = emptyList(); mcpClients = emptyList()
     }
 
     /** Switch to a saved session. Refused while a turn runs. */
@@ -310,6 +321,8 @@ class AgentSession(
         val shown = display.trim().ifEmpty { text.trim() }
         val user = ChatItem.User(shown, images, prompt = note + text.trim())
         if (titleAuto && sessionTitle.isBlank()) sessionTitle = SessionTitles.auto(shown.ifBlank { text })
+        // a new request invalidates the previous plan pill (v0.8 planner replaces it)
+        plan.clear()
         // the model's view of the conversation always comes from the items (also after a restore)
         history.clear(); history.addAll(HistoryRebuilder.rebuild(items))
         items += user
@@ -458,18 +471,23 @@ class AgentSession(
     private suspend fun loop(): RunOutcome {
         val (llm, model) = client()
         var lastText = ""
+        // v0.8 team mode: plan first (cheap model), then code; MCP tools connect once per turn
+        if (settings.agentMode == "team") runPlanner()
+        refreshMcpTools()
         for (step in 0 until MAX_STEPS) {
             trimHistory()
             this.step = step + 1
             hooks.onActivity(projectName, step + 1, RunActivity.THINKING)
             val bubble = ChatItem.Assistant()
             items += bubble
-            val sys = withContext(Dispatchers.IO) { SystemPrompt.build(projectDir, touched, linux.ready, settings.agentMode == "team") }
+            val sys = withContext(Dispatchers.IO) {
+                SystemPrompt.build(projectDir, touched, linux.ready, settings.agentMode == "team", mcpSpecs.map { it.name })
+            }
             val inputChars = sys.length + history.sumOf { size(it) }
             contextTokens = (inputChars / 3.6).toInt()
             val streamed = StringBuffer()
             // only the newest image turns carry their pixels; older ones say "[image omitted]"
-            val turn = llm.complete(sys, ImagePruner.prune(history), Tools.specs, object : StreamListener {
+            val turn = llm.complete(sys, ImagePruner.prune(history), specs(), object : StreamListener {
                 override fun onText(delta: String) {
                     streamed.append(delta)
                     scope.launch { bubble.text = streamed.toString() }
@@ -629,7 +647,9 @@ class AgentSession(
         items += card
         markDirty()
         val diff = Reviewer.diffOf(changes)
-        val req = Reviewer.buildRequest(currentUser?.text ?: "", diff)
+        // v0.8: automatic checks (lint/tests) run before the reviewer and join its context
+        val checks = if (settings.reviewAutoTests) collectChecks() else null
+        val req = Reviewer.buildRequest(currentUser?.text ?: "", diff, checks)
         val out = runCatching {
             val rl = LlmClient(def, cfg.baseUrl, model, settings.apiKey(def.id))
             rl.complete(Reviewer.SYSTEM, listOf(Msg.User(req)), emptyList(), object : StreamListener {
@@ -637,7 +657,9 @@ class AgentSession(
             })
         }
         out.onSuccess { turn ->
-            recordUsage(model, turn.usage ?: UsageParser.estimate(req.length, turn.text.length))
+            val used = turn.usage ?: UsageParser.estimate(req.length, turn.text.length)
+            recordUsage(model, used)
+            reviewUsage[model] = (reviewUsage[model] ?: Usage.ZERO) + used // v0.8: shown separately
             val report = Reviewer.parse(turn.text)
             card.finish(report)
             history += Msg.User(
@@ -653,6 +675,19 @@ class AgentSession(
             history += Msg.User("[Reviewer] The review call failed (${(e.message ?: "error").take(120)}); continue with your best judgement.")
         }
         markDirty()
+    }
+
+    /**
+     * v0.8: quick automatic checks for the reviewer — lint always (cheap), tests only when a
+     * runner exists. Failures of the helper functions never block the review itself.
+     */
+    private suspend fun collectChecks(): String? {
+        if (!linux.ready) return null
+        val results = ArrayList<Pair<String, String>>()
+        runCatching { lintProject().takeIf { it.isNotBlank() } }?.getOrNull()?.let { results += "lint" to it }
+        runCatching { runProjectTests(timeoutSec = 120) }.getOrNull()
+            ?.takeIf { it.isNotBlank() && !it.contains("No test runner detected") }?.let { results += "tests" to it }
+        return Reviewer.checksSection(results)
     }
 
     /** v0.7: summarise the oldest context into one note once it passes the threshold. */
@@ -714,13 +749,14 @@ class AgentSession(
     }
 
     private suspend fun runTool(name: String, a: JSONObject): String = withContext(Dispatchers.IO) {
-        when (name) {
-            in Tools.GIT -> GitTools.run(name, a, projectDir, git, settings.gitName, settings.gitEmail)
-            Tools.LIST -> Tools.listFiles(projectDir, a.optString("path", "."), a.optBoolean("recursive", true))
-            Tools.READ -> Tools.readFile(projectDir, a.optString("path"),
+        when {
+            name.startsWith(Mcp.PREFIX) -> runMcpTool(name, a)
+            name in Tools.GIT -> GitTools.run(name, a, projectDir, git, settings.gitName, settings.gitEmail)
+            name == Tools.LIST -> Tools.listFiles(projectDir, a.optString("path", "."), a.optBoolean("recursive", true))
+            name == Tools.READ -> Tools.readFile(projectDir, a.optString("path"),
                 a.optInt("start_line", 0).takeIf { it > 0 }, a.optInt("end_line", 0).takeIf { it > 0 })
-            Tools.SEARCH -> Tools.search(projectDir, a.optString("query"), a.optBoolean("regex"), a.optString("path", "."))
-            Tools.RUN -> {
+            name == Tools.SEARCH -> Tools.search(projectDir, a.optString("query"), a.optBoolean("regex"), a.optString("path", "."))
+            name == Tools.RUN -> {
                 val cmd = a.optString("command")
                 val v = SafetyPolicy.check(cmd)
                 if (!v.allowed) "Blocked by safety policy: ${v.reason}. Do not retry this command."
@@ -732,11 +768,78 @@ class AgentSession(
                     }
                 }
             }
-            Tools.WEB_SEARCH -> WebTools.search(a.optString("query"), a.optInt("max_results", 6))
-            Tools.WEB_FETCH -> WebTools.fetch(a.optString("url"), a.optInt("max_chars", 8_000))
-            Tools.LINT -> lintProject()
-            Tools.TESTS -> runProjectTests()
+            name == Tools.WEB_SEARCH -> WebTools.search(a.optString("query"), a.optInt("max_results", 6))
+            name == Tools.WEB_FETCH -> WebTools.fetch(a.optString("url"), a.optInt("max_chars", 8_000))
+            name == Tools.LINT -> lintProject()
+            name == Tools.TESTS -> runProjectTests()
             else -> "Error: unknown tool $name"
+        }
+    }
+
+    /** The tool list the model sees: built-ins plus the MCP tools discovered this turn. */
+    private fun specs(): List<ToolSpec> = Tools.specs + mcpSpecs
+
+    /** v0.8: connects to the user's MCP servers once per turn and collects their tools. */
+    private suspend fun refreshMcpTools() {
+        mcpSpecs = emptyList(); mcpClients = emptyList()
+        val servers = settings.mcpServers.take(MAX_MCP_SERVERS)
+        if (servers.isEmpty()) return
+        var anyOk = false
+        for (s in servers) {
+            val cl = McpClient(Mcp.Server(s.name, s.url, settings.mcpAuth(s.name)))
+            val tools = withContext(Dispatchers.IO) { runCatching { cl.listTools() }.getOrNull() }
+            if (tools == null || tools.isEmpty()) {
+                items += ChatItem.Notice(
+                    "MCP “${s.name}”: ${cl.endpointError ?: "no tools found"} — its tools are skipped this turn.",
+                    isError = false, kind = ChatItem.Notice.Kind.MCP,
+                )
+                continue
+            }
+            mcpClients += s to cl
+            mcpSpecs = mcpSpecs + tools.map { ToolSpec(it.name, it.description, it.inputSchema) }
+            anyOk = true
+        }
+        if (anyOk) markDirty()
+    }
+
+    /** Executes one `mcp_<server>_<tool>` call against the matching client. */
+    private suspend fun runMcpTool(full: String, a: JSONObject): String = withContext(Dispatchers.IO) {
+        val (slug, tool) = Mcp.splitToolName(full)
+            ?: return@withContext "Error: malformed MCP tool name '$full' (expected mcp_<server>_<tool>)"
+        val cl = mcpClients.firstOrNull { it.first.slug == slug }?.second
+            ?: return@withContext "Error: MCP server '$slug' is not connected this turn. Tell the user to check Settings → MCP servers."
+        cl.callTool(tool, a)
+    }
+
+    /**
+     * v0.8 team mode: an explicit planning pass before the coder loop. A cheap model (or the
+     * coder's own model) turns the request into a task list that fills the progress pill and
+     * is handed to the coder. Silent on failure — the coder can work without a plan.
+     */
+    private suspend fun runPlanner() {
+        val user = currentUser ?: return
+        if (!Planner.worthPlanning(user.text)) return
+        val def = Providers.byId(settings.activeProvider)
+        val cfg = settings.config(def.id)
+        val model = settings.plannerModel.ifBlank { cfg.model }
+        if (model.isBlank()) return
+        hooks.onActivity(projectName, 0, RunActivity.forTool("planner", ""))
+        val req = Planner.buildRequest(user.text)
+        val out = runCatching {
+            val pl = LlmClient(def, cfg.baseUrl, model, settings.apiKey(def.id))
+            pl.complete(Planner.SYSTEM, listOf(Msg.User(req)), emptyList(), object : StreamListener {
+                override fun onText(delta: String) {}
+            })
+        }
+        out.onSuccess { turn ->
+            val used = turn.usage ?: UsageParser.estimate(req.length, turn.text.length)
+            recordUsage(model, used)
+            plannerUsage[model] = (plannerUsage[model] ?: Usage.ZERO) + used
+            val parsed = Planner.parse(turn.text) ?: return
+            plan.clear(); plan.addAll(Planner.toPlanItems(parsed))
+            items += ChatItem.Notice("", kind = ChatItem.Notice.Kind.PLANNED, count = parsed.tasks.size)
+            history += Msg.User(Planner.planMessage(parsed))
+            markDirty()
         }
     }
 
@@ -757,13 +860,13 @@ class AgentSession(
     }
 
     /** v0.7: detect and run the project's tests (npm test / pytest / unittest). */
-    private suspend fun runProjectTests(): String {
+    private suspend fun runProjectTests(timeoutSec: Long = 300): String {
         val runners = ProjectChecks.detectTests(projectDir)
         if (runners.isEmpty()) {
             return "No test runner detected (no package.json test script, no pytest layout, no *_test.py files). Offer to write tests for this project."
         }
         val r = runners.first()
-        val res = linux.exec(projectDir, r.command, 300)
+        val res = linux.exec(projectDir, r.command, timeoutSec)
         return buildString {
             appendLine("Runner: ${r.label} (${r.command})")
             append(if (res.timedOut) "[timed out]\n" else "[exit ${res.exitCode}]\n")
@@ -796,6 +899,8 @@ class AgentSession(
         const val MAX_CONTEXT_CHARS = 180_000
         /** v0.7: reviewer passes per turn (team mode). */
         const val MAX_REVIEW_ROUNDS = 2
+        /** v0.8: MCP servers contacted per turn (the first ones configured). */
+        const val MAX_MCP_SERVERS = 4
         /** v0.7: compaction threshold (chars), from [ContextCompactor.THRESHOLD_CHARS]. */
         const val COMPACT_THRESHOLD = ContextCompactor.THRESHOLD_CHARS
         /** Rough context cost of one attached image (~1.5k tokens) for the meter and trimming. */
@@ -805,7 +910,7 @@ class AgentSession(
 }
 
 object SystemPrompt {
-    fun build(projectDir: File, touched: Collection<String>, linuxReady: Boolean, teamMode: Boolean = false): String {
+    fun build(projectDir: File, touched: Collection<String>, linuxReady: Boolean, teamMode: Boolean = false, mcpToolNames: List<String> = emptyList()): String {
         val rules = File(projectDir, "AGENTS.md").takeIf { it.isFile }?.readText()?.take(4000)
         return buildString {
             appendLine("""You are Saqr (صقر), an expert software engineer working as a coding agent inside the Saqr Code Android app.
@@ -839,7 +944,10 @@ You operate on the user's project through tools. The project root is the current
             appendLine("# Web & quality tools (v0.7)")
             appendLine("- web_search / web_fetch reach the public internet only (private addresses are blocked). Use them for docs, API references and unfamiliar errors.")
             appendLine("- lint_project gives quick JS/Python/JSON/HTML checks; run_tests detects and runs the project's tests. Use them after meaningful changes and fix what they report.")
-            if (teamMode) appendLine("- Team mode: a reviewer agent checks your applied changes after each batch. Reviewer messages start with \"[Reviewer]\"; fix reported issues immediately without re-asking the user.")
+            if (teamMode) appendLine("- Team mode: a planner outlined the tasks for this request ([Planner] message); follow it and keep the plan pill updated. A reviewer agent checks your applied changes after each batch. Reviewer messages start with \"[Reviewer]\"; fix reported issues immediately without re-asking the user.")
+            if (mcpToolNames.isNotEmpty()) {
+                appendLine("- MCP tools (names starting with mcp_) call the user's configured external servers. Available now: ${mcpToolNames.take(12).joinToString(", ")}. Their arguments follow the schema in each tool spec; never call an MCP tool that is not listed.")
+            }
             appendLine()
             appendLine("# PROJECT MAP")
             appendLine(Tools.projectMap(projectDir))

@@ -40,7 +40,7 @@ class ProjectRepository(context: Context) {
 }
 
 enum class Template {
-    EMPTY, WEB, PYTHON, NODE, COMPOSE, IME;
+    EMPTY, WEB, PYTHON, NODE, COMPOSE, IME, LITE_WEB;
 
     fun files(name: String): Map<String, String> = when (this) {
         EMPTY -> mapOf(
@@ -109,6 +109,7 @@ server.listen(3000, '127.0.0.1', () => console.log('http://127.0.0.1:3000'));
         )
         COMPOSE -> TemplateFiles.compose(name)
         IME -> TemplateFiles.ime(name)
+        LITE_WEB -> TemplateFiles.liteWeb(name)
     }
 
     companion object {

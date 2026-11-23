@@ -316,6 +316,8 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                         val month = remember(ws.agent.usageVersion) { ws.agent.ledger.month() }
                         val session = ws.agent.sessionUsage.toMap()
                         val sessionTotal = session.values.fold(Usage.ZERO) { a, b -> a + b }
+                        val reviewTotal = ws.agent.reviewUsage.values.fold(Usage.ZERO) { a, b -> a + b }
+                        val plannerTotal = ws.agent.plannerUsage.values.fold(Usage.ZERO) { a, b -> a + b }
                         val state = ChatUiState(
                             items = ws.agent.items, running = ws.agent.running, step = ws.agent.step, maxSteps = AgentSession.MAX_STEPS,
                             contextTokens = ws.agent.contextTokens, contextWindow = def.contextWindow, providerId = def.id,
@@ -327,7 +329,10 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                             },
                             customCommands = settings.customCommands,
                             sessionTokens = sessionTotal.total, sessionCost = com.ctodrs.saqrcode.agent.PriceTable.cost(session, prices),
-                            usageEstimated = sessionTotal.estimated, budget = settings.monthlyBudget,
+                            usageEstimated = sessionTotal.estimated,
+                            reviewTokens = reviewTotal.total, reviewCost = com.ctodrs.saqrcode.agent.PriceTable.cost(ws.agent.reviewUsage.toMap(), prices),
+                            plannerTokens = plannerTotal.total, plannerCost = com.ctodrs.saqrcode.agent.PriceTable.cost(ws.agent.plannerUsage.toMap(), prices),
+                            budget = settings.monthlyBudget,
                             monthSpent = com.ctodrs.saqrcode.agent.PriceTable.cost(month, prices) ?: 0.0,
                             pendingImages = pendingImages.toList(), imageToCode = imageToCode,
                             voice = com.ctodrs.saqrcode.ui.chat.VoiceUi(voice.available, voice.listening, voiceLang, voice.level),
@@ -404,7 +409,10 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     if (batteryDialog) BatteryDialog(onDismiss = { batteryDialog = false })
     if (showUsage) {
         version
-        val summary = UsageSummary(ws.agent.sessionUsage.toMap(), ws.agent.ledger.day(), ws.agent.ledger.month(), settings.prices(), settings.monthlyBudget)
+        val summary = UsageSummary(
+            ws.agent.sessionUsage.toMap(), ws.agent.ledger.day(), ws.agent.ledger.month(), settings.prices(), settings.monthlyBudget,
+            review = ws.agent.reviewUsage.toMap(), planner = ws.agent.plannerUsage.toMap(),
+        )
         UsageSheet(summary, onDismiss = { showUsage = false })
     }
     confirmRestore?.let { (p, plan) ->

@@ -60,6 +60,9 @@ class UsageSummary(
     val month: Map<String, Usage>,
     val prices: List<ModelPrice>,
     val budget: Double?,
+    /** v0.8 team mode: reviewer / planner spend of this session, shown as their own rows. */
+    val review: Map<String, Usage> = emptyMap(),
+    val planner: Map<String, Usage> = emptyMap(),
 ) {
     fun cost(m: Map<String, Usage>) = PriceTable.cost(m, prices)
     val monthSpent get() = cost(month) ?: 0.0
@@ -96,6 +99,8 @@ fun UsageSheet(summary: UsageSummary, onDismiss: () -> Unit) {
         SheetTitle(Lucide.Zap, stringResource(R.string.usage_title))
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
             UsageRow(stringResource(R.string.usage_session), summary.session, summary.cost(summary.session))
+            if (summary.review.isNotEmpty()) UsageRow(stringResource(R.string.usage_review), summary.review, summary.cost(summary.review))
+            if (summary.planner.isNotEmpty()) UsageRow(stringResource(R.string.usage_planner), summary.planner, summary.cost(summary.planner))
             UsageRow(stringResource(R.string.usage_today), summary.today, summary.cost(summary.today))
             UsageRow(stringResource(R.string.usage_month), summary.month, summary.cost(summary.month))
             summary.budget?.let { b ->

@@ -1,49 +1,43 @@
 # Development plan · خطة التطوير
 
-## الوضع بعد 0.7.0 · Where we are after 0.7.0
+## الوضع بعد 0.8.0 · Where we are after 0.8.0
 
-شُحنت في 0.7.0: فريق الوكلاء (مخطط ← مبرمج ← مراجع بنموذج مختلف)، ضغط السياق التلقائي، كاشف الحلقات، أدوات الويب (`web_search` / `web_fetch`) وفحوصات الجودة (`lint_project` / `run_tests`)، تبويب «بناء» على الجهاز (نسخة أولية تجريبية)، وقالبا Compose وIME.
+شُحنت في 0.8.0: تحصين مسار البناء (تنزيلات مثبّتة بـ SHA-256 قابلة للاستئناف، مرآة aapt2 مع تحقق ELF، إرشادات فشل ودّية، مراقب أعطال، قالب ويب خفيف بلا اعتماديات)، ومرحلة «مخطط» صريحة في وضع الفريق، وفحوصات تلقائية تُمرَّر للمراجع، وتكلفة المراجع/المخطط منفصلة في العدّاد، ودعم خوادم **MCP** عبر Streamable HTTP كأدوات `mcp_*`.
 
-Shipped in 0.7.0: agent team review (second model), auto context compaction, loop detector, web tools, quality checks, the experimental on-device Build tab, and the Compose + IME templates.
+Shipped in 0.8.0: hardened build path (SHA-256-pinned resumable downloads, aapt2 mirror with ELF validation, friendly failure hints, crash monitor, zero-dependency Lite Web template), the explicit planner stage in team mode, automatic checks fed to the reviewer, separate review/planner cost in the meter, and **MCP** servers over Streamable HTTP exposed as `mcp_*` tools.
 
 ---
 
-## الأولوية 1 · Priority 1 — إثبات البناء على الجهاز · Prove on-device build
+## الأولوية 1 · Priority 1 — إثبات البناء ميدانياً · Field-prove the on-device build
 
-### 1. تثبيت بناء الجهاز واختباره ميدانياً · Field-test the on-device builder
-- اختبار على هواتف حقيقية (Snapdragon وMediaTek، 4–8 غيغابايت) لكل خطوة: تنزيل ubuntu-base، apt داخل proot، sdkmanager، تحميل aapt2، وبناء قالب Compose كاملاً.
-- Test on real phones (Snapdragon + MediaTek, 4–8 GB) through every step: ubuntu-base download, apt in proot, sdkmanager, aapt2 fetch, and a full Compose-template build.
-- سجّل الأخطاء الشائعة في الشاشة (نفاد الذاكرة، فشل الشبكة، تعارض proot) مع حلول مقترحة لكل خطأ.
-- Surface the common failures (OOM, network, proot edge cases) as friendly hints in the build log.
-- قياس: زمن التجهيز، حجم التنزيل، الذاكرة القصوى، وبطارية الهاتف — انشر الأرقام في README.
-- Track: setup time, download size, peak memory, battery drain — publish numbers in the README.
+### 1. اختبار ميداني وأرقام · Field-test and publish numbers
+- اختبار على هواتف حقيقية (Snapdragon وMediaTek، 4–8 غيغابايت) لكل خطوة: التنزيل المثبّت، apt داخل proot، sdkmanager، جلب aapt2، وبناء قالب Lite كاملاً ثم قالب Compose.
+- Test on real phones (Snapdragon + MediaTek, 4–8 GB) through every step: pinned downloads, apt in proot, sdkmanager, aapt2 fetch, then a full Lite-template and Compose-template build.
+- قياس زمن التجهيز، حجم التنزيل، الذاكرة القصوى والبطارية، ونشر الأرقام في README.
+- Track setup time, download size, peak memory, battery — publish in the README.
+- خيار «بناء الإصدار الموقّع»: توقيع الـ APK بمفتاح المشروع (إدخال كلمة المرور) بدل debug فقط.
+- «Signed release build» option: sign the on-device APK with the project keystore (password prompt) instead of debug-only.
 
-### 2. تحصين مسار البناء · Harden the build path
-- خيار «البناء الخفيف»: قالب لا يحتاج Compose (WebView بسيط) ليبني في دقائق على الهواتف الضعيفة.
-- «Lite build» option: a WebView-only template that builds in minutes on low-end devices.
-- تخزين مؤقت للتوزيعات: استئناف التنزيلات المجزّأة، والتحقق بـ SHA-256 لكل مكون (ubuntu-base وcmdline-tools وGradle).
-- Resumable downloads + SHA-256 pinning for every component (ubuntu-base, cmdline-tools, Gradle, aapt2).
-- بديل aapt2: قائمة مرايا قابلة للاختيار من الإعدادات بدل اعتماد مستودع واحد.
-- aapt2 mirror list in Settings instead of a single source.
-- بث `logcat` بعد التثبيت لإظهار أعطال التطبيق المبني داخل التبويب نفسه.
-- Stream `logcat` of the built app after install, inside the same tab.
+### 2. مرونة البناء · Build flexibility
+- قائمة مرايا aapt2 كاملة (عدة مستودعات جاهزة) بدلاً من مرآة واحدة + القائمة المدمجة.
+- Full aapt2 mirror presets (several curated sources) beyond the single user URL + built-in lookup.
+- تنظيف تلقائي للمخزونات القديمة (rootfs/SDK/Gradle) وحساب المساحة في التبويب.
+- Cache management in the Build tab (old rootfs/SDK/Gradle, sizes, one-tap reclaim).
 
 ## الأولوية 2 · Priority 2 — ذكاء أعمق ودمج أوسع · Deeper agent, wider integrations
 
 ### 3. تطوير فريق الوكلاء · Evolve the agent team
-- مرحلة «مخطط» صريحة: نموذج اقتصادي يحوّل الطلب إلى خطة مهام قبل كتابة الكود (مفصولة عن `update_plan`).
-- Explicit planner stage: a cheap model turns the request into a task plan before coding (distinct from `update_plan`).
-- اختبار تلقائي بعد المراجعة: تشغيل `run_tests`/`lint_project` وجمع نتائجها في حكم المراجع.
-- Auto-test pass: feed `run_tests`/`lint_project` output into the reviewer's context.
-- انتخاب نموذج المراجع لكل مزوّد، وعرض تكلفة المراجعة كحدها في عدّاد التكلفة.
-- Per-provider reviewer model + show review cost separately in the meter.
-- دعم **MCP** عبر HTTP/SSE: إعدادات خوادم المستخدم وأدواتها كأدوات وكيل باسم مسبوق بـ `mcp_`.
-- **MCP** over HTTP/SSE: user-configured servers exposed as `mcp_*` agent tools.
+- اختيار نموذج المراجع/المخطط لكل مزوّد (قوائم مقترحة بدل كتابة الاسم يدوياً).
+- Per-provider reviewer/planner pickers with suggested-model menus instead of free-text ids.
+- MCP: نقل stdio عبر الطرفية للمستخدمين المتقدمين، وOAuth لخوادم تتطلب دخولاً.
+- MCP: stdio transport bridged through the terminal for advanced users; OAuth for servers requiring sign-in.
+- لوحة أدوات MCP في الإعدادات (استعراض أدوات كل خادم واختبارها يدوياً).
+- An MCP tools browser in Settings (list and test each server's tools manually).
 
 ### 4. GitLab / Gitea + تسجيل دخول أسهل · GitLab / Gitea + easier sign-in
-- شاشة حسابات تدعم GitLab وGitea (حساب + رمز + مضيف HTTPS مخصص) مع نفس تدفقات الدفع والسحب.
-- Accounts screen for GitLab and Gitea (host + token) reusing the same push/pull flows.
-- زر **GitHub Device Flow** بدل لصق الرموز (Client ID اختياري من المستخدم كما هو موجود الآن).
+- شاشة حسابات تدعم GitLab وGitea بشكل كامل (المخزن يدعمها فعلاً؛ يتبقى واجهة إنشاء المستودعات والدفع).
+- Full GitLab/Gitea account UI (the account store already accepts custom HTTPS hosts; missing: create-repo and PR flows).
+- زر **GitHub Device Flow** بدل لصق الرموز (Client ID اختياري موجود بالفعل).
 - **GitHub Device Flow** button instead of pasting tokens (the optional Client ID setting already exists).
 
 ## الأولوية 3 · Priority 3 — العمل · Business
@@ -51,8 +45,8 @@ Shipped in 0.7.0: agent team review (second model), auto context compaction, loo
 ### 5. النشر والدفع · Distribution & payments
 - Google Play Billing + **Moyasar** (mada، Apple Pay، STC Pay) بأسعار بالريال وخطة للطلاب.
 - Google Play Billing + **Moyasar** (mada, Apple Pay, STC Pay), SAR pricing, student plan.
-- صفحات المتاجر (Play، AppGallery، Galaxy Store) بالعربية والإنجليزية، ولقطات من الشاشات الجديدة (البناء، المراجعة).
-- Store listings (Play, AppGallery, Galaxy Store) in Arabic and English with screenshots of the new tabs.
+- صفحات المتاجر بالعربية والإنجليزية مع لقطات التبويبات الجديدة (البناء، المراجعة، MCP).
+- Store listings in Arabic and English with screenshots of the new tabs (Build, Review, MCP).
 - مستندات ودروس فيديو قصيرة: «ابنِ أول تطبيق من هاتفك في 10 دقائق».
 - Docs + short videos: «Build your first app from your phone in 10 minutes».
 

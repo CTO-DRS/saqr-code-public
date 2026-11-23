@@ -117,6 +117,12 @@ class ChatUiState(
     val sessionTokens: Long = 0,
     val sessionCost: Double? = null,
     val usageEstimated: Boolean = false,
+    /** v0.8 team mode: the reviewer's own spend, shown separately in the meter. */
+    val reviewTokens: Long = 0,
+    val reviewCost: Double? = null,
+    /** v0.8 team mode: the planner's own spend. */
+    val plannerTokens: Long = 0,
+    val plannerCost: Double? = null,
     val budget: Double? = null,
     val monthSpent: Double = 0.0,
     /** Images attached in the composer, not sent yet. */
@@ -637,6 +643,7 @@ private fun NoticeCard(item: ChatItem.Notice) {
                 else stringResource(R.string.notice_restored, item.text)
             ChatItem.Notice.Kind.COMPACTED -> stringResource(R.string.notice_compacted)
             ChatItem.Notice.Kind.LOOP -> stringResource(R.string.notice_loop)
+            ChatItem.Notice.Kind.PLANNED -> stringResource(R.string.notice_planned, item.count.coerceAtLeast(0).toString())
             else -> item.text
         }
         Text(body, style = Saqr.type.bodySmall.copy(color = c.text1, textDirection = TextDirection.Content))
@@ -729,6 +736,11 @@ private fun StepMeter(state: ChatUiState, onClick: () -> Unit) {
                     Text(" · " + (if (state.usageEstimated) "~" else "") + formatTokens(state.sessionTokens) +
                         (state.sessionCost?.let { " · " + formatUsd(it) } ?: ""),
                         style = Saqr.type.monoMicro, color = c.accentText, maxLines = 1)
+                }
+                if (state.reviewTokens > 0) {
+                    Text(" · " + stringResource(R.string.meter_review) + " " + formatTokens(state.reviewTokens) +
+                        (state.reviewCost?.let { " · " + formatUsd(it) } ?: ""),
+                        style = Saqr.type.monoMicro, color = c.text2, maxLines = 1)
                 }
             }
         }

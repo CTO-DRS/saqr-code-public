@@ -458,4 +458,28 @@
     <string name="tpl_compose_desc">Kotlin + Jetpack Compose, Arabic/RTL — builds on the phone</string>
     <string name="tpl_ime">Keyboard</string>
     <string name="tpl_ime_desc">Arabic IME keyboard (InputMethodService), 3 letter rows</string>
+    <!-- v0.8 planner / MCP / build hardening -->
+    <string name="notice_planned">The planner outlined a plan with %1$s tasks — the agent follows it below.</string>
+    <string name="meter_review">review:</string>
+    <string name="usage_review">Review agent (session)</string>
+    <string name="usage_planner">Planner agent (session)</string>
+    <string name="planner_model">Planner model</string>
+    <string name="planner_model_desc">In team mode, this model turns each request into a task plan before coding. Blank = the coder model; a cheap fast model is ideal.</string>
+    <string name="review_auto_tests">Automatic checks for the reviewer</string>
+    <string name="review_auto_tests_desc">Run lint and the project tests after each batch and give the output to the reviewer</string>
+    <string name="mcp_section">MCP servers</string>
+    <string name="mcp_add">Add an MCP server</string>
+    <string name="mcp_add_desc">Tools of the server appear to the agent as mcp_… tools. Streamable HTTP (also works with most SSE servers).</string>
+    <string name="mcp_name">Server name</string>
+    <string name="mcp_auth">Auth header</string>
+    <string name="mcp_add_btn">Add server</string>
+    <string name="mcp_added">Server added — its tools connect at the start of the next turn.</string>
+    <string name="build_section">On-device build</string>
+    <string name="aapt2_mirror">aapt2 mirror URL</string>
+    <string name="aapt2_mirror_desc">Direct URL of an arm64 aapt2 (file or .tar.gz). Blank = the built-in lookup. The binary is verified before use.</string>
+    <string name="build_crash_check">Check crashes</string>
+    <string name="build_crash_none">No recent crashes in the log.</string>
+    <string name="build_crash_found">%1$s recent crash(es):</string>
+    <string name="tpl_lite">Lite Web app</string>
+    <string name="tpl_lite_desc">WebView + zero dependencies — the fastest build on weak phones</string>
 </resources>

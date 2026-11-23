@@ -19,8 +19,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +32,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import com.ctodrs.saqrcode.R
+import com.ctodrs.saqrcode.SaqrApp
 import com.ctodrs.saqrcode.ondevice.OnDeviceBuild
 import com.ctodrs.saqrcode.ui.components.PrimaryButton
 import com.ctodrs.saqrcode.ui.components.GhostButton
@@ -42,18 +45,21 @@ import com.ctodrs.saqrcode.ui.theme.Sp
 import kotlinx.coroutines.launch
 
 /**
- * v0.7 · لوحة البناء على الجهاز · On-device build pane: prepare the proot build environment
- * (Debian + JDK 17 + Android SDK + arm64 aapt2), build a debug APK of the project, and
- * install it. Experimental: the first preparation downloads ~600 MB and a phone needs room.
+ * v0.7/v0.8 · لوحة البناء على الجهاز · On-device build pane: prepare the proot build environment
+ * (Debian + JDK 17 + Android SDK + arm64 aapt2), build a debug APK of the project, install it,
+ * and (v0.8) check the built app's recent crashes from logcat. Downloads are pinned and resumable.
  */
 @Composable
 fun BuildPane(ws: Workspace) {
     val ctx = LocalContext.current
-    val build = remember(ws.name) { OnDeviceBuild(ctx.applicationContext, ws.dir) }
+    val build = remember(ws.name) {
+        OnDeviceBuild(ctx.applicationContext, ws.dir).also { it.aapt2Mirror = SaqrApp.instance.settings.aapt2Mirror }
+    }
     val phase by build.phase.collectAsState()
     val logs by build.log.collectAsState()
     val line by build.progressLine.collectAsState()
     val apk by build.apk.collectAsState()
+    var crashes by remember { mutableStateOf<List<String>?>(null) }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val c = Saqr.colors
@@ -93,6 +99,29 @@ fun BuildPane(ws: Workspace) {
                 stringResource(R.string.build_apk_ready, apk!!.name, (apk!!.length() / 1024).toString()),
                 style = Saqr.type.caption.copy(textDirection = TextDirection.Ltr), color = c.success,
             )
+            Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalAlignment = Alignment.CenterVertically) {
+                GhostButton(stringResource(R.string.build_crash_check), {
+                    scope.launch { crashes = build.crashReport() }
+                }, icon = Lucide.Bug)
+                crashes?.let { list ->
+                    if (list.isEmpty()) {
+                        Text(stringResource(R.string.build_crash_none), style = Saqr.type.caption, color = c.success)
+                    } else {
+                        Text(stringResource(R.string.build_crash_found, list.size.toString()), style = Saqr.type.caption, color = c.danger)
+                    }
+                }
+            }
+            crashes?.takeIf { it.isNotEmpty() }?.let { list ->
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.lg))
+                        .background(c.surface1).border(1.dp, c.border, RoundedCornerShape(Radius.lg)).padding(Sp.md),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    list.forEach { l ->
+                        Text(l, style = Saqr.type.monoMicro, color = c.danger)
+                    }
+                }
+            }
         }
 
         Text(

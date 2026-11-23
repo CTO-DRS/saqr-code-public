@@ -124,6 +124,18 @@ class SettingsUi(
     val onReviewModel: (String) -> Unit = {},
     val autoCompact: Boolean = true,
     val onAutoCompact: (Boolean) -> Unit = {},
+    /** v0.8 team mode: planner stage + automatic checks fed to the reviewer. */
+    val plannerModel: String = "",
+    val onPlannerModel: (String) -> Unit = {},
+    val reviewAutoTests: Boolean = true,
+    val onReviewAutoTests: (Boolean) -> Unit = {},
+    /** v0.8 MCP servers (add returns an error message, or null on success). */
+    val mcpServers: List<com.ctodrs.saqrcode.agent.Mcp.Server> = emptyList(),
+    val onMcpAdd: (String, String, String) -> String? = { _, _, _ -> null },
+    val onMcpRemove: (String) -> Unit = {},
+    /** v0.8 on-device build: direct aapt2 mirror URL (blank = built-in lookup). */
+    val aapt2Mirror: String = "",
+    val onAapt2Mirror: (String) -> Unit = {},
 )
 
 @Composable
@@ -176,6 +188,25 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
         onReviewModel = { settings.reviewModel = it },
         autoCompact = settings.autoCompact,
         onAutoCompact = { settings.autoCompact = it },
+        plannerModel = settings.plannerModel,
+        onPlannerModel = { settings.plannerModel = it },
+        reviewAutoTests = settings.reviewAutoTests,
+        onReviewAutoTests = { settings.reviewAutoTests = it },
+        mcpServers = settings.mcpServers,
+        onMcpAdd = { name, url, auth ->
+            val err = McpSettings.validate(name, url, settings.mcpServers)
+            if (err == null) {
+                settings.mcpServers = settings.mcpServers + com.ctodrs.saqrcode.agent.Mcp.Server(name, url)
+                settings.setMcpAuth(name, auth.ifBlank { null })
+            }
+            err
+        },
+        onMcpRemove = { name ->
+            settings.mcpServers = settings.mcpServers.filter { it.name != name }
+            settings.setMcpAuth(name, null)
+        },
+        aapt2Mirror = settings.aapt2Mirror,
+        onAapt2Mirror = { settings.aapt2Mirror = it },
     )
     if (showBattery) BatteryDialog(onDismiss = { showBattery = false })
     SettingsContent(ui, onBack)
@@ -247,8 +278,38 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     )
                 }
             }
-            if (ui.teamMode) Group { ReviewModelEditor(ui) }
+            if (ui.teamMode) {
+                Group { ReviewModelEditor(ui) }
+                Group { PlannerModelEditor(ui) }
+                Group {
+                    ListRow(
+                        title = stringResource(R.string.review_auto_tests), subtitle = stringResource(R.string.review_auto_tests_desc), icon = Lucide.CircleCheck,
+                        trailing = { SaqrSwitch(ui.reviewAutoTests, ui.onReviewAutoTests) },
+                    )
+                }
+            }
             if (ui.activeModel.isNotBlank()) Group { VisionEditor(ui) }
+            // ---- v0.8 MCP servers
+            SectionLabel(stringResource(R.string.mcp_section), Modifier.padding(top = Sp.md))
+            if (ui.mcpServers.isNotEmpty()) {
+                Group {
+                    Column {
+                        ui.mcpServers.forEachIndexed { i, s ->
+                            if (i > 0) RowDivider()
+                            ListRow(
+                                title = s.name, subtitle = s.url,
+                                icon = Lucide.Plug,
+                                onClick = { ui.onMcpRemove(s.name) },
+                                trailing = { SIcon(Lucide.Trash2, size = 18.dp, tint = Saqr.colors.danger) },
+                            )
+                        }
+                    }
+                }
+            }
+            Group { McpSettings(ui) }
+            // ---- v0.8 on-device build
+            SectionLabel(stringResource(R.string.build_section), Modifier.padding(top = Sp.md))
+            Group { Aapt2MirrorEditor(ui) }
             Group {
                 Column {
                     ListRow(
@@ -348,6 +409,87 @@ private fun ReviewModelEditor(ui: SettingsUi) {
                 placeholder = "claude-haiku-4-5 / gemini-2.5-flash", mono = true)
             Spacer(Modifier.width(Sp.sm))
             GhostButton(stringResource(R.string.save), { ui.onReviewModel(text); status = savedText }, icon = Lucide.Save)
+        }
+        status?.let { Text(it, style = Saqr.type.caption, color = c.text2) }
+    }
+}
+
+/** v0.8 team mode: the planner model id (blank = the coder's model). */
+@Composable
+private fun PlannerModelEditor(ui: SettingsUi) {
+    val c = Saqr.colors
+    var text by remember(ui.plannerModel) { mutableStateOf(ui.plannerModel) }
+    val savedText = stringResource(R.string.saved)
+    var status by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+        LabeledIcon(Lucide.ListTree, stringResource(R.string.planner_model))
+        Text(stringResource(R.string.planner_model_desc), style = Saqr.type.caption, color = c.text3)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SaqrField(text, { text = it; status = null }, Modifier.weight(1f), label = stringResource(R.string.model),
+                placeholder = "gemini-2.5-flash / gpt-4o-mini", mono = true)
+            Spacer(Modifier.width(Sp.sm))
+            GhostButton(stringResource(R.string.save), { ui.onPlannerModel(text); status = savedText }, icon = Lucide.Save)
+        }
+        status?.let { Text(it, style = Saqr.type.caption, color = c.text2) }
+    }
+}
+
+/** v0.8 MCP servers: add (name + URL + optional auth header) or remove. */
+object McpSettings {
+    fun validate(name: String, url: String, existing: List<com.ctodrs.saqrcode.agent.Mcp.Server>): String? = when {
+        name.isBlank() -> "The server needs a name."
+        url.isBlank() -> "The server needs a URL."
+        !url.trim().startsWith("https://") -> "The URL must start with https://"
+        existing.any { it.name.equals(name.trim(), ignoreCase = true) } -> "A server with this name already exists."
+        else -> null
+    }
+
+    @Composable
+    operator fun invoke(ui: SettingsUi) {
+        val c = Saqr.colors
+        var name by remember { mutableStateOf("") }
+        var url by remember { mutableStateOf("") }
+        var auth by remember { mutableStateOf("") }
+        var status by remember { mutableStateOf<String?>(null) }
+        val addedText = stringResource(R.string.mcp_added)
+        Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+            LabeledIcon(Lucide.Plug, stringResource(R.string.mcp_add))
+            Text(stringResource(R.string.mcp_add_desc), style = Saqr.type.caption, color = c.text3)
+            SaqrField(name, { name = it; status = null }, label = stringResource(R.string.mcp_name), placeholder = "context7")
+            SaqrField(url, { url = it; status = null }, label = "URL", placeholder = "https://mcp.example.com/mcp", mono = true,
+                keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri))
+            SaqrField(auth, { auth = it; status = null }, label = stringResource(R.string.mcp_auth),
+                placeholder = "Bearer … (optional)", mono = true, visual = PasswordVisualTransformation(),
+                keyboard = KeyboardOptions(keyboardType = KeyboardType.Password))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PrimaryButton(stringResource(R.string.mcp_add_btn), {
+                    val err = ui.onMcpAdd(name, url, auth)
+                    if (err == null) {
+                        name = ""; url = ""; auth = ""; status = addedText
+                    } else status = err
+                }, icon = Lucide.Plus)
+            }
+            status?.let { Text(it, style = Saqr.type.caption, color = c.text2) }
+        }
+    }
+}
+
+/** v0.8: direct aapt2 mirror URL for the on-device build (blank = the built-in lookup). */
+@Composable
+private fun Aapt2MirrorEditor(ui: SettingsUi) {
+    val c = Saqr.colors
+    var text by remember(ui.aapt2Mirror) { mutableStateOf(ui.aapt2Mirror) }
+    val savedText = stringResource(R.string.saved)
+    var status by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+        LabeledIcon(Lucide.CloudDownload, stringResource(R.string.aapt2_mirror))
+        Text(stringResource(R.string.aapt2_mirror_desc), style = Saqr.type.caption, color = c.text3)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SaqrField(text, { text = it; status = null }, Modifier.weight(1f), label = "URL",
+                placeholder = "https://…/aapt2 (blank = auto)", mono = true,
+                keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri))
+            Spacer(Modifier.width(Sp.sm))
+            GhostButton(stringResource(R.string.save), { ui.onAapt2Mirror(text); status = savedText }, icon = Lucide.Save)
         }
         status?.let { Text(it, style = Saqr.type.caption, color = c.text2) }
     }

@@ -194,6 +194,148 @@ fun MainScreen() {
 </resources>
 """
 
+    // ------------------------------------------------------------ lite web (v0.8: builds in minutes)
+
+    /**
+     * A WebView-only app with ZERO dependencies (no AndroidX, no Compose) — the whole build is
+     * one Kotlin file, so even a low-end phone compiles it in minutes. The page itself is a
+     * styled, RTL-ready assets/index.html the agent can edit freely.
+     */
+    fun liteWeb(name: String): Map<String, String> {
+        return mapOf(
+            "README.md" to "# $name\n\nA WebView app with zero dependencies — builds on this phone in minutes (Build tab → Prepare → Build APK).\n\n" +
+                "- The page lives at `app/src/main/assets/index.html`; edit it directly or ask the agent.\n",
+            "AGENTS.md" to Template.AGENTS_MD +
+                "- This is a zero-dependency WebView app: the UI is `app/src/main/assets/index.html` (HTML/CSS/JS, Arabic-ready). Keep MainActivity.kt minimal.\n",
+            "settings.gradle.kts" to LITE_SETTINGS,
+            "build.gradle.kts" to LITE_ROOT,
+            "gradle.properties" to LITE_GRADLE_PROPS,
+            "app/build.gradle.kts" to fill(LITE_APP, name),
+            "app/src/main/AndroidManifest.xml" to LITE_MANIFEST,
+            "app/src/main/java/com/saqr/" + pkg(name) + "/MainActivity.kt" to LITE_MAIN,
+            "app/src/main/assets/index.html" to fill(LITE_PAGE, name),
+        )
+    }
+
+    private const val LITE_SETTINGS = """pluginManagement {
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories { google(); mavenCentral() }
+}
+rootProject.name = "@@NAME@@"
+include(":app")
+"""
+
+    private const val LITE_ROOT = """plugins {
+    id("com.android.application") version "8.7.3" apply false
+    id("org.jetbrains.kotlin.android") version "2.0.21" apply false
+}
+"""
+
+    private const val LITE_GRADLE_PROPS = """org.gradle.jvmargs=-Xmx900m -Dfile.encoding=UTF-8
+android.useAndroidX=false
+"""
+
+    private const val LITE_APP = """plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace = "com.saqr.@@PKG@@"
+    compileSdk = 35
+    defaultConfig {
+        applicationId = "com.saqr.@@PKG@@"
+        minSdk = 26
+        targetSdk = 35
+        versionCode = 1
+        versionName = "0.1.0"
+        resourceConfigurations += listOf("en", "ar")
+    }
+    buildTypes { release { isMinifyEnabled = false } }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = "17" }
+}
+
+dependencies {
+    // zero dependencies by design: this is what makes the build fast on phones
+}
+"""
+
+    private const val LITE_MANIFEST = """<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:label="@@NAME@@"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.NoActionBar">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+"""
+
+    private const val LITE_MAIN = """package com.saqr.@@PKG@@
+
+import android.app.Activity
+import android.os.Bundle
+import android.webkit.WebView
+import android.webkit.WebViewClient
+
+class MainActivity : Activity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val web = WebView(this)
+        web.settings.javaScriptEnabled = true
+        web.settings.defaultTextEncodingName = "utf-8"
+        web.webViewClient = WebViewClient()
+        setContentView(web)
+        web.loadUrl("file:///android_asset/index.html")
+    }
+}
+"""
+
+    private const val LITE_PAGE = """<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>@@NAME@@</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #0e1116; color: #e8eaed;
+         min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .card { text-align: center; padding: 32px 24px; }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  p  { color: #9aa0a6; margin: 0 0 24px; }
+  button { font-size: 16px; padding: 12px 28px; border-radius: 12px; border: 0;
+           background: #4f8cff; color: white; }
+  .count { margin-top: 16px; font-size: 14px; color: #9aa0a6; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>@@NAME@@ 🦅</h1>
+    <p>عدّل هذه الصفحة من app/src/main/assets/index.html</p>
+    <button onclick="tap()">اضغط هنا</button>
+    <div class="count" id="c">عدد الضغطات: 0</div>
+  </div>
+<script>
+  let n = 0;
+  function tap() { n++; document.getElementById('c').textContent = 'عدد الضغطات: ' + n; }
+</script>
+</body>
+</html>
+"""
+
     // ------------------------------------------------------------ IME keyboard
 
     fun ime(name: String): Map<String, String> {

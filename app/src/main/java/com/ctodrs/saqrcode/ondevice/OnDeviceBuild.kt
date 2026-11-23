@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.Request
 import com.ctodrs.saqrcode.terminal.LinuxEnv
 import com.ctodrs.saqrcode.terminal.TarExtractor
 import org.json.JSONObject
@@ -16,21 +15,22 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 /**
- * v0.7 · بناء APK على الجهاز · On-device APK build (experimental, "lite" path).
+ * v0.7/v0.8 · بناء APK على الجهاز · On-device APK build (experimental).
  *
  * Prepares a Debian-based build environment inside proot on the phone:
  *  1. Ubuntu base arm64 rootfs (glibc, ~34 MB) extracted next to the Alpine runtime rootfs;
  *  2. OpenJDK 17 + unzip installed through apt inside proot;
  *  3. Android cmdline-tools + `platforms;android-35` via sdkmanager (Java jars, arch-free);
- *  4. an arm64 `aapt2` binary fetched from a community GitHub release (Google does not
- *     publish linux-arm64 build-tools; aapt2 is the only native binary AGP needs);
+ *  4. an arm64 `aapt2` binary (Google does not publish linux-arm64 build-tools; aapt2 is the
+ *     only native binary AGP needs) fetched from a mirror list, ELF-verified;
  *  5. a Gradle 8.11.1 distribution (Java, arch-free).
  * Then `assembleDebug` runs inside proot with `android.aapt2FromMavenOverride` pointed at
  * the arm64 binary, and the produced APK is installed through a content-URI intent.
  *
- * Everything streams into [log]; the whole path is explicit so failures say what to fix.
- * On a mid-range phone the first bootstrap downloads ~600 MB and a small Compose app
- * builds in 5–15 minutes.
+ * v0.8: every download is resumable and pinned to the publisher's SHA-256
+ * ([Downloader]), aapt2 comes from a mirror list that accepts a user URL from Settings,
+ * failures get actionable [Hints] in the log, and the tab can show the built app's crashes
+ * ([LogcatStream]).
  */
 class OnDeviceBuild(private val context: Context, val projectDir: File) {
 
@@ -57,6 +57,9 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
     private val sdkRoot = "/opt/android-sdk"
     private val gradleHome = "/opt/gradle/gradle-8.11.1"
 
+    /** v0.8: aapt2 mirror the user set in Settings (a direct URL to the binary/archive); empty = auto. */
+    var aapt2Mirror: String = ""
+
     private fun addLog(l: String) {
         _log.value = (_log.value + l).takeLast(MAX_LOG_LINES)
     }
@@ -73,9 +76,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
         _phase.value = Phase.BOOTSTRAPPING
         try {
             if (!File(rootfs, ".saqr_installed").isFile) {
-                _line.value = "Downloading Debian base (ubuntu-base arm64)…"
-                addLog("• Downloading rootfs (~34 MB)…")
-                val gz = download(UBUNTU_BASE_URL, File(context.cacheDir, "ubuntu-base.tar.gz"))
+                val gz = fetch(ART_ROOTFS, "Downloading Debian base (ubuntu-base arm64)…", "rootfs (~34 MB)")
                 rootfs.deleteRecursively(); rootfs.mkdirs()
                 gz.inputStream().use { TarExtractor.extractGz(it, rootfs) { } }
                 gz.delete()
@@ -97,8 +98,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             }
 
             if (!File(sdkDir, "cmdline-tools/latest/bin/sdkmanager").isFile) {
-                _line.value = "Downloading Android cmdline-tools…"
-                val zip = download(CMDTOOLS_URL, File(context.cacheDir, "sdk-cmdtools.zip"))
+                val zip = fetch(ART_CMDTOOLS, "Downloading Android cmdline-tools…", "cmdline-tools (~150 MB)")
                 addLog("• Extracting cmdline-tools…")
                 val tmp = File(context.cacheDir, "sdk-cmdtools")
                 tmp.deleteRecursively(); tmp.mkdirs()
@@ -125,40 +125,10 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
                 addLog("✓ android-35 platform ready")
             }
 
-            val aapt2 = File(sdkDir, "build-tools/35.0.0/aapt2")
-            if (!aapt2.isFile) {
-                _line.value = "Fetching arm64 aapt2…"
-                addLog("• Looking up the latest aapt2 release (aarch64-android-builds)…")
-                val api = getJson(GITHUB_AAPT2_API)
-                val assets = api.optJSONArray("assets") ?: error("no assets in the aapt2 release")
-                var url = ""
-                for (i in 0 until assets.length()) {
-                    val a = assets.optJSONObject(i) ?: continue
-                    val name = a.optString("name")
-                    if (name.lowercase().contains("aapt2") && (name.endsWith(".tar.gz") || name.equals("aapt2", ignoreCase = true))) {
-                        url = a.optString("browser_download_url")
-                        if (name.endsWith(".tar.gz")) break
-                    }
-                }
-                if (url.isEmpty()) error(
-                    "No aapt2 asset found. Put an arm64 aapt2 binary manually at files/linux/android-sdk/build-tools/35.0.0/aapt2 and retry.",
-                )
-                aapt2.parentFile?.mkdirs()
-                val f = download(url, aapt2)
-                if (f.name.endsWith(".tar.gz")) {
-                    f.inputStream().use { TarExtractor.extractGz(it, aapt2.parentFile!!) { } }
-                    f.delete()
-                    val inner = aapt2.parentFile?.listFiles()?.firstOrNull { it.name == "aapt2" && it.isFile }
-                    check(inner != null) { "aapt2 not found inside the archive" }
-                }
-                aapt2.setExecutable(true, false)
-                addLog("✓ aapt2 arm64 ready")
-            }
+            fetchAapt2()
 
             if (!File(gradleDir, "gradle-8.11.1/bin/gradle").isFile) {
-                _line.value = "Downloading Gradle 8.11.1…"
-                addLog("• gradle-8.11.1-bin.zip (~130 MB)…")
-                val zip = download(GRADLE_URL, File(context.cacheDir, "gradle.zip"))
+                val zip = fetch(ART_GRADLE, "Downloading Gradle 8.11.1…", "Gradle (~130 MB)")
                 val tmp = File(context.cacheDir, "gradle-unz")
                 tmp.deleteRecursively(); tmp.mkdirs()
                 unzip(zip, tmp)
@@ -174,12 +144,83 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             addLog("✓ Build environment ready — “Build APK” is unlocked.")
             true
         } catch (e: Exception) {
-            _line.value = ""
-            _phase.value = Phase.FAILED
-            addLog("✗ Bootstrap failed: ${e.message}")
-            addLog("  Tap “Prepare” to retry; finished steps are skipped on retry.")
+            failWithHints("Bootstrap", e)
             false
         }
+    }
+
+    /** v0.8: fetches the arm64 aapt2 through the mirror list and ELF-validates it. */
+    private fun fetchAapt2() {
+        val aapt2 = File(sdkDir, "build-tools/35.0.0/aapt2")
+        if (aapt2.isFile) {
+            if (Elf.isArm64(aapt2)) { addLog("✓ aapt2 arm64 ready (cached)"); return }
+            addLog("! cached aapt2 is not an arm64 ELF — refetching")
+            aapt2.delete()
+        }
+        _line.value = "Fetching arm64 aapt2…"
+        aapt2.parentFile?.mkdirs()
+        val dl = File(aapt2.path + ".dl")
+        val userMirror = aapt2Mirror.trim()
+        val url = if (userMirror.startsWith("http")) {
+            // direct URL: the user vouches for it; the binary is still ELF-validated below
+            addLog("• Using the mirror set in Settings → On-device build")
+            userMirror
+        } else {
+            addLog("• Looking up the latest aapt2 release (aarch64-android-builds)…")
+            Downloader.releaseAssetUrl(http, listOf(GITHUB_AAPT2_API), "aapt2", ".tar.gz")
+        }
+        simpleDownload(url, dl)
+        if (dl.name.endsWith(".tar.gz") || dl.name.endsWith(".tgz") || dl.name.endsWith(".dl")) {
+            // archive (or unknown content): unpack and locate the binary
+            dl.inputStream().use { runCatching { TarExtractor.extractGz(it, aapt2.parentFile!!) { } } }
+            dl.delete()
+            if (!aapt2.isFile) {
+                val inner = aapt2.parentFile?.listFiles()?.firstOrNull { it.name == "aapt2" && it.isFile }
+                    ?: error("aapt2 not found inside the archive from $url")
+                inner.renameTo(aapt2)
+            }
+        } else {
+            if (!dl.renameTo(aapt2)) dl.copyTo(aapt2, overwrite = true)
+            dl.delete()
+        }
+        if (!Elf.isArm64(aapt2)) {
+            aapt2.delete()
+            error("aapt2 fetched but not a valid arm64 ELF — try another mirror in Settings → On-device build")
+        }
+        aapt2.setExecutable(true, false)
+        addLog("✓ aapt2 arm64 ready")
+    }
+
+    /** One pinned artifact into the cache dir, logging progress. Returns the local file. */
+    private fun fetch(a: Downloader.Artifact, message: String, short: String): File {
+        _line.value = message
+        addLog("• $message ($short)")
+        val dest = File(context.cacheDir, a.name)
+        return Downloader.download(http, a, dest, onProgress = { done, total ->
+            _line.value = message + " " + if (total > 0) "${done * 100 / total}% (${done / 1_000_000} MB)" else "(${done / 1_000_000} MB)"
+        }).also { addLog("  ↓ ${a.primary.take(120)}") }
+    }
+
+    /** Unpinned direct download (only used for the aapt2 user mirror / GitHub asset). */
+    private fun simpleDownload(url: String, to: File): File {
+        addLog("  ↓ $url".take(200))
+        to.parentFile?.mkdirs()
+        val req = okhttp3.Request.Builder().url(url).header("User-Agent", "SaqrCode/0.8").build()
+        http.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) throw java.io.IOException("download failed: HTTP ${resp.code}")
+            to.outputStream().use { out -> resp.body!!.byteStream().copyTo(out) }
+        }
+        return to
+    }
+
+    /** v0.8: shared failure logging with a friendly hint line. */
+    private fun failWithHints(stage: String, e: Exception) {
+        _line.value = ""
+        _phase.value = Phase.FAILED
+        val msg = e.message ?: e.toString()
+        addLog("✗ $stage failed: $msg")
+        Hints.forMessage(msg)?.let { addLog("→ $it") }
+        addLog("  Tap “Prepare” to retry; finished steps are skipped on retry.")
     }
 
     // ------------------------------------------------------------ build
@@ -205,10 +246,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             addLog("✓ APK ready: dist/app-debug.apk (" + target.length() / 1024 + " KB)")
             true
         } catch (e: Exception) {
-            _line.value = ""
-            _phase.value = Phase.FAILED
-            addLog("✗ Build failed: ${e.message}")
-            addLog("  Common fixes: a compile error in the project (see the log), or memory — close other apps.")
+            failWithHints("Build", e)
             false
         }
     }
@@ -239,7 +277,24 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 
-    // ------------------------------------------------------------ process + download
+    /** v0.8: the built app's recent crashes, parsed from the device logcat. */
+    fun crashReport(): List<String> {
+        val pkg = LogcatStream.guessPackage(
+            runCatching { File(projectDir, "app/build.gradle.kts").readText() }.getOrDefault(""),
+        )
+        val dump = runCatching {
+            val p = ProcessBuilder("sh", "-c", LogcatStream.dumpCommand()).redirectErrorStream(true).start()
+            p.outputStream.close()
+            val out = p.inputStream.bufferedReader().use { it.readText() }
+            p.waitFor(20, TimeUnit.SECONDS)
+            out
+        }.getOrDefault("")
+        if (dump.isBlank()) return emptyList()
+        val crashes = LogcatStream.crashes(dump, pkg)
+        return LogcatStream.summarize(crashes)
+    }
+
+    // ------------------------------------------------------------ process
 
     /** Runs [cmd] inside the Debian rootfs with the SDK/Gradle bound at /opt; streams into [log]. */
     private suspend fun prootRun(cmd: String, timeoutSec: Long): Int = withContext(Dispatchers.IO) {
@@ -293,27 +348,6 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
         .readTimeout(120, TimeUnit.SECONDS)
         .build()
 
-    private fun download(url: String, to: File): File {
-        addLog("  ↓ $url")
-        val req = Request.Builder().url(url).header("User-Agent", "SaqrCode/0.7").build()
-        http.newCall(req).execute().use { resp ->
-            check(resp.isSuccessful) { "download failed: HTTP ${resp.code}" }
-            to.parentFile?.mkdirs()
-            to.outputStream().use { out -> resp.body!!.byteStream().copyTo(out) }
-        }
-        return to
-    }
-
-    private fun getJson(url: String): JSONObject {
-        val req = Request.Builder().url(url)
-            .header("Accept", "application/vnd.github+json")
-            .header("User-Agent", "SaqrCode/0.7").build()
-        http.newCall(req).execute().use { resp ->
-            check(resp.isSuccessful) { "GitHub API HTTP ${resp.code}" }
-            return JSONObject(resp.body!!.string())
-        }
-    }
-
     private fun unzip(zip: File, target: File) {
         java.util.zip.ZipInputStream(zip.inputStream().buffered()).use { z ->
             var e = z.nextEntry
@@ -335,16 +369,31 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
     companion object {
         const val MAX_LOG_LINES = 400
 
-        /** Ubuntu base arm64: glibc rootfs with apt. */
-        const val UBUNTU_BASE_URL = "https://cdimage.ubuntu.com/ubuntu-base/releases/22.04/release/ubuntu-base-22.04.5-base-arm64.tar.gz"
+        /** Ubuntu base arm64: glibc rootfs with apt. Pinned to the publisher's SHA-256. */
+        val ART_ROOTFS = Downloader.Artifact(
+            "ubuntu-base.tar.gz",
+            "075d4abd2817a5023ab0a82f5cb314c5ec0aa64a9c0b40fd3154ca3bfdae979f",
+            listOf("https://cdimage.ubuntu.com/ubuntu-base/releases/22.04/release/ubuntu-base-22.04.5-base-arm64.tar.gz"),
+        )
 
-        /** Android cmdline-tools (Java + shell, works on arm64). */
-        const val CMDTOOLS_URL = "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+        /** Android cmdline-tools (Java + shell, works on arm64). Pinned to Google's checksum. */
+        val ART_CMDTOOLS = Downloader.Artifact(
+            "sdk-cmdtools.zip",
+            "2d2d50857e4eb553af5a6dc3ad507a17adf43d115264b1afc116f95c92e5e258",
+            listOf("https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"),
+        )
 
-        /** Gradle distribution (Java, works on arm64). */
-        const val GRADLE_URL = "https://services.gradle.org/distributions/gradle-8.11.1-bin.zip"
+        /** Gradle distribution (Java, works on arm64). Pinned to gradle.org's checksum. */
+        val ART_GRADLE = Downloader.Artifact(
+            "gradle.zip",
+            "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6",
+            listOf(
+                "https://services.gradle.org/distributions/gradle-8.11.1-bin.zip",
+                "https://downloads.gradle.org/distributions/gradle-8.11.1-bin.zip",
+            ),
+        )
 
-        /** The arm64 aapt2 community build; resolved through the GitHub API for the latest release. */
+        /** The arm64 aapt2 community build; resolved through the GitHub API (mirror list in v0.8). */
         const val GITHUB_AAPT2_API = "https://api.github.com/repos/Llzzy/aarch64-android-builds/releases/latest"
     }
 }

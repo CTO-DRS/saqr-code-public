@@ -458,4 +458,28 @@
     <string name="tpl_compose_desc">كوتلن + Jetpack Compose عربي RTL — يبنى على الجهاز</string>
     <string name="tpl_ime">لوحة مفاتيح</string>
     <string name="tpl_ime_desc">IME عربي (InputMethodService) بثلاثة صفوف حروف</string>
+    <!-- v0.8 المخطط وMCP وتحصين البناء -->
+    <string name="notice_planned">وضع المخطط خطة من %1$s مهام — سيتبعها الوكيل أدناه.</string>
+    <string name="meter_review">مراجعة:</string>
+    <string name="usage_review">وكيل المراجعة (الجلسة)</string>
+    <string name="usage_planner">وكيل المخطط (الجلسة)</string>
+    <string name="planner_model">نموذج المخطط</string>
+    <string name="planner_model_desc">في وضع الفريق، يحوّل هذا النموذج كل طلب إلى خطة مهام قبل كتابة الكود. اتركه فارغاً لاستخدام نموذج المبرمج؛ نموذج رخيص وسريع هو الأفضل.</string>
+    <string name="review_auto_tests">فحوصات تلقائية للمراجع</string>
+    <string name="review_auto_tests_desc">تشغيل الفحوصات واختبارات المشروع بعد كل دفعة وإعطاء نتيجتها للمراجع</string>
+    <string name="mcp_section">خوادم MCP</string>
+    <string name="mcp_add">إضافة خادم MCP</string>
+    <string name="mcp_add_desc">تظهر أدوات الخادم للوكيل بأسماء mcp_… عبر Streamable HTTP (يعمل مع أغلب خوادم SSE أيضاً).</string>
+    <string name="mcp_name">اسم الخادم</string>
+    <string name="mcp_auth">ترويسة المصادقة</string>
+    <string name="mcp_add_btn">إضافة الخادم</string>
+    <string name="mcp_added">أُضيف الخادم — ستتصل أدواته مع بداية الجولة القادمة.</string>
+    <string name="build_section">البناء على الجهاز</string>
+    <string name="aapt2_mirror">رابط مرآة aapt2</string>
+    <string name="aapt2_mirror_desc">رابط مباشر لملف aapt2 arm64 (ملف أو .tar.gz). اتركه فارغاً للبحث التلقائي. يُفحص الملف قبل استخدامه.</string>
+    <string name="build_crash_check">فحص الأعطال</string>
+    <string name="build_crash_none">لا أعطال حديثة في السجل.</string>
+    <string name="build_crash_found">%1$s عطل/أعطال حديثة:</string>
+    <string name="tpl_lite">تطبيق ويب خفيف</string>
+    <string name="tpl_lite_desc">WebView بلا أي اعتماديات — أسرع بناء على الهواتف الضعيفة</string>
 </resources>

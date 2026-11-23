@@ -1,5 +1,34 @@
 # Changelog · سجل التغييرات
 
+## [0.8.0] — 2026-11-23 — Build hardening, planner & MCP · تحصين البناء والمخطط ودعم MCP
+
+### Hardened on-device build path · تحصين مسار البناء على الجهاز
+- **Pinned + resumable downloads:** every build component (ubuntu-base rootfs, cmdline-tools, Gradle) now carries the publisher's official SHA-256 and is verified before use; interrupted downloads resume with HTTP Range (`206`) instead of restarting, and a corrupted download fails loudly with the measured hash. Artifact sizes are capped, mirrors are tried in order (Gradle has a second official host).
+  كل مكوّنات البناء مثبّتة بـ SHA-256 رسمي وتُتحقق قبل الاستخدام، والتنزيلات تُستأنف من نقطة الانقطاع بدل الإعادة من الصفر، مع سقف للحجم وقائمة مرايا.
+- **aapt2 mirror + ELF validation:** the arm64 aapt2 can come from a **direct mirror URL set in Settings → On-device build**, falling back to the built-in GitHub lookup; whatever the source, the binary is rejected early unless it really is an **arm64 ELF** (magic + machine check).
+  مرآة مباشرة لملف aapt2 من الإعدادات مع تحقق صارم أن الملف فعلاً ELF arm64 قبل استخدامه.
+- **Friendly failure hints:** bootstrap/build failures get an actionable hint line in the log (out-of-memory → try the Lite template; network → retry; storage; proot; sdkmanager; apt; compile errors; aapt2).
+  كل فشل شائع يقابله سطر إرشادي واضح في سجل البناء.
+- **Crash monitor:** after building, «فحص الأعطال» reads the device crash log (`logcat -b crash`), filters the built package's FATAL EXCEPTION blocks (package parsed from `applicationId`) and shows them as short friendly lines in the Build tab.
+  فحص أعطال التطبيق المبني من سجل النظام داخل تبويب البناء نفسه.
+- **Lite Web template:** a zero-dependency WebView app (plain `android.app.Activity`, `android.useAndroidX=false`, one Kotlin file + `assets/index.html` Arabic RTL) that builds in minutes even on weak phones — validated end-to-end in CI-like conditions (605 KB APK, no AndroidX on the classpath).
+  قالب «تطبيق ويب خفيف» بلا أي اعتماديات يُبنى في دقائق على الهواتف الضعيفة، ومجرّب بالكامل.
+
+### Deeper agent team · فريق وكلاء أعمق
+- **Explicit planner stage:** in team mode, a cheap model turns each substantial request into a 2–6 task plan **before coding** (distinct from `update_plan`); the plan fills the progress pill, lands as a `[Planner]` message, and the coder follows it. The planner model is selectable (Settings → Agent team) and its spend is shown separately. Small talk and slash commands skip it.
+  مرحلة «مخطط» صريحة: نموذج اقتصادي يحوّل الطلب إلى خطة مهام قبل كتابة الكود، بنموذج قابل للاختيار وتكلفة تظهر منفصلة.
+- **Automatic checks for the reviewer:** after each applied batch, `lint_project` (and `run_tests` when a runner exists, 120 s budget) runs and its output joins the reviewer's context under «Automatic checks» — a check failure caused by the diff is a real issue. Toggle in Settings (on by default).
+  فحوصات تلقائية تُمرَّر إلى المراجع بعد كل دفعة تعديلات، مع مفتاح في الإعدادات.
+- **Review cost in the meter:** the reviewer's tokens/cost are tracked per model and shown separately in the step meter («review: …») and as their own rows in the usage sheet; the planner's spend likewise.
+  تكلفة المراجع والمخطط تظهران منفصلتين في عدّاد التكلفة وورقة الاستخدام.
+- **MCP support (Streamable HTTP):** user-configured MCP servers (Settings → MCP servers: name + HTTPS URL + optional encrypted auth header) expose their tools to the agent as `mcp_<server>_<tool>` tools, discovered once per turn (up to 4 servers, 32 tools each) with strict JSON-RPC handling, SSE responses parsed, tool results flattened to text, and unreachable servers reported as a notice instead of failing the turn.
+  دعم خوادم MCP عبر Streamable HTTP: تظهر أدواتها للوكيل بأسماء mcp_…، مع اكتشاف أثناء كل جولة، وتحليل ردود SSE، وإشعار واضح عند فشل الاتصال بدل إفشال الجولة.
+
+### Infrastructure · البنية
+- 216 unit tests (189 run in-sandbox; the rest need a device/emulator), including the full MCP protocol parser, planner parser, downloader primitives (SHA-256, Content-Range), ELF validator, hint mapper, crash parser and the lite template contract.
+- Bilingual strings for every new surface (values + values-ar); versionCode 8.
+
+
 ## [0.7.0] — 2026-11-23 — Agent team, web tools & on-device build · فريق الوكلاء وأدوات الويب والبناء على الجهاز
 
 ### Agent team (Planner → Coder → Reviewer) · فريق الوكلاء

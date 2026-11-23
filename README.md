@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.7.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.8.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 
 ---
 
@@ -25,6 +25,17 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.8
+| الميزة | الحالة |
+|---|---|
+| تحصين البناء: تنزيلات مثبّتة بـ SHA-256 رسمي وقابلة للاستئناف (HTTP Range)، وقائمة مرايا مع مرآة aapt2 من الإعدادات وتحقق ELF arm64 صارم | ✅ |
+| إرشادات فشل ودّية في سجل البناء (نفاد الذاكرة، الشبكة، التخزين، proot، أخطاء الكود…) ومراقب أعطال التطبيق المبني داخل تبويب «بناء» | ✅ |
+| قالب «تطبيق ويب خفيف»: WebView بلا أي اعتماديات — يُبنى في دقائق على الهواتف الضعيفة (مُجرّب بالكامل) | ✅ |
+| مرحلة «مخطط» صريحة في وضع الفريق: نموذج اقتصادي يحوّل الطلب إلى خطة مهام قبل الكود، بنموذج قابل للاختيار | ✅ |
+| فحوصات تلقائية (فحص + اختبارات) تُمرَّر إلى المراجع مع مفتاح في الإعدادات | ✅ |
+| تكلفة المراجع والمخطط تظهران منفصلتين في عدّاد التكلفة وورقة الاستخدام | ✅ |
+| دعم خوادم **MCP** عبر Streamable HTTP: أدوات الخادم تظهر للوكيل بأسماء `mcp_…` مع تحليل SSE وترويسة مصادقة مشفّرة | ✅ |
 
 ### الجديد في 0.7
 | الميزة | الحالة |
@@ -71,7 +82,7 @@
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `SaqrCode-v0.7.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.8.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -82,6 +93,15 @@
 ---
 
 ## English
+
+### New in v0.8
+- **Hardened build path:** every build component (ubuntu-base, cmdline-tools, Gradle) is pinned to the publisher's SHA-256 and verified before use; downloads **resume** with HTTP Range instead of restarting; sizes are capped and mirrors tried in order. The arm64 **aapt2** accepts a direct mirror URL from Settings → On-device build and is always **ELF-validated**.
+- **Friendly failure hints + crash monitor:** known failures (memory, network, storage, proot, apt, compile errors…) get an actionable hint line in the build log; a «Check crashes» button parses the device crash buffer and shows the built app's FATAL EXCEPTIONs in the Build tab.
+- **Lite Web template:** a zero-dependency WebView app (plain Activity, one Kotlin file + Arabic RTL `index.html`) that builds in minutes even on weak phones — validated end-to-end (605 KB APK).
+- **Explicit planner stage:** in team mode a cheap model turns each substantial request into a 2–6 task plan before coding; the plan fills the progress pill and is handed to the coder as a `[Planner]` message. Planner model selectable; small talk and slash commands skip it.
+- **Automatic checks for the reviewer:** after each applied batch, lint (and tests, when a runner exists) run and their output joins the reviewer's context; a diff-caused check failure is a real issue. Settings toggle, on by default.
+- **Separate review/planner cost:** the reviewer's and planner's token spend show separately in the step meter and the usage sheet.
+- **MCP support (Streamable HTTP):** add servers in Settings → MCP servers (name + HTTPS URL + optional encrypted auth header); their tools appear to the agent as `mcp_<server>_<tool>`, discovered once per turn, SSE responses parsed, unreachable servers reported as a notice.
 
 ### New in v0.7
 - **Agent team (Planner → Coder → Reviewer):** after every applied file batch, a second model reviews the diff and the coder fixes its notes in the same turn (max 2 review rounds). The reviewer model is selectable in Settings (blank = the coder's model); a verdict card shows the result in chat.

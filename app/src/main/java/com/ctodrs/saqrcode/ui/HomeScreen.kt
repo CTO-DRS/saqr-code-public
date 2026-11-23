@@ -74,6 +74,7 @@ val templateGallery = listOf(
     TemplateInfo(Template.NODE, R.string.tpl_node, R.string.tpl_node_desc, "index.js", Color(0xFF8CC84B)),
     TemplateInfo(Template.COMPOSE, R.string.tpl_compose, R.string.tpl_compose_desc, "MainActivity.kt", Color(0xFF8A6FE8)),
     TemplateInfo(Template.IME, R.string.tpl_ime, R.string.tpl_ime_desc, "ArabicImeService.kt", Color(0xFF3BA9A0)),
+    TemplateInfo(Template.LITE_WEB, R.string.tpl_lite, R.string.tpl_lite_desc, "index.html", Color(0xFF4F8CFF)),
     TemplateInfo(Template.EMPTY, R.string.tpl_empty, R.string.tpl_empty_desc, "README.md", Color(0xFF8FA3B8)),
 )
 
