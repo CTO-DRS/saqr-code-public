@@ -5,7 +5,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import com.ctodrs.saqrcode.editor.EditHistory
+import com.ctodrs.saqrcode.editor.EditorState
 import com.ctodrs.saqrcode.SaqrApp
 import com.ctodrs.saqrcode.agent.AgentSession
 import com.ctodrs.saqrcode.git.GitController
@@ -16,6 +19,21 @@ class OpenFile(val path: String, initial: String) {
     var value by mutableStateOf(TextFieldValue(initial))
     var saved by mutableStateOf(initial)
     val dirty get() = value.text != saved
+    val history = EditHistory()
+    /** Bumped on undo/redo/replace so the UI can refresh enabled states. */
+    var historyVersion by mutableIntStateOf(0)
+
+    private fun TextFieldValue.state() = EditorState(text, selection.min, selection.max)
+    private fun EditorState.tfv() = TextFieldValue(text, TextRange(selStart.coerceIn(0, text.length), selEnd.coerceIn(0, text.length)))
+
+    /** Apply an edit, recording it in the undo history. */
+    fun edit(new: TextFieldValue) {
+        if (new.text != value.text) { history.record(value.state(), new.state()); historyVersion++ }
+        value = new
+    }
+
+    fun undo(): Boolean { val s = history.undo(value.state()) ?: return false; value = s.tfv(); historyVersion++; return true }
+    fun redo(): Boolean { val s = history.redo(value.state()) ?: return false; value = s.tfv(); historyVersion++; return true }
 }
 
 /** Per-project state that survives navigation (chat, shell, open editor tabs). */
@@ -60,7 +78,7 @@ class Workspace(val name: String, val dir: File) {
             if (!file.exists()) continue
             if (!t.dirty) {
                 val disk = runCatching { file.readText() }.getOrNull() ?: continue
-                if (disk != t.saved) { t.saved = disk; t.value = TextFieldValue(disk) }
+                if (disk != t.saved) { t.saved = disk; t.history.breakGroup(); t.edit(TextFieldValue(disk)) }
             }
         }
     }

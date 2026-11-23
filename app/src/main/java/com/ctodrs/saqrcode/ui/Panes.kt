@@ -277,51 +277,6 @@ private fun sizeLabel(b: Long) = when {
     else -> "$b B"
 }
 
-@Composable
-fun CodeEditor(f: OpenFile) {
-    val c = Saqr.colors
-    val palette = if (c.isDark) CodePalette.Dark else CodePalette.Light
-    val lang = remember(f.path) { SyntaxHighlighter.languageOf(f.path) }
-    val transformation = remember(lang, palette) { HighlightTransformation(lang, palette) }
-    val style = Saqr.type.mono.copy(color = c.text1, lineHeight = Saqr.type.mono.lineHeight)
-    val lines = remember(f.value.text) { f.value.text.count { it == '\n' } + 1 }
-    val curLine = remember(f.value.selection.start, f.value.text) { f.value.text.take(f.value.selection.start.coerceAtMost(f.value.text.length)).count { it == '\n' } + 1 }
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Column(Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxWidth().padding(horizontal = Sp.md).height(1.dp).background(c.border))
-            Row(Modifier.weight(1f).fillMaxWidth().background(c.codeBg).verticalScroll(rememberScrollState())) {
-                Text(
-                    buildAnnotatedString {
-                        for (i in 1..lines) {
-                            withStyle(SpanStyle(color = if (i == curLine) c.accentText else c.text3.copy(alpha = 0.7f))) { append(i.toString()) }
-                            if (i < lines) append('\n')
-                        }
-                    },
-                    Modifier.padding(start = Sp.md, end = Sp.sm, top = Sp.md, bottom = Sp.md).widthIn(min = 26.dp),
-                    style = style.copy(textAlign = androidx.compose.ui.text.style.TextAlign.End),
-                )
-                Box(Modifier.width(1.dp).fillMaxHeight().background(c.border))
-                Box(Modifier.weight(1f).horizontalScroll(rememberScrollState())) {
-                    BasicTextField(
-                        value = f.value, onValueChange = { f.value = it }, textStyle = style, cursorBrush = SolidColor(c.accent),
-                        visualTransformation = transformation,
-                        keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, capitalization = KeyboardCapitalization.None),
-                        modifier = Modifier.padding(horizontal = Sp.md, vertical = Sp.md).widthIn(min = 600.dp),
-                    )
-                }
-            }
-            // status bar
-            Row(Modifier.fillMaxWidth().background(c.surface1).padding(horizontal = Sp.lg, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(lang.uppercase(), style = Saqr.type.monoMicro, color = c.accentText)
-                Spacer(Modifier.width(Sp.md))
-                Text("Ln $curLine · $lines lines", style = Saqr.type.monoMicro, color = c.text3)
-                Spacer(Modifier.weight(1f))
-                Text(if (f.dirty) "● " + stringResource(R.string.unsaved) else "UTF-8", style = Saqr.type.micro, color = if (f.dirty) c.accentText else c.text3)
-            }
-        }
-    }
-}
-
 // ------------------------------------------------------------------ Git
 
 @Composable

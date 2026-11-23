@@ -4,107 +4,174 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 
-/** Token colours. Dark = "Falcon Night", Light = "Falcon Day". */
+/** Token colours. Dark = "Falcon Night", Light = "Falcon Day" (Saqr gold / teal family). */
 data class CodePalette(
     val keyword: Color, val string: Color, val comment: Color, val number: Color, val tag: Color, val type: Color,
+    val annotation: Color = tag, val operator: Color = comment, val attr: Color = type,
+    val heading: Color = keyword, val link: Color = number, val code: Color = string,
+    val match: Color = Color(0x40E9B44C), val currentMatch: Color = Color(0x99E9B44C), val currentLine: Color = Color(0x0FFFFFFF),
 ) {
     companion object {
         val Dark = CodePalette(
             keyword = Color(0xFFF0B85A), string = Color(0xFF9BD08F), comment = Color(0xFF6B7380),
             number = Color(0xFF7CC4F2), tag = Color(0xFFF08A73), type = Color(0xFF6CCBB6),
+            annotation = Color(0xFFD7A0E6), operator = Color(0xFFB7BDC6), attr = Color(0xFFE8CF8A),
+            heading = Color(0xFFEDBE5E), link = Color(0xFF7CC4F2), code = Color(0xFF9BD08F),
+            match = Color(0x40E9B44C), currentMatch = Color(0x99E9B44C), currentLine = Color(0x0FFFFFFF),
         )
         val Light = CodePalette(
             keyword = Color(0xFF9A5B00), string = Color(0xFF2F7D32), comment = Color(0xFF8A8F97),
             number = Color(0xFF1F6FB2), tag = Color(0xFFB23A24), type = Color(0xFF137A68),
+            annotation = Color(0xFF8A3FA0), operator = Color(0xFF5A606A), attr = Color(0xFF8A6A00),
+            heading = Color(0xFF9A5B00), link = Color(0xFF1F6FB2), code = Color(0xFF2F7D32),
+            match = Color(0x40C48A12), currentMatch = Color(0x8CC48A12), currentLine = Color(0x0A000000),
         )
     }
+
+    fun style(t: TokenType): SpanStyle = when (t) {
+        TokenType.KEYWORD -> SpanStyle(color = keyword)
+        TokenType.STRING -> SpanStyle(color = string)
+        TokenType.NUMBER -> SpanStyle(color = number)
+        TokenType.COMMENT -> SpanStyle(color = comment, fontStyle = FontStyle.Italic)
+        TokenType.ANNOTATION -> SpanStyle(color = annotation)
+        TokenType.TYPE -> SpanStyle(color = type)
+        TokenType.OPERATOR -> SpanStyle(color = operator)
+        TokenType.TAG -> SpanStyle(color = tag)
+        TokenType.ATTR -> SpanStyle(color = attr)
+        TokenType.HEADING -> SpanStyle(color = heading, fontWeight = FontWeight.Bold)
+        TokenType.LINK -> SpanStyle(color = link, textDecoration = TextDecoration.Underline)
+        TokenType.CODE -> SpanStyle(color = code)
+        TokenType.EMPHASIS -> SpanStyle(color = keyword, fontStyle = FontStyle.Italic)
+    }
 }
 
-/** Lightweight regex highlighter. */
+/**
+ * Re-lexes only the lines whose text or incoming state changed since the last call; the rest of the cached
+ * per-line tokens are reused. Typing on line N of a 5k-line file re-lexes ~1 line (more only when a multi-line
+ * construct such as an opened block comment changes the state of the following lines).
+ */
+class IncrementalHighlighter(val lang: String) {
+    private var lines: List<String> = emptyList()
+    private var startStates = IntArray(0)
+    private var results: Array<LineTokens?> = arrayOfNulls(0)
+    private var lastText: String? = null
+
+    /** Lines lexed by the most recent [update] (for tests / diagnostics). */
+    var lastRelexed = 0
+        private set
+
+    fun update(text: String): List<LineTokens> {
+        if (text === lastText || text == lastText) { lastRelexed = 0; return results.map { it!! } }
+        val newLines = text.split('\n')
+        val newStates = IntArray(newLines.size)
+        val newRes = arrayOfNulls<LineTokens>(newLines.size)
+        // align unchanged tail as well as head so inserting a line does not re-lex everything below it
+        var head = 0
+        while (head < newLines.size && head < lines.size && newLines[head] == lines[head]) head++
+        var tail = 0
+        while (tail < newLines.size - head && tail < lines.size - head &&
+            newLines[newLines.size - 1 - tail] == lines[lines.size - 1 - tail]) tail++
+        val shift = lines.size - newLines.size
+        var state = Tokenizer.NORMAL
+        var relexed = 0
+        for (i in newLines.indices) {
+            newStates[i] = state
+            val oldIdx = when {
+                i < head -> i
+                i >= newLines.size - tail -> i + shift
+                else -> -1
+            }
+            val cached = if (oldIdx in lines.indices && startStates[oldIdx] == state) results[oldIdx] else null
+            val r = cached ?: Tokenizer.lexLine(newLines[i], lang, state).also { relexed++ }
+            newRes[i] = r
+            state = r.endState
+        }
+        lines = newLines; startStates = newStates; results = newRes; lastText = text; lastRelexed = relexed
+        return newRes.map { it!! }
+    }
+}
+
 object SyntaxHighlighter {
 
-    private val kw = mapOf(
-        "kt" to "package import class interface object fun val var if else when for while do return break continue try catch finally throw is as in null true false this super data sealed enum override private public internal protected open abstract suspend companion lateinit const init by typealias",
-        "java" to "package import class interface extends implements public private protected static final void if else switch case for while do return break continue try catch finally throw throws new null true false this super int long boolean char double float byte short var record",
-        "js" to "import export from default function const let var if else switch case for while do return break continue try catch finally throw new null undefined true false this class extends async await typeof instanceof of in yield",
-        "py" to "import from as def class return if elif else for while break continue try except finally raise with lambda None True False and or not in is pass yield global nonlocal async await self",
-        "sh" to "if then else elif fi for while do done case esac function return in export local echo cd",
-        "dart" to "import class extends implements with void final const var if else for while return true false null new this super async await static late required",
-        "go" to "package import func var const type struct interface map chan if else for range return go defer switch case break continue nil true false",
-        "rs" to "fn let mut pub struct enum impl trait use mod if else match for while loop return true false self Self crate super as where async await",
-        "c" to "int char void long short unsigned signed struct union enum typedef static const if else for while do return break continue switch case default sizeof include define",
-    ).mapValues { it.value.split(' ').toSet() }
-
-    private val alias = mapOf(
-        "kts" to "kt", "ts" to "js", "tsx" to "js", "jsx" to "js", "mjs" to "js", "cjs" to "js", "json" to "js",
-        "bash" to "sh", "zsh" to "sh", "cpp" to "c", "h" to "c", "hpp" to "c", "cc" to "c", "gradle" to "kt", "swift" to "kt",
-    )
-
     fun languageOf(fileName: String): String {
-        val ext = fileName.substringAfterLast('.', "").lowercase()
-        return when {
-            ext in setOf("html", "htm", "xml", "svg", "vue") -> "html"
-            ext in setOf("css", "scss") -> "css"
-            ext in setOf("md", "txt", "", "text", "plain") -> "plain"
-            ext in setOf("python") -> "py"
-            ext in setOf("kotlin") -> "kt"
-            ext in setOf("javascript", "typescript") -> "js"
-            ext in setOf("shell", "console") -> "sh"
-            else -> alias[ext] ?: ext
+        val lower = fileName.lowercase()
+        if (lower.endsWith(".gradle.kts")) return "kt"
+        val ext = lower.substringAfterLast('.', "")
+        return when (ext) {
+            "kt", "kts", "kotlin", "gradle", "swift", "groovy" -> "kt"
+            "java" -> "java"
+            "js", "jsx", "mjs", "cjs", "javascript" -> "js"
+            "ts", "tsx", "mts", "cts", "typescript" -> "ts"
+            "py", "pyw", "python" -> "py"
+            "html", "htm", "vue", "svelte" -> "html"
+            "xml", "svg", "plist", "xsd", "xsl" -> "xml"
+            "css", "scss", "less" -> "css"
+            "json", "jsonc", "json5" -> "json"
+            "md", "markdown", "mdx" -> "md"
+            "sh", "bash", "zsh", "shell", "console", "yaml", "yml", "toml", "ini", "properties", "env", "conf" -> "sh"
+            "dart" -> "dart"
+            "go" -> "go"
+            "rs" -> "rs"
+            "c", "h", "cpp", "hpp", "cc", "cxx", "m", "mm", "cs" -> "c"
+            else -> "plain"
         }
     }
 
-    private val tokenRe = Regex(
-        """(?<comment>//[^\n]*|/\*[\s\S]*?\*/|#[^\n]*)|(?<str>"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|(?<num>\b\d+(?:\.\d+)?[fFLu]?\b)|(?<word>\b[A-Za-z_][A-Za-z0-9_]*\b)"""
-    )
-    private val htmlRe = Regex("""(?<comment><!--[\s\S]*?-->)|(?<str>"[^"\n]*"|'[^'\n]*')|(?<tag></?[A-Za-z][A-Za-z0-9-]*|/?>)""")
+    /** Spans to overlay (e.g. find matches): [start, end) in whole-text offsets. */
+    class Overlay(val start: Int, val end: Int, val style: SpanStyle)
 
-    fun highlight(text: String, lang: String, p: CodePalette = CodePalette.Dark): AnnotatedString {
-        val keywordColor = p.keyword; val stringColor = p.string; val commentColor = p.comment
-        val numberColor = p.number; val tagColor = p.tag; val typeColor = p.type
-        if (text.length > 80_000 || lang == "plain") return AnnotatedString(text)
+    fun annotate(text: String, perLine: List<LineTokens>, p: CodePalette, overlays: List<Overlay> = emptyList()): AnnotatedString {
         val b = AnnotatedString.Builder(text)
-        if (lang == "html" || lang == "css") {
-            htmlRe.findAll(text).forEach { m ->
-                val g = m.groups
-                val style = when {
-                    g["comment"] != null -> SpanStyle(color = commentColor, fontStyle = FontStyle.Italic)
-                    g["str"] != null -> SpanStyle(color = stringColor)
-                    else -> SpanStyle(color = tagColor)
-                }
-                b.addStyle(style, m.range.first, m.range.last + 1)
+        val styles = HashMap<TokenType, SpanStyle>()
+        var offset = 0
+        var li = 0
+        var pos = 0
+        // walk line starts without allocating substrings
+        while (li < perLine.size) {
+            for (t in perLine[li].tokens) {
+                val s = offset + t.start; val e = offset + t.end
+                if (e <= text.length) b.addStyle(styles.getOrPut(t.type) { p.style(t.type) }, s, e)
             }
-            return b.toAnnotatedString()
+            val nl = text.indexOf('\n', pos)
+            if (nl < 0) break
+            pos = nl + 1; offset = pos; li++
         }
-        val words = kw[lang] ?: kw["js"]!!
-        val hashComments = lang in setOf("py", "sh", "rb", "yaml", "yml", "toml")
-        tokenRe.findAll(text).forEach { m ->
-            val g = m.groups
-            val style = when {
-                g["comment"] != null -> {
-                    val v = m.value
-                    if (v.startsWith("#") && !hashComments) null else SpanStyle(color = commentColor, fontStyle = FontStyle.Italic)
-                }
-                g["str"] != null -> SpanStyle(color = stringColor)
-                g["num"] != null -> SpanStyle(color = numberColor)
-                g["word"] != null -> when {
-                    m.value in words -> SpanStyle(color = keywordColor)
-                    m.value[0].isUpperCase() -> SpanStyle(color = typeColor)
-                    else -> null
-                }
-                else -> null
-            }
-            if (style != null) b.addStyle(style, m.range.first, m.range.last + 1)
-        }
+        for (o in overlays) if (o.end <= text.length && o.end > o.start) b.addStyle(o.style, o.start, o.end)
         return b.toAnnotatedString()
+    }
+
+    /** One-shot highlight (chat code blocks). */
+    fun highlight(text: String, lang: String, p: CodePalette = CodePalette.Dark): AnnotatedString {
+        if (text.length > 200_000 || lang == "plain") return AnnotatedString(text)
+        return annotate(text, IncrementalHighlighter(lang).update(text), p)
     }
 }
 
-class HighlightTransformation(private val lang: String, private val palette: CodePalette = CodePalette.Dark) : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText =
-        TransformedText(SyntaxHighlighter.highlight(text.text, lang, palette), OffsetMapping.Identity)
+/** Editor transformation: cached incremental highlighting plus find-match overlays. Identity offset mapping. */
+class HighlightTransformation(
+    private val highlighter: IncrementalHighlighter,
+    private val palette: CodePalette,
+    private val matches: List<IntRange> = emptyList(),
+    private val current: Int = -1,
+) : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val t = text.text
+        if (highlighter.lang == "plain" && matches.isEmpty()) return TransformedText(text, OffsetMapping.Identity)
+        val lines = if (highlighter.lang == "plain" || t.length > 1_000_000) emptyList() else highlighter.update(t)
+        val overlays = matches.mapIndexedNotNull { i, r ->
+            if (r.last + 1 > t.length) null
+            else SyntaxHighlighter.Overlay(r.first, r.last + 1, SpanStyle(background = if (i == current) palette.currentMatch else palette.match))
+        }
+        return TransformedText(SyntaxHighlighter.annotate(t, lines, palette, overlays), OffsetMapping.Identity)
+    }
+
+    override fun equals(other: Any?) = other is HighlightTransformation && other.highlighter === highlighter &&
+        other.palette == palette && other.matches == matches && other.current == current
+    override fun hashCode() = System.identityHashCode(highlighter) * 31 + matches.hashCode() * 7 + current
 }
