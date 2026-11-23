@@ -92,11 +92,11 @@ class SettingsUi(
     val onSaveProvider: (id: String, baseUrl: String, model: String, key: String?) -> Unit,
     val fetchModels: suspend (def: ProviderDef, baseUrl: String, model: String, key: String?) -> Result<List<String>>,
     val onApproveAll: (Boolean) -> Unit,
-    val onSaveGithub: (user: String, token: String?) -> Unit,
+    val onAccounts: () -> Unit = {},
 )
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
     val settings = SaqrApp.instance.settings
     val version by settings.version.collectAsState()
     version
@@ -106,7 +106,7 @@ fun SettingsScreen(onBack: () -> Unit) {
         providers = Providers.all.map { it to settings.config(it.id) },
         activeProvider = settings.activeProvider,
         approveAll = settings.approveAll,
-        githubUser = settings.githubUser,
+        githubUser = settings.accounts.github?.login ?: "",
         githubTokenSet = settings.githubToken != null,
         versionName = BuildConfig.VERSION_NAME,
         onTheme = { settings.themeMode = it },
@@ -115,7 +115,7 @@ fun SettingsScreen(onBack: () -> Unit) {
         onSaveProvider = { id, b, m, k -> settings.saveProvider(id, b, m, k) },
         fetchModels = { def, b, m, k -> runCatching { LlmClient(def, b, m, k ?: settings.apiKey(def.id)).listModels() } },
         onApproveAll = { settings.approveAll = it },
-        onSaveGithub = { u, t -> settings.githubUser = u; if (t != null) runCatching { settings.accounts.saveGitHub(t, com.ctodrs.saqrcode.data.GitHubAccount(u.ifBlank { "github" }, null, null, 0, null, false)); settings.accountsChanged() } },
+        onAccounts = onAccounts,
     )
     SettingsContent(ui, onBack)
 }
@@ -174,28 +174,22 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 )
             }
 
-            // ---- github
-            SectionLabel(stringResource(R.string.github), Modifier.padding(top = Sp.md))
+            // ---- accounts
+            SectionLabel(stringResource(R.string.accounts), Modifier.padding(top = Sp.md))
             Group {
-                var user by remember { mutableStateOf(ui.githubUser) }
-                var token by remember { mutableStateOf("") }
-                var saved by remember { mutableStateOf(false) }
-                Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        LabeledIcon(Lucide.Github, stringResource(R.string.github_account), Modifier.weight(1f))
-                        Tag(stringResource(if (ui.githubTokenSet) R.string.connected else R.string.not_connected),
-                            color = if (ui.githubTokenSet) c.success else c.text3, dot = true)
-                    }
-                    SaqrField(user, { user = it; saved = false }, label = stringResource(R.string.github_user), placeholder = "octocat", mono = true)
-                    SaqrField(token, { token = it; saved = false }, label = stringResource(R.string.github_token),
-                        placeholder = if (ui.githubTokenSet) "••••••••  " + stringResource(R.string.key_set) else "github_pat_…",
-                        visual = PasswordVisualTransformation(), keyboard = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        supporting = stringResource(R.string.github_token_hint), mono = true)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        PrimaryButton(stringResource(R.string.save), { ui.onSaveGithub(user, token.ifBlank { null }); token = ""; saved = true }, icon = Lucide.Save)
-                        if (saved) { Spacer(Modifier.width(Sp.md)); SIcon(Lucide.CircleCheck, size = 16.dp, tint = c.success); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.saved), style = Saqr.type.caption, color = c.success) }
-                    }
-                }
+                ListRow(
+                    title = stringResource(R.string.github),
+                    subtitle = if (ui.githubTokenSet && ui.githubUser.isNotBlank()) "@" + ui.githubUser else stringResource(R.string.accounts_desc),
+                    icon = Lucide.Github, onClick = ui.onAccounts,
+                    trailing = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Tag(stringResource(if (ui.githubTokenSet) R.string.connected else R.string.not_connected),
+                                color = if (ui.githubTokenSet) c.success else c.text3, dot = true)
+                            Spacer(Modifier.width(Sp.xs))
+                            SIcon(Lucide.ChevronRight, size = 18.dp, tint = c.text3)
+                        }
+                    },
+                )
             }
 
             // ---- about
@@ -216,14 +210,14 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
 }
 
 @Composable
-private fun Group(content: @Composable () -> Unit) {
+internal fun Group(content: @Composable () -> Unit) {
     val c = Saqr.colors
     val shape = RoundedCornerShape(Radius.lg)
     Box(Modifier.fillMaxWidth().clip(shape).background(c.surface1).border(1.dp, c.border, shape)) { content() }
 }
 
 @Composable
-private fun LabeledIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, modifier: Modifier = Modifier) {
+internal fun LabeledIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, modifier: Modifier = Modifier) {
     val c = Saqr.colors
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         SIcon(icon, size = 17.dp, tint = c.accentText)

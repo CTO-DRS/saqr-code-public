@@ -14,6 +14,15 @@ object Tools {
     const val RUN = "run_command"
     const val SEARCH = "search"
     const val PLAN = "update_plan"
+    const val GIT_STATUS = "git_status"
+    const val GIT_DIFF = "git_diff"
+    const val GIT_LOG = "git_log"
+    const val GIT_COMMIT = "git_commit"
+    const val GIT_BRANCH = "git_branch"
+    const val GIT_PULL = "git_pull"
+    const val GIT_PUSH = "git_push"
+
+    val GIT = setOf(GIT_STATUS, GIT_DIFF, GIT_LOG, GIT_COMMIT, GIT_BRANCH, GIT_PULL, GIT_PUSH)
 
     val MUTATING = setOf(WRITE, EDIT, DELETE)
 
@@ -60,7 +69,7 @@ object Tools {
                         .put("title", p("string", "Short step title in the user's language"))
                         .put("status", JSONObject().put("type", "string").put("enum", JSONArray(listOf("pending", "in_progress", "done")))))
                     .put("required", JSONArray(listOf("title", "status"))))), listOf("items"))),
-    )
+    ) + GitTools.specs
 
     private val IGNORED_DIRS = setOf(".git", "node_modules", "build", ".gradle", "__pycache__", ".venv", "dist", ".saqr")
 
@@ -149,6 +158,12 @@ object Tools {
         RUN -> args.optString("command")
         SEARCH -> "\"" + args.optString("query") + "\""
         LIST -> args.optString("path", ".")
+        GIT_COMMIT -> args.optString("message").lineSequence().firstOrNull().orEmpty().take(80)
+        GIT_BRANCH -> args.optString("action", "list") + (args.optString("name").takeIf { it.isNotBlank() }?.let { " $it" } ?: "")
+        GIT_PUSH, GIT_PULL -> args.optString("remote", "origin") + (args.optString("branch").takeIf { it.isNotBlank() }?.let { " $it" } ?: "")
+        GIT_LOG -> "-n " + args.optInt("max_count", 15)
+        GIT_STATUS -> "."
+        GIT_DIFF -> args.optString("path").ifBlank { if (args.optBoolean("staged")) "--staged" else "." }
         else -> args.optString("path")
     }
 }

@@ -217,4 +217,24 @@
     <string name="term_new_tab">جلسة جديدة</string>
     <string name="term_paste">لصق</string>
     <string name="term_smaller">تصغير الخط</string>
+    <string name="accounts">الحسابات</string>
+    <string name="accounts_desc">اربط GitHub للدفع والسحب وطلبات الدمج</string>
+    <string name="push_review_title">الموافقة على الدفع (push)</string>
+    <string name="push_review_sub">يريد الوكيل رفع الإيداعات إلى المستودع البعيد.</string>
+    <string name="gh_guide_title">أنشئ رمزًا دقيق الصلاحيات</string>
+    <string name="gh_guide_1">اختر المستودعات التي يصل إليها صقر كود.</string>
+    <string name="gh_guide_2">صلاحيات المستودع ← Contents: قراءة وكتابة.</string>
+    <string name="gh_guide_3">Metadata: قراءة فقط (تُضاف تلقائيًا).</string>
+    <string name="gh_guide_4">Pull requests: قراءة وكتابة (اختياري لفتح طلبات الدمج).</string>
+    <string name="gh_create_token">إنشاء رمز على GitHub</string>
+    <string name="gh_verify">تحقّق واربط</string>
+    <string name="gh_verifying">جارٍ التحقق…</string>
+    <string name="gh_signed_in_as">مسجّل الدخول باسم ‎@%1$s</string>
+    <string name="gh_sign_out">تسجيل الخروج</string>
+    <string name="gh_profile">الملف الشخصي</string>
+    <string name="gh_scopes">الصلاحيات: %1$s</string>
+    <string name="commit_identity">هوية الإيداع</string>
+    <string name="commit_identity_desc">اسم المؤلف المستخدم في الإيداعات من التطبيق ومن الوكيل. افتراضيًا حساب GitHub الخاص بك.</string>
+    <string name="git_author_name">اسم المؤلف</string>
+    <string name="git_author_email">بريد المؤلف</string>
 </resources>

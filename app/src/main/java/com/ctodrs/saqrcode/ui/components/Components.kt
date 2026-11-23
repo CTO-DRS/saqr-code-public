@@ -422,7 +422,7 @@ fun FalconMark(size: Dp = 40.dp, glow: Boolean = false) {
                 .border(1.dp, Color(0x33E9B44C), RoundedCornerShape(size * 0.28f)),
             contentAlignment = Alignment.Center,
         ) {
-            Image(painterResource(R.drawable.ic_launcher_foreground), null, Modifier.size(size * 1.62f))
+            Image(painterResource(R.drawable.ic_saqr_mark), null, Modifier.size(size))
         }
     }
 }

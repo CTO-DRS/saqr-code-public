@@ -217,4 +217,24 @@
     <string name="term_new_tab">New session</string>
     <string name="term_paste">Paste</string>
     <string name="term_smaller">Smaller text</string>
+    <string name="accounts">Accounts</string>
+    <string name="accounts_desc">Link GitHub for push, pull and pull requests</string>
+    <string name="push_review_title">Approve push</string>
+    <string name="push_review_sub">The agent wants to push commits to a remote.</string>
+    <string name="gh_guide_title">Create a fine-grained token</string>
+    <string name="gh_guide_1">Pick the repositories Saqr Code may access.</string>
+    <string name="gh_guide_2">Repository permissions → Contents: Read and write.</string>
+    <string name="gh_guide_3">Metadata: Read-only (added automatically).</string>
+    <string name="gh_guide_4">Pull requests: Read and write (optional, to open PRs).</string>
+    <string name="gh_create_token">Create token on GitHub</string>
+    <string name="gh_verify">Verify &amp; link</string>
+    <string name="gh_verifying">Verifying…</string>
+    <string name="gh_signed_in_as">Signed in as @%1$s</string>
+    <string name="gh_sign_out">Sign out</string>
+    <string name="gh_profile">Profile</string>
+    <string name="gh_scopes">Scopes: %1$s</string>
+    <string name="commit_identity">Commit identity</string>
+    <string name="commit_identity_desc">Author used for commits made in the app and by the agent. Defaults to your GitHub account.</string>
+    <string name="git_author_name">Author name</string>
+    <string name="git_author_email">Author email</string>
 </resources>

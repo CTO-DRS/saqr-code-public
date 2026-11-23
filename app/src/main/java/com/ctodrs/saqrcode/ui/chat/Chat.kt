@@ -178,7 +178,9 @@ fun ChatRow(item: ChatItem, onDecide: (ChatItem.Approval, Boolean) -> Unit) {
         is ChatItem.User -> UserBubble(item.text)
         is ChatItem.Assistant -> if (item.text.isBlank() && item.streaming) WorkingRow() else MarkdownText(item.text)
         is ChatItem.Tool -> ToolRow(item)
-        is ChatItem.Approval -> if (item.decision == null) ApprovalCard(item, onDecide) else Column { item.changes.forEach { ChangeRow(it, item.decision == true, item.durationMs) } }
+        is ChatItem.Approval -> if (item.decision == null) ApprovalCard(item, onDecide)
+            else if (item.action != null) ActionDecisionRow(item)
+            else Column { item.changes.forEach { ChangeRow(it, item.decision == true, item.durationMs) } }
         is ChatItem.Notice -> NoticeCard(item)
     }
 }
@@ -375,17 +377,40 @@ private fun ApprovalCard(item: ChatItem.Approval, onDecide: (ChatItem.Approval, 
             }
             Spacer(Modifier.width(Sp.md))
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.plan_review_title), style = Saqr.type.title3, color = c.text1)
-                Text(stringResource(R.string.plan_title, item.changes.size.toString()), style = Saqr.type.caption, color = c.text2)
+                if (item.action != null) {
+                    Text(stringResource(R.string.push_review_title), style = Saqr.type.title3, color = c.text1)
+                    Text(stringResource(R.string.push_review_sub), style = Saqr.type.caption, color = c.text2)
+                } else {
+                    Text(stringResource(R.string.plan_review_title), style = Saqr.type.title3, color = c.text1)
+                    Text(stringResource(R.string.plan_title, item.changes.size.toString()), style = Saqr.type.caption, color = c.text2)
+                }
             }
         }
         Spacer(Modifier.height(Sp.xs))
+        item.action?.let { act ->
+            Text(act, style = Saqr.type.monoSmall, color = c.text1,
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2).padding(Sp.md))
+        }
         item.changes.forEach { PendingChangeRow(it) }
         Spacer(Modifier.height(Sp.sm))
         Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
             PrimaryButton(stringResource(R.string.approve), { onDecide(item, true) }, Modifier.weight(1f), icon = Lucide.Check)
             SecondaryButton(stringResource(R.string.reject), { onDecide(item, false) }, Modifier.weight(1f), icon = Lucide.X)
         }
+    }
+}
+
+@Composable
+private fun ActionDecisionRow(item: ChatItem.Approval) {
+    val c = Saqr.colors
+    val ok = item.decision == true
+    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        SIcon(if (ok) Lucide.ArrowUpFromLine else Lucide.X, size = 16.dp, tint = if (ok) c.success else c.danger)
+        Spacer(Modifier.width(Sp.sm))
+        Text(item.action!!.lineSequence().first(), style = Saqr.type.monoSmall, color = c.text2, maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Spacer(Modifier.width(Sp.sm))
+        Text(stringResource(if (ok) R.string.approved else R.string.rejected), style = Saqr.type.caption, color = if (ok) c.success else c.danger)
     }
 }
 

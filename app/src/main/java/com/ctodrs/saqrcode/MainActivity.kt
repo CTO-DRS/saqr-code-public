@@ -22,6 +22,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.ctodrs.saqrcode.ui.AccountsScreen
 import com.ctodrs.saqrcode.ui.HomeScreen
 import com.ctodrs.saqrcode.ui.IdeScreen
 import com.ctodrs.saqrcode.ui.OnboardingScreen
@@ -31,6 +33,7 @@ import com.ctodrs.saqrcode.ui.theme.SaqrTheme
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val settings = (application as SaqrApp).settings
@@ -45,10 +48,13 @@ class MainActivity : AppCompatActivity() {
                     enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
                 }
                 Box(Modifier.fillMaxSize().background(c.bg)) {
-                    // "onboarding" | "home" | "settings" | "project:<name>"
+                    // "onboarding" | "home" | "settings" | "accounts" | "project:<name>"
                     var screen by rememberSaveable { mutableStateOf(if (settings.onboarded) "home" else "onboarding") }
                     var returnTo by rememberSaveable { mutableStateOf("home") }
-                    BackHandler(enabled = screen != "home" && screen != "onboarding") { screen = if (screen == "settings") returnTo else "home" }
+                    var accountsReturn by rememberSaveable { mutableStateOf("settings") }
+                    BackHandler(enabled = screen != "home" && screen != "onboarding") {
+                        screen = when (screen) { "settings" -> returnTo; "accounts" -> accountsReturn; else -> "home" }
+                    }
                     AnimatedContent(screen, transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) }, label = "nav") { s ->
                         when {
                             s == "onboarding" -> OnboardingScreen(onDone = { openSettings ->
@@ -56,12 +62,13 @@ class MainActivity : AppCompatActivity() {
                                 returnTo = "home"
                                 screen = if (openSettings && !settings.activeReady()) "settings" else "home"
                             })
-                            s == "settings" -> SettingsScreen(onBack = { screen = returnTo })
+                            s == "settings" -> SettingsScreen(onBack = { screen = returnTo }, onAccounts = { accountsReturn = "settings"; screen = "accounts" })
+                            s == "accounts" -> AccountsScreen(onBack = { screen = accountsReturn })
                             s.startsWith("project:") -> IdeScreen(
                                 projectName = s.removePrefix("project:"),
                                 onBack = { screen = "home" },
                                 onSettings = { returnTo = s; screen = "settings" },
-                                onAccounts = { returnTo = s; screen = "settings" }, // TODO: open accounts section directly
+                                onAccounts = { accountsReturn = s; screen = "accounts" },
                             )
                             else -> HomeScreen(
                                 onOpen = { screen = "project:$it" },

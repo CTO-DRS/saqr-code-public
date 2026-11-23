@@ -25,7 +25,7 @@
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|density"
-            android:theme="@style/Theme.SaqrCode">
+            android:theme="@style/Theme.SaqrCode.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

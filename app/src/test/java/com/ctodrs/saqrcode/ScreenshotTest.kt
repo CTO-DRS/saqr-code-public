@@ -213,7 +213,7 @@ class ScreenshotTest {
         },
         activeProvider = "anthropic", approveAll = false, githubUser = "cto-drs", githubTokenSet = true, versionName = "0.2.0",
         onTheme = {}, onLang = {}, onActivate = {}, onSaveProvider = { _, _, _, _ -> }, fetchModels = { _, _, _, _ -> Result.success(emptyList()) },
-        onApproveAll = {}, onSaveGithub = { _, _ -> },
+        onApproveAll = {},
     )
 
     @Test fun settings() = shot("settings") { SettingsContent(settingsUi(), {}) }

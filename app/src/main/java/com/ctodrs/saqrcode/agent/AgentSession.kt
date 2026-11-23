@@ -7,6 +7,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.ctodrs.saqrcode.data.SettingsStore
+import com.ctodrs.saqrcode.git.GitService
+import com.ctodrs.saqrcode.git.Redact
 import com.ctodrs.saqrcode.terminal.LinuxEnv
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -45,7 +47,8 @@ sealed class ChatItem {
         var ok by mutableStateOf(true)
         var durationMs by mutableLongStateOf(-1L)
     }
-    class Approval(val changes: List<FileChange>) : ChatItem() {
+    /** File changes to approve, or (when [action] is set) a non-file action such as `git push`. */
+    class Approval(val changes: List<FileChange>, val action: String? = null) : ChatItem() {
         var decision by mutableStateOf<Boolean?>(null)
         var durationMs by mutableLongStateOf(-1L)
         val deferred = CompletableDeferred<Boolean>()
@@ -69,6 +72,7 @@ class AgentSession(
     snapshotRoot: File,
     private val settings: SettingsStore,
     private val linux: LinuxEnv,
+    private val git: GitService = GitService(null, settings.accounts),
 ) {
     val items = mutableStateListOf<ChatItem>()
     var running by mutableStateOf(false); private set
@@ -224,8 +228,8 @@ class AgentSession(
             val item = ChatItem.Tool(c.name, Tools.summarizeArgs(c.name, args))
             items += item
             val out = try {
-                runTool(c.name, args)
-            } catch (e: CancellationException) { throw e } catch (e: Exception) { item.ok = false; "Error: ${e.message}" }
+                if (c.name == Tools.GIT_PUSH) gitPush(args) else runTool(c.name, args)
+            } catch (e: CancellationException) { throw e } catch (e: Exception) { item.ok = false; "Error: " + Redact.text(e.message ?: e.toString(), settings.githubToken) }
             if (out.startsWith("Error") || out.startsWith("Blocked") || Regex("""^\[exit [1-9]""").containsMatchIn(out) || out.startsWith("[timed out]")) item.ok = false
             item.durationMs = System.currentTimeMillis() - item.createdAt
             item.result = out
@@ -247,8 +251,19 @@ class AgentSession(
         return "Plan updated (${next.count { it.done }}/${next.size} done)."
     }
 
+    /** `git_push` always needs an explicit yes from the user, whatever the approval mode. */
+    private suspend fun gitPush(a: JSONObject): String {
+        val summary = withContext(Dispatchers.IO) { GitTools.describePush(a, projectDir, git) }
+        val card = ChatItem.Approval(emptyList(), action = summary)
+        items += card
+        val ok = card.deferred.await().also { card.durationMs = System.currentTimeMillis() - card.createdAt }
+        if (!ok) return "The user REJECTED the push. Nothing was pushed."
+        return withContext(Dispatchers.IO) { GitTools.push(a, projectDir, git) }
+    }
+
     private suspend fun runTool(name: String, a: JSONObject): String = withContext(Dispatchers.IO) {
         when (name) {
+            in Tools.GIT -> GitTools.run(name, a, projectDir, git, settings.gitName, settings.gitEmail)
             Tools.LIST -> Tools.listFiles(projectDir, a.optString("path", "."), a.optBoolean("recursive", true))
             Tools.READ -> Tools.readFile(projectDir, a.optString("path"),
                 a.optInt("start_line", 0).takeIf { it > 0 }, a.optInt("end_line", 0).takeIf { it > 0 })
@@ -315,6 +330,10 @@ You operate on the user's project through tools. The project root is the current
 - For tasks with 3+ distinct steps, call update_plan first with a short step list, then update it as steps finish (statuses: pending, in_progress, done).
 - If the user mentions a file as @path, read it before answering.
 - Be concise. When done, give a short summary of what changed and how to run it. Do not paste whole files back to the user.
+
+# Git
+- Use the git_* tools (git_status, git_diff, git_log, git_commit, git_branch, git_pull, git_push) rather than running `git` in the terminal; they use the user's linked account and commit identity.
+- Only commit or push when the user asks. git_push always shows the user an approval card; never force-push unless asked.
 
 # Terminal
 """)

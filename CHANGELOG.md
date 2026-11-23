@@ -1,5 +1,31 @@
 # Changelog · سجل التغييرات
 
+## [0.3.0] — 2026-11-23 — Git & accounts · Git والحسابات
+
+### Git engine · محرّك Git
+- Real git on the device via **Eclipse JGit** (no git binary): init, clone, status with line counts, stage/unstage/discard, commit/amend, history, diffs, branches (create/switch/delete/merge, conflict state), remotes, fetch/pull/push with upstream tracking. Tokens are redacted from every message.
+  Git حقيقي على الجهاز عبر JGit: إيداع، سجل، فروع، دمج، سحب ودفع، مع إخفاء الرموز من كل الرسائل.
+- New **Source control** screen (Changes / History / Branches tabs, diff viewer, publish to GitHub, open pull request).
+
+### GitHub accounts · حسابات GitHub
+- New **Settings → Accounts** screen: paste a fine-grained token with an inline scope guide (Contents: Read & write, Metadata: Read, Pull requests optional), a button that opens GitHub's token page, **Verify & link** (checks the token with the GitHub API), avatar + @username when linked, and **Sign out**.
+  شاشة الحسابات: لصق الرمز مع دليل الصلاحيات، التحقق والربط، صورة الحساب واسم المستخدم، وتسجيل الخروج.
+- **Commit identity** (author name / email), defaulting to the linked account's name and noreply address.
+- Tokens stored encrypted (Android Keystore); the v0.2 token migrates automatically. Other HTTPS hosts (GitLab, Gitea, …) supported in the account store.
+- "Link GitHub" in the Git screen now opens the Accounts screen directly.
+
+### Agent git tools · أدوات Git للوكيل
+- `git_status`, `git_diff`, `git_log`, `git_commit`, `git_branch`, `git_pull`, `git_push`, backed by the JGit engine and the linked account.
+- **`git_push` always asks for approval** with a card showing the remote, branch and URL, whatever the approval mode.
+  الدفع (push) يتطلب موافقتك دائمًا.
+
+### Terminal · الطرفية
+- Full **Termux terminal emulator** (VT100/xterm) with multiple sessions, quick keys and adjustable font size, on the Alpine/proot environment.
+
+### Brand · الهوية
+- New **"Stoop"** falcon icon (adaptive + monochrome) and in-app logo mark.
+- **Splash screen** (AndroidX SplashScreen, Android 12 style, backported to Android 8+) with the Stoop mark.
+
 ## [0.2.0] — 2026-11-22 — "Falcon" UI redesign · إعادة تصميم الواجهة
 
 ### Design system · نظام التصميم
