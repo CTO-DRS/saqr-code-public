@@ -26,8 +26,8 @@ android {
         applicationId = "com.ctodrs.saqrcode"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "0.11.0"
+        versionCode = 12
+        versionName = "0.12.0"
         ndk { abiFilters += "arm64-v8a" }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += listOf("en", "ar")
@@ -82,6 +82,12 @@ android {
                 // Screenshot rendering is opt-in: SAQR_SCREENS=1 ./gradlew testDebugUnitTest --tests '*ScreenshotTest*'
                 it.systemProperty("saqr.screens", System.getenv("SAQR_SCREENS") ?: "0")
                 it.systemProperty("saqr.screens.dir", rootProject.file("dist/screens").absolutePath)
+                // v0.12: without SAQR_SCREENS=1 the screenshot class never runs at all — its compose
+                // activity rule launches before the @Before gate could assume-skip it, which made the
+                // whole suite fail on machines without Robolectric native graphics.
+                if (System.getenv("SAQR_SCREENS") != "1") {
+                    it.exclude("**/ScreenshotTest*")
+                }
             }
         }
     }

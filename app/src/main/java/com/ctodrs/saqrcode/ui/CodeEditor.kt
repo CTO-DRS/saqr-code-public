@@ -67,6 +67,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.editor.CodePalette
 import com.ctodrs.saqrcode.editor.FindReplace
@@ -92,14 +93,14 @@ private class FindState {
 }
 
 @Composable
-fun CodeEditor(f: OpenFile) {
+fun CodeEditor(f: OpenFile, fontSize: Int = 13, wrap: Boolean = false) {
     val c = Saqr.colors
     val palette = if (c.isDark) CodePalette.Dark else CodePalette.Light
     val lang = remember(f.path) { SyntaxHighlighter.languageOf(f.path) }
     val highlighter = remember(f, lang) { IncrementalHighlighter(lang) }
     val find = remember(f) { FindState() }
     val findFocus = remember { FocusRequester() }
-    val style = Saqr.type.mono.copy(color = c.text1, lineHeight = Saqr.type.mono.lineHeight)
+    val style = Saqr.type.mono.copy(color = c.text1, fontSize = fontSize.sp, lineHeight = (fontSize * 1.55f).sp)
     val text = f.value.text
     val lines = remember(text) { text.count { it == '\n' } + 1 }
     val caret = f.value.selection.start.coerceIn(0, text.length)
@@ -178,6 +179,9 @@ fun CodeEditor(f: OpenFile) {
             // toolbar
             Row(Modifier.fillMaxWidth().background(c.surface1).padding(horizontal = Sp.sm, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Spacer(Modifier.weight(1f))
+                TextToolIcon("A−", stringResource(R.string.editor_font_down), enabled = fontSize > 12) { settingsEditorFont(fontSize - 1) }
+                TextToolIcon("A+", stringResource(R.string.editor_font_up), enabled = fontSize < 20) { settingsEditorFont(fontSize + 1) }
+                ToolIcon(Lucide.ArrowUpDown, stringResource(R.string.editor_wrap), active = wrap) { settingsEditorWrap(!wrap) }
                 ToolIcon(Lucide.Undo2, stringResource(R.string.editor_undo), enabled = f.history.canUndo) { f.undo() }
                 ToolIcon(Lucide.Redo2, stringResource(R.string.editor_redo), enabled = f.history.canRedo) { f.redo() }
                 ToolIcon(Lucide.Search, stringResource(R.string.editor_find), active = find.open) { if (find.open) find.open = false else openFind(false) }
@@ -205,7 +209,15 @@ fun CodeEditor(f: OpenFile) {
                 }
                 Text(gutter, Modifier.padding(start = Sp.md, end = Sp.sm, top = Sp.md, bottom = Sp.md).widthIn(min = 26.dp), style = style.copy(textAlign = TextAlign.End))
                 Box(Modifier.width(1.dp).fillMaxHeight().background(c.border))
-                Box(Modifier.weight(1f).horizontalScroll(hScroll)) {
+                if (wrap) {
+                    BasicTextField(
+                        value = f.value, onValueChange = { f.edit(it) }, textStyle = style, cursorBrush = SolidColor(c.accent),
+                        visualTransformation = transformation,
+                        onTextLayout = { layout = it },
+                        keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, capitalization = KeyboardCapitalization.None),
+                        modifier = Modifier.weight(1f).padding(horizontal = Sp.md, vertical = Sp.md),
+                    )
+                } else Box(Modifier.weight(1f).horizontalScroll(hScroll)) {
                     BasicTextField(
                         value = f.value, onValueChange = { f.edit(it) }, textStyle = style, cursorBrush = SolidColor(c.accent),
                         visualTransformation = transformation,
@@ -235,6 +247,26 @@ private fun ToolIcon(icon: ImageVector, label: String, enabled: Boolean = true, 
             .clickable(enabled = enabled, onClick = onClick).semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) { SIcon(icon, size = 16.dp, tint = when { active -> c.accentText; enabled -> c.text2; else -> c.text3.copy(alpha = 0.45f) }) }
+}
+
+@Composable
+private fun TextToolIcon(text: String, label: String, enabled: Boolean = true, onClick: () -> Unit) {
+    val c = Saqr.colors
+    Box(
+        Modifier.size(width = 34.dp, height = 34.dp).clip(RoundedCornerShape(8.dp)).background(c.surface1)
+            .clickable(enabled = enabled, onClick = onClick).semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) { Text(text, style = Saqr.type.micro, color = if (enabled) c.text2 else c.text3.copy(alpha = 0.45f)) }
+}
+
+/** Persists the editor font size (v0.12); safe no-op when the app store is unavailable. */
+private fun settingsEditorFont(size: Int) {
+    runCatching { com.ctodrs.saqrcode.SaqrApp.instance.settings.editorFontSize = size.coerceIn(12, 20) }
+}
+
+/** Persists the wrap toggle (v0.12); safe no-op when the app store is unavailable. */
+private fun settingsEditorWrap(wrap: Boolean) {
+    runCatching { com.ctodrs.saqrcode.SaqrApp.instance.settings.editorWrap = wrap }
 }
 
 @Composable

@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.11.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.12.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,15 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.12
+| الميزة | الحالة |
+|---|---|
+| استوديو الثيمات: كلمة المزاج تتحول عبر النموذج النشط إلى ثيم كامل بمعاينة حية، حفظ ونسخ JSON واستيراده، وستّ حزم مجتمعية جاهزة (نجد، تهامة، البحر، الوادي، عُمان، الأندلس) | ✅ |
+| ثيم «ليل» OLED أسود نقي بذهب أفتح — وضع رابع بجانب الداكن والفاتح والنظام، بتبديل فوري | ✅ |
+| لوحة الأوامر العربية من أي تبويب: ملفات، أوامر شرطة بأسمائها العربية، وجهات الإعدادات، والجلسات — بمطابقة تفهم صيغ الهمزات والحركات | ✅ |
+| البطاقات الحية في الرئيسية: نتيجة آخر بناء على الجهاز وفرع git الحالي لكل مشروع | ✅ |
+| المحرر: حجم خط (12–20sp) والتفاف أسطر — من الإعدادات وشريط أدوات المحرر، وتطبيق فوري | ✅ |
 
 ### الجديد في 0.11
 | الميزة | الحالة |
@@ -111,7 +120,7 @@
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `SaqrCode-v0.11.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.12.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -122,6 +131,11 @@
 ---
 
 ## English
+
+### New in v0.12
+- **Theme Studio:** a mood phrase becomes a complete color theme via the active model (one-shot JSON, tolerant parsing) with a live swatch preview, apply / save / copy-JSON and JSON import, plus **six built-in community packs** (Najd, Tihama, Bahar, Wadi, Oman, Andalus). A pack is six colors; the rest of the palette (borders, states, code/terminal) is derived, so the app stays token-driven. A pure-black **OLED «ليل» theme** joins dark / light / system, and the editor gains a live font-size (12–20sp) and line-wrap control (Settings + toolbar).
+- **Arabic command palette:** the IDE top bar gains a search button — one box that reaches files, slash commands (Arabic aliases), settings destinations and the sessions sheet, with Arabic-aware ranked matching (alef forms, diacritics, tatweel).
+- **Live home cards:** each project shows its last on-device build result (✓/✗ + when) and the current git branch (read from `.git/HEAD`).
 
 ### New in v0.11
 - **Plans in SAR with honest gating:** Free keeps everything (3 projects, 1 MCP server, 1 git host); **Pro SAR 15/mo**, **Student SAR 5/mo** (honors-system), **Lifetime SAR 149** lift the caps and unlock team agents + signed release builds. Every limit attempt opens the paywall with an explanation instead of failing silently.

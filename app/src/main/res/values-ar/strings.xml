@@ -612,4 +612,32 @@
     <string name="mcp_stdio_desc">للمتقدمين: يُنفّذ الأمر داخل طرفية التطبيق (لينكس proot إن كانت مثبتة) ويتخاطب JSON-RPC عبر stdin/stdout. مثال: `npx -y @modelcontextprotocol/server-filesystem /workspace`.</string>
     <string name="mcp_stdio_command">الأمر (سطر شل واحد)</string>
     <string name="mcp_stdio_env">متغيرات البيئة (K=V لكل سطر، اختياري)</string>
+    <!-- v0.12 ريش جديدة -->
+    <string name="theme_oled">OLED</string>
+    <string name="studio_section">استوديو الثيمات</string>
+    <string name="studio_packs">حزم المجتمع</string>
+    <string name="studio_saved_packs">الحزم المحفوظة</string>
+    <string name="studio_mood">اوصف مزاجًا أو مشهدًا، وسيتولّد ثيم من انطباعه</string>
+    <string name="studio_generate">توليد</string>
+    <string name="studio_generating">جارٍ التوليد…</string>
+    <string name="studio_apply">تطبيق</string>
+    <string name="studio_applied">تم تطبيق الثيم</string>
+    <string name="studio_save">حفظ</string>
+    <string name="studio_saved">حُفظت الحزمة</string>
+    <string name="studio_copy">نسخ JSON</string>
+    <string name="studio_export_copied">نُسخ JSON الثيم</string>
+    <string name="studio_import">استيراد ثيم (JSON)</string>
+    <string name="studio_import_apply">استيراد</string>
+    <string name="studio_bad_json">JSON الثيم غير صالح — تحقق من الحقول (name، dark، bg، surface1، surface2، text1، text2، accent)</string>
+    <string name="editor_section">المحرر</string>
+    <string name="editor_font">حجم خط المحرر</string>
+    <string name="editor_font_up">خط أكبر</string>
+    <string name="editor_font_down">خط أصغر</string>
+    <string name="editor_wrap">التفاف الأسطر</string>
+    <string name="editor_wrap_desc">التفاف الأسطر الطويلة بدل التمرير الأفقي</string>
+    <string name="palette_open">بحث</string>
+    <string name="palette_hint">ملفات، أوامر، إعدادات…</string>
+    <string name="palette_no_results">لا نتائج</string>
+    <string name="build_last_ok">بُني %1$s</string>
+    <string name="build_last_failed">فشل بناء %1$s</string>
 </resources>

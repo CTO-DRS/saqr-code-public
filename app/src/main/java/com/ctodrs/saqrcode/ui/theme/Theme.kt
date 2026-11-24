@@ -130,6 +130,43 @@ val LightSaqr = SaqrColors(
     scrim = Color(0xFFF6F5F2),
 )
 
+/**
+ * v0.12 «ليل» — the OLED theme: pure black to save power on OLED panels, with the gold tuned a
+ * step lighter so it keeps its pop on the deeper background. Same structure as [DarkSaqr].
+ */
+val NightSaqr = SaqrColors(
+    isDark = true,
+    bg = Color(0xFF000000),
+    surface1 = Color(0xFF0A0B0D),
+    surface2 = Color(0xFF101114),
+    surface3 = Color(0xFF171A1F),
+    border = Color(0xFF1E2126),
+    borderStrong = Color(0xFF2A2F36),
+    text1 = Color(0xFFE8E9EB),
+    text2 = Color(0xFFA6ACB5),
+    text3 = Color(0xFF6E747E),
+    accent = Color(0xFFF0C568),
+    accentText = Color(0xFFF5D37E),
+    accentSoft = Color(0x1FF0C568),
+    onAccent = Color(0xFF1B1305),
+    success = Color(0xFF46C98B),
+    danger = Color(0xFFF2555A),
+    warning = Color(0xFFF0A93B),
+    warningBg = Color(0xFF221A0C),
+    warningBorder = Color(0xFF5E4519),
+    info = Color(0xFF5FB3A1),
+    diffAdd = Color(0xFF5BD47F),
+    diffAddBg = Color(0x1F5BD47F),
+    diffDel = Color(0xFFF4736B),
+    diffDelBg = Color(0x1FF4736B),
+    codeBg = Color(0xFF050607),
+    codeHeader = Color(0xFF0B0D10),
+    termBg = Color(0xFF000000),
+    termText = Color(0xFFD3D9E0),
+    glass = Color(0xE60E1013),
+    scrim = Color(0xFF000000),
+)
+
 /** Spacing scale (dp). */
 object Sp {
     val xxs = 2.dp; val xs = 4.dp; val sm = 8.dp; val md = 12.dp; val lg = 16.dp
@@ -190,11 +227,20 @@ object Saqr {
     val type: SaqrType @Composable @ReadOnlyComposable get() = LocalSaqrType.current
 }
 
-/** "system" | "dark" | "light" */
+/** "system" | "dark" | "light" | "oled" | "custom" (when a Theme Studio pack is active) */
 @Composable
-fun SaqrTheme(themeMode: String = "dark", content: @Composable () -> Unit) {
-    val dark = when (themeMode) { "light" -> false; "system" -> isSystemInDarkTheme(); else -> true }
-    val c = if (dark) DarkSaqr else LightSaqr
+fun SaqrTheme(themeMode: String = "dark", customPack: ThemePack? = null, content: @Composable () -> Unit) {
+    val dark = when {
+        themeMode == "light" -> false
+        themeMode == "system" -> isSystemInDarkTheme()
+        themeMode == "custom" -> customPack?.dark ?: true
+        else -> true
+    }
+    val c = when (themeMode) {
+        "oled" -> NightSaqr
+        "custom" -> customPack?.toSaqrColors() ?: DarkSaqr
+        else -> if (dark) DarkSaqr else LightSaqr
+    }
     val type = SaqrType()
     val scheme = if (dark) darkColorScheme(
         primary = c.accent, onPrimary = c.onAccent, primaryContainer = c.accentSoft, onPrimaryContainer = c.accentText,

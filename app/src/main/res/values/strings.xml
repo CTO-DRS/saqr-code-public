@@ -612,4 +612,32 @@
     <string name="mcp_stdio_desc">Advanced: the command runs inside the app’s terminal (proot Linux when installed) and speaks JSON-RPC over stdin/stdout. Example: `npx -y @modelcontextprotocol/server-filesystem /workspace`.</string>
     <string name="mcp_stdio_command">Command (one shell line)</string>
     <string name="mcp_stdio_env">Environment (K=V per line, optional)</string>
+    <!-- v0.12 New Plumage -->
+    <string name="theme_oled">OLED</string>
+    <string name="studio_section">Theme Studio</string>
+    <string name="studio_packs">Community packs</string>
+    <string name="studio_saved_packs">Saved packs</string>
+    <string name="studio_mood">Describe a mood, and a theme is generated from it</string>
+    <string name="studio_generate">Generate</string>
+    <string name="studio_generating">Generating…</string>
+    <string name="studio_apply">Apply</string>
+    <string name="studio_applied">Theme applied</string>
+    <string name="studio_save">Save</string>
+    <string name="studio_saved">Pack saved</string>
+    <string name="studio_copy">Copy JSON</string>
+    <string name="studio_export_copied">Theme JSON copied</string>
+    <string name="studio_import">Import a theme (JSON)</string>
+    <string name="studio_import_apply">Import</string>
+    <string name="studio_bad_json">Invalid theme JSON — check the fields (name, dark, bg, surface1, surface2, text1, text2, accent)</string>
+    <string name="editor_section">Editor</string>
+    <string name="editor_font">Editor font size</string>
+    <string name="editor_font_up">Bigger font</string>
+    <string name="editor_font_down">Smaller font</string>
+    <string name="editor_wrap">Wrap lines</string>
+    <string name="editor_wrap_desc">Wrap long lines instead of horizontal scrolling</string>
+    <string name="palette_open">Search</string>
+    <string name="palette_hint">Files, commands, settings…</string>
+    <string name="palette_no_results">No results</string>
+    <string name="build_last_ok">Built %1$s</string>
+    <string name="build_last_failed">Build failed %1$s</string>
 </resources>

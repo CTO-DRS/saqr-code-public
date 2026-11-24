@@ -201,6 +201,8 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
 
     // ---- v0.6: sessions, voice, background
     var showSessions by remember { mutableStateOf(false) }
+    // v0.12: command palette
+    var showPalette by remember { mutableStateOf(false) }
     var batteryDialog by remember { mutableStateOf(false) }
     var micRationale by remember { mutableStateOf(false) }
     var micDenied by remember { mutableStateOf(false) }
@@ -299,6 +301,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                     pane = ws.tab, onDrawer = { scope.launch { drawer.open() } },
                     onPane = { ws.tab = if (ws.tab == it) Pane.AGENT else it },
                     overflow = chatOverflow.takeIf { ws.tab == Pane.AGENT },
+                    onSearch = { showPalette = true },
                     center = {
                         if (ws.tab == Pane.AGENT) PlanPillContent(ws.agent.plan, ws.agent.running, onPause = { ws.agent.stop() }, title = projectName)
                         else PaneTitle(ws.tab, projectName)
@@ -380,6 +383,31 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     }
     if (showSessions) {
         com.ctodrs.saqrcode.ui.chat.SessionsSheet(ws.agent, onOpened = { speaker.stop(); ws.tab = Pane.AGENT }, onDismiss = { showSessions = false })
+    }
+    // v0.12: the command palette — files, slash commands, settings destinations and sessions.
+    if (showPalette) {
+        val paletteItems = remember(showPalette) {
+            val files = runCatching {
+                com.ctodrs.saqrcode.agent.Tools.listFiles(ws.dir, ".", true, 400)
+                    .lines().filter { !it.endsWith("/") && !it.contains("(skipped)") && it.isNotBlank() }
+                    .map { it.substringBeforeLast(" (") }
+            }.getOrDefault(emptyList())
+            PaletteLogic.build(files, SlashCommands.all(settings.customCommands))
+        }
+        CommandPaletteDialog(
+            visible = showPalette,
+            onDismiss = { showPalette = false },
+            items = paletteItems,
+            onSelect = { item ->
+                showPalette = false
+                when (item.kind) {
+                    PaletteKind.FILE -> ws.open(item.key)
+                    PaletteKind.COMMAND -> input = "/" + item.key + " "
+                    PaletteKind.SETTING -> onSettings()
+                    PaletteKind.SESSION -> { ws.tab = Pane.AGENT; showSessions = true }
+                }
+            },
+        )
     }
     if (micRationale) {
         val c = Saqr.colors
@@ -540,12 +568,13 @@ private fun statusBarHeight(): Dp {
 }
 
 @Composable
-fun IdeTopBar(pane: Int, onDrawer: () -> Unit, onPane: (Int) -> Unit, overflow: (@Composable () -> Unit)? = null, center: @Composable () -> Unit) {
+fun IdeTopBar(pane: Int, onDrawer: () -> Unit, onPane: (Int) -> Unit, overflow: (@Composable () -> Unit)? = null, center: @Composable () -> Unit, onSearch: (() -> Unit)? = null) {
     Row(
         Modifier.fillMaxWidth().height(TopBarHeight).padding(horizontal = Sp.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         GlassIconButton(Lucide.PanelLeft, stringResource(R.string.menu), onDrawer)
+        onSearch?.let { GlassIconButton(Lucide.Search, stringResource(R.string.palette_open), it) }
         Spacer(Modifier.weight(1f))
         GlassPill { center() }
         Spacer(Modifier.weight(1f))

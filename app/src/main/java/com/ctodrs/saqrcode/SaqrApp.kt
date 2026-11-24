@@ -15,6 +15,8 @@ class SaqrApp : Application() {
     lateinit var settings: SettingsStore; private set
     lateinit var projects: ProjectRepository; private set
     lateinit var linux: LinuxEnv; private set
+    /** v0.12: last on-device build result per project, for the live home cards. */
+    lateinit var builds: com.ctodrs.saqrcode.data.BuildHistory; private set
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {
@@ -24,6 +26,7 @@ class SaqrApp : Application() {
         settings = SettingsStore(this, secure)
         projects = ProjectRepository(this)
         linux = LinuxEnv(this)
+        builds = com.ctodrs.saqrcode.data.BuildHistory(this)
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityStarted(a: android.app.Activity) { com.ctodrs.saqrcode.service.AgentRuntime.visibleActivities++ }
             override fun onActivityStopped(a: android.app.Activity) {

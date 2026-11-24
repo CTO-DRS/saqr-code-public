@@ -37,10 +37,20 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("active_provider", Providers.all.first().id)!!
         set(v) { prefs.edit().putString("active_provider", v).apply(); bump() }
 
-    /** "dark" (default) | "light" | "system" */
+    /** "dark" (default) | "light" | "system" | "oled" | "custom" (Theme Studio pack) */
     var themeMode: String
         get() = prefs.getString("theme_mode", "dark") ?: "dark"
         set(v) { prefs.edit().putString("theme_mode", v).apply(); bump() }
+
+    /** v0.12: the applied Theme Studio pack JSON (active while themeMode == "custom"). */
+    var customThemeJson: String
+        get() = prefs.getString("custom_theme", "") ?: ""
+        set(v) { prefs.edit().putString("custom_theme", v).apply(); bump() }
+
+    /** v0.12: user-saved Theme Studio packs (JSON array of [com.ctodrs.saqrcode.ui.theme.ThemePack]). */
+    var savedThemesJson: String
+        get() = prefs.getString("saved_themes", "") ?: ""
+        set(v) { prefs.edit().putString("saved_themes", v).apply(); bump() }
 
     /** First-run welcome has been seen. */
     var onboarded: Boolean
@@ -181,6 +191,16 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
     var terminalFontSize: Int
         get() = prefs.getInt("term_font", 12)
         set(v) { prefs.edit().putInt("term_font", v.coerceIn(8, 22)).apply(); bump() }
+
+    /** v0.12: editor font size in sp. */
+    var editorFontSize: Int
+        get() = prefs.getInt("editor_font", 13)
+        set(v) { prefs.edit().putInt("editor_font", v.coerceIn(12, 20)).apply(); bump() }
+
+    /** v0.12: wrap long lines in the code editor instead of horizontal scrolling. */
+    var editorWrap: Boolean
+        get() = prefs.getBoolean("editor_wrap", false)
+        set(v) { prefs.edit().putBoolean("editor_wrap", v).apply(); bump() }
 
     /** User-defined slash commands (name + prompt template). */
     var customCommands: List<SlashCommand>

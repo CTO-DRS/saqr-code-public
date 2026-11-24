@@ -61,7 +61,11 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val version by settings.version.collectAsState()
             version
-            SaqrTheme(themeMode = settings.themeMode) {
+            // v0.12: the active Theme Studio pack (parsed once per settings change).
+            val customPack = androidx.compose.runtime.remember(version) {
+                runCatching { com.ctodrs.saqrcode.ui.theme.ThemePack.fromJson(settings.customThemeJson) }.getOrNull()
+            }
+            SaqrTheme(themeMode = settings.themeMode, customPack = customPack) {
                 val c = Saqr.colors
                 LaunchedEffect(c.isDark) {
                     val style = if (c.isDark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)

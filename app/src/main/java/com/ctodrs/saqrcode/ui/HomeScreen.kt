@@ -65,7 +65,7 @@ import com.ctodrs.saqrcode.ui.theme.Radius
 import com.ctodrs.saqrcode.ui.theme.Saqr
 import com.ctodrs.saqrcode.ui.theme.Sp
 
-data class ProjectCard(val name: String, val modified: Long, val files: Int, val mainFile: String)
+data class ProjectCard(val name: String, val modified: Long, val files: Int, val mainFile: String, val branch: String? = null, val lastBuild: com.ctodrs.saqrcode.data.BuildRecord? = null)
 
 data class TemplateInfo(val template: Template, val title: Int, val desc: Int, val icon: String, val accent: Color)
 
@@ -86,12 +86,27 @@ fun Project.toCard(): ProjectCard {
     return ProjectCard(name, modified, files.size, main)
 }
 
+/** v0.12: the project's current git branch, read straight from .git/HEAD (null when not a repo). */
+fun branchOf(dir: java.io.File): String? = runCatching {
+    val head = java.io.File(dir, ".git/HEAD")
+    if (!head.isFile) return null
+    val s = head.readText().trim()
+    when {
+        s.startsWith("ref: refs/heads/") -> s.removePrefix("ref: refs/heads/").take(60)
+        s.length >= 7 -> s.take(7)
+        else -> null
+    }
+}.getOrNull()
+
 @Composable
 fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -> Unit = {}) {
     val app = SaqrApp.instance
     val version by app.settings.version.collectAsState()
     var refresh by remember { mutableIntStateOf(0) }
-    val projects = remember(refresh) { app.projects.list().map { it.toCard() } }
+    val projects = remember(refresh) {
+        val builds = app.builds
+        app.projects.list().map { p -> p.toCard().copy(branch = branchOf(p.dir), lastBuild = builds.last(p.name)) }
+    }
     var create by remember { mutableStateOf<Template?>(null) }
     var toDelete by remember { mutableStateOf<String?>(null) }
     var gate by remember { mutableStateOf(false) }
@@ -123,7 +138,7 @@ fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -
             icon = { SIcon(Lucide.Trash2, size = 24.dp, tint = c.danger) },
             text = { Text(stringResource(R.string.delete_project_q, name), style = Saqr.type.body) },
             confirmButton = {
-                TextButton(onClick = { app.projects.get(name)?.let { app.projects.delete(it) }; toDelete = null; refresh++ }) {
+                TextButton(onClick = { app.projects.get(name)?.let { app.projects.delete(it) }; app.builds.clear(name); toDelete = null; refresh++ }) {
                     Text(stringResource(R.string.delete), color = c.danger)
                 }
             },
@@ -265,6 +280,26 @@ private fun ProjectRow(p: ProjectCard, now: Long, onOpen: () -> Unit, onDelete: 
                     Text(DateUtils.getRelativeTimeSpanString(p.modified, now, DateUtils.MINUTE_IN_MILLIS).toString().latinDigits(), style = Saqr.type.caption, color = c.text2, maxLines = 1)
                     Text("  ·  ", style = Saqr.type.caption, color = c.text3)
                     Text(stringResource(R.string.n_files, p.files.toString()), style = Saqr.type.caption, color = c.text2, maxLines = 1)
+                }
+                // v0.12: live card — last on-device build and the git branch, when they exist.
+                if (p.lastBuild != null || p.branch != null) {
+                    Spacer(Modifier.height(3.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        p.lastBuild?.let { b ->
+                            SIcon(if (b.ok) Lucide.CircleCheck else Lucide.CircleAlert, size = 12.dp, tint = if (b.ok) c.success else c.danger)
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                stringResource(if (b.ok) R.string.build_last_ok else R.string.build_last_failed, DateUtils.getRelativeTimeSpanString(b.time, now, DateUtils.MINUTE_IN_MILLIS).toString().latinDigits()),
+                                style = Saqr.type.caption, color = c.text2, maxLines = 1,
+                            )
+                        }
+                        p.branch?.let { br ->
+                            if (p.lastBuild != null) Text("  ·  ", style = Saqr.type.caption, color = c.text3)
+                            SIcon(Lucide.GitBranch, size = 12.dp, tint = c.text3)
+                            Spacer(Modifier.width(4.dp))
+                            Text(br, style = Saqr.type.monoMicro, color = c.text2, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
                 }
             }
             Box(Modifier.size(40.dp).clip(RoundedCornerShape(50)).clickable(onClick = onDelete), contentAlignment = Alignment.Center) {

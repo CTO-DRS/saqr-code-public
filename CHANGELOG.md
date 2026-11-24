@@ -1,5 +1,20 @@
 # Changelog · سجل التغييرات
 
+## [0.12.0] — 2026-11-24 — New Plumage · ريش جديدة: design system 2.0, Theme Studio & the command palette
+
+### Appearance · المظهر
+- **Theme Studio (استوديو الثيمات):** a mood phrase becomes a complete color theme through the active model (one-shot JSON with tolerant parsing), with live swatch preview, apply / save / copy-JSON, **six built-in community packs** (نجد، تهامة، البحر، الوادي، عُمان، الأندلس) and JSON import. A custom pack derives a full `SaqrColors` palette — borders, states, code and terminal colors — from just six colors, so every screen stays token-driven. Image → theme lands later.
+- **OLED theme «ليل»:** a pure-black palette with the gold tuned a step lighter, as a fourth theme mode beside dark / light / system; instant switching, no restart.
+- **Editor polish:** font size (12–20sp) and line wrap — both in Settings and on the editor toolbar (A− / A+ / wrap), applied live and persisted.
+
+### Productivity · الإنتاجية
+- **Arabic command palette:** a search button in the IDE top bar opens one box that reaches files, slash commands (Arabic aliases included), settings destinations and the sessions sheet — Arabic-aware matching (alef forms unify, diacritics and tatweel dropped) with ranked results.
+- **Live home cards:** each project card shows the last on-device build result (✓ / ✗ with when) and the current git branch read straight from `.git/HEAD`; deleting a project clears its record.
+
+### Build
+- **Screenshot tests are excluded from the suite unless `SAQR_SCREENS=1`** — their compose activity rule launched before the `@Before` assume gate and failed the whole suite on machines without Robolectric native graphics; the opt-in behavior now matches the README.
+- Version 0.12.0 (code 12) · APK 10.98 MB · new tests in `V012FeaturesTest` (theme packs, studio parsing, palette search, build history, editor settings, branch helper).
+
 ## [0.11.0] — 2026-11-24 — Plans, payments & stdio MCP · الخطط والمدفوعات وMCP عبر stdio
 
 ### Monetization · الدفع والترخيص

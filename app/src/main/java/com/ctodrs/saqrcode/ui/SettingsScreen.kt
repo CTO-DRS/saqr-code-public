@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -154,11 +155,25 @@ class SettingsUi(
     val mcpStdioServers: List<com.ctodrs.saqrcode.agent.McpStdio.StdioServer> = emptyList(),
     val onMcpStdioAdd: (name: String, command: String, env: String) -> String? = { _, _, _ -> null },
     val onMcpStdioRemove: (String) -> Unit = {},
+    /** v0.12 theme studio: saved packs, the active pack id, and the model generation callback. */
+    val savedPacks: List<com.ctodrs.saqrcode.ui.theme.ThemePack> = emptyList(),
+    val activePackId: String? = null,
+    val onApplyPack: (com.ctodrs.saqrcode.ui.theme.ThemePack) -> Unit = {},
+    val onSavePack: (com.ctodrs.saqrcode.ui.theme.ThemePack) -> Unit = {},
+    val onDeletePack: (String) -> Unit = {},
+    val onCopyPack: (com.ctodrs.saqrcode.ui.theme.ThemePack) -> Unit = {},
+    val generateTheme: suspend (String) -> Result<com.ctodrs.saqrcode.ui.theme.ThemePack> = { Result.failure(IllegalStateException()) },
+    /** v0.12 editor: font size (12–20sp) + line wrap. */
+    val editorFontSize: Int = 13,
+    val onEditorFontSize: (Int) -> Unit = {},
+    val editorWrap: Boolean = false,
+    val onEditorWrap: (Boolean) -> Unit = {},
 )
 
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: () -> Unit = {}) {
     val settings = SaqrApp.instance.settings
+    val ctx = LocalContext.current
     val version by settings.version.collectAsState()
     version
     var showBattery by remember { mutableStateOf(false) }
@@ -261,6 +276,45 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
             } else err
         },
         onMcpStdioRemove = { name -> settings.mcpStdioServers = settings.mcpStdioServers.filter { it.name != name } },
+        savedPacks = com.ctodrs.saqrcode.ui.theme.ThemeStudio.decodePacks(settings.savedThemesJson),
+        activePackId = com.ctodrs.saqrcode.ui.theme.ThemePack.fromJson(settings.customThemeJson)?.id.takeIf { settings.themeMode == "custom" },
+        onApplyPack = { pack ->
+            settings.customThemeJson = pack.toJson()
+            settings.themeMode = "custom"
+        },
+        onSavePack = { pack ->
+            val studio = com.ctodrs.saqrcode.ui.theme.ThemeStudio
+            val cur = studio.decodePacks(settings.savedThemesJson).filter { it.id != pack.id }
+            settings.savedThemesJson = studio.encodePacks(cur + pack)
+        },
+        onDeletePack = { id ->
+            val studio = com.ctodrs.saqrcode.ui.theme.ThemeStudio
+            settings.savedThemesJson = studio.encodePacks(studio.decodePacks(settings.savedThemesJson).filter { it.id != id })
+        },
+        onCopyPack = { pack ->
+            val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            cm.setPrimaryClip(android.content.ClipData.newPlainText("saqr-theme", pack.toJson()))
+            android.widget.Toast.makeText(ctx, R.string.studio_export_copied, android.widget.Toast.LENGTH_SHORT).show()
+        },
+        generateTheme = { mood ->
+            runCatching {
+                require(settings.activeReady()) { "no_provider" }
+                val def = Providers.byId(settings.activeProvider)
+                val cfg = settings.config(def.id)
+                val client = LlmClient(def, cfg.baseUrl, cfg.model, settings.apiKey(def.id))
+                val turn = client.complete(
+                    com.ctodrs.saqrcode.ui.theme.ThemeStudio.SYSTEM_PROMPT,
+                    listOf(com.ctodrs.saqrcode.agent.Msg.User(com.ctodrs.saqrcode.ui.theme.ThemeStudio.buildRequest(mood))),
+                    emptyList(),
+                    object : com.ctodrs.saqrcode.agent.StreamListener { override fun onText(delta: String) {} },
+                )
+                com.ctodrs.saqrcode.ui.theme.ThemeStudio.parseModelOutput(turn.text) ?: error("theme_json")
+            }
+        },
+        editorFontSize = settings.editorFontSize,
+        onEditorFontSize = { settings.editorFontSize = it },
+        editorWrap = settings.editorWrap,
+        onEditorWrap = { settings.editorWrap = it },
     )
     if (showBattery) BatteryDialog(onDismiss = { showBattery = false })
     com.ctodrs.saqrcode.billing.PaywallDialog(
@@ -287,14 +341,31 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             Group {
                 Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
                     LabeledIcon(Lucide.Palette, stringResource(R.string.theme))
-                    val themes = listOf("dark", "light", "system")
-                    Segmented(listOf(stringResource(R.string.theme_dark), stringResource(R.string.theme_light), stringResource(R.string.theme_system)),
+                    val themes = listOf("dark", "light", "oled", "system")
+                    Segmented(listOf(stringResource(R.string.theme_dark), stringResource(R.string.theme_light), stringResource(R.string.theme_oled), stringResource(R.string.theme_system)),
                         themes.indexOf(ui.themeMode).coerceAtLeast(0), { ui.onTheme(themes[it]) })
+                    Spacer(Modifier.height(Sp.xs))
+                    ThemeStudioCard(ui)
                     Spacer(Modifier.height(Sp.xs))
                     LabeledIcon(Lucide.Languages, stringResource(R.string.language))
                     val langs = listOf("", "ar", "en")
                     val cur = when { ui.langTag.startsWith("ar") -> 1; ui.langTag.startsWith("en") -> 2; else -> 0 }
                     Segmented(listOf(stringResource(R.string.lang_system), stringResource(R.string.lang_ar), stringResource(R.string.lang_en)), cur, { ui.onLang(langs[it]) })
+                }
+            }
+
+            // ---- editor (v0.12)
+            SectionLabel(stringResource(R.string.editor_section), Modifier.padding(top = Sp.md))
+            Group {
+                Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+                    LabeledIcon(Lucide.CodeXml, stringResource(R.string.editor_font))
+                    val sizes = listOf(12, 13, 14, 16, 18, 20)
+                    Segmented(sizes.map { it.toString() }, sizes.indexOf(ui.editorFontSize).coerceAtLeast(0), { ui.onEditorFontSize(sizes[it]) })
+                    Spacer(Modifier.height(Sp.xs))
+                    ListRow(
+                        title = stringResource(R.string.editor_wrap), subtitle = stringResource(R.string.editor_wrap_desc), icon = Lucide.ArrowUpDown,
+                        trailing = { SaqrSwitch(ui.editorWrap, ui.onEditorWrap) },
+                    )
                 }
             }
 
@@ -1008,3 +1079,139 @@ private fun VisionEditor(ui: SettingsUi) {
             modes.indexOf(ui.visionMode).coerceAtLeast(0), { ui.onVisionMode(modes[it]) })
     }
 }
+
+// ------------------------------------------------------------------ v0.12 Theme Studio
+
+@Composable
+private fun ThemeStudioCard(ui: SettingsUi) {
+    val c = Saqr.colors
+    val ctx = LocalContext.current
+    var mood by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var genPack by remember { mutableStateOf<com.ctodrs.saqrcode.ui.theme.ThemePack?>(null) }
+    var importJson by remember { mutableStateOf("") }
+    var err by remember { mutableStateOf<Int?>(null) }
+    val scope = rememberCoroutineScope()
+
+    Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+        LabeledIcon(Lucide.Sparkles, stringResource(R.string.studio_section))
+        Text(stringResource(R.string.studio_packs), style = Saqr.type.caption, color = c.text2)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            com.ctodrs.saqrcode.ui.theme.ThemeStudio.builtins.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    row.forEach { p ->
+                        PackChip(p, Modifier.weight(1f), active = ui.activePackId == p.id) {
+                            ui.onApplyPack(p); toast(ctx, R.string.studio_applied)
+                        }
+                    }
+                }
+            }
+        }
+        if (ui.savedPacks.isNotEmpty()) {
+            Text(stringResource(R.string.studio_saved_packs), style = Saqr.type.caption, color = c.text2)
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                ui.savedPacks.forEach { p ->
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2)
+                            .border(1.dp, if (ui.activePackId == p.id) c.accent.copy(alpha = 0.5f) else c.border, RoundedCornerShape(Radius.sm))
+                            .padding(horizontal = Sp.md, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(p.name, style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1, maxLines = 1)
+                            Text(p.nameEn.ifBlank { p.mood }, style = Saqr.type.micro, color = c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        ColorDot(p.colors.accent); Spacer(Modifier.width(4.dp)); ColorDot(p.colors.bg)
+                        Spacer(Modifier.width(Sp.sm))
+                        Box(Modifier.size(30.dp).clip(CircleShape).clickable { ui.onCopyPack(p) }, contentAlignment = Alignment.Center) {
+                            SIcon(Lucide.Copy, size = 14.dp, tint = c.text3, contentDescription = stringResource(R.string.studio_copy))
+                        }
+                        Box(Modifier.size(30.dp).clip(CircleShape).clickable { ui.onDeletePack(p.id) }, contentAlignment = Alignment.Center) {
+                            SIcon(Lucide.Trash2, size = 14.dp, tint = c.danger, contentDescription = stringResource(R.string.delete))
+                        }
+                        Box(Modifier.size(30.dp).clip(CircleShape).clickable { ui.onApplyPack(p); toast(ctx, R.string.studio_applied) }, contentAlignment = Alignment.Center) {
+                            SIcon(Lucide.Check, size = 15.dp, tint = c.accentText, contentDescription = stringResource(R.string.studio_apply))
+                        }
+                    }
+                }
+            }
+        }
+        SaqrField(mood, { mood = it; err = null }, label = stringResource(R.string.studio_mood), placeholder = "غروب على الكورنيش")
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalAlignment = Alignment.CenterVertically) {
+            PrimaryButton(
+                stringResource(if (busy) R.string.studio_generating else R.string.studio_generate),
+                {
+                    busy = true; err = null
+                    scope.launch {
+                        val r = ui.generateTheme(mood)
+                        busy = false
+                        genPack = r.getOrNull()
+                        if (genPack == null) err = R.string.studio_bad_json
+                    }
+                },
+                icon = Lucide.Sparkles, enabled = !busy && mood.isNotBlank(),
+            )
+        }
+        genPack?.let { p ->
+            PreviewRow(p,
+                onApply = { ui.onApplyPack(p); toast(ctx, R.string.studio_applied) },
+                onSave = { ui.onSavePack(p); toast(ctx, R.string.studio_saved) },
+                onCopy = { ui.onCopyPack(p) })
+        }
+        SaqrField(importJson, { importJson = it }, label = stringResource(R.string.studio_import), placeholder = "{\"name\":…}", mono = true)
+        GhostButton(stringResource(R.string.studio_import_apply), {
+            val p = com.ctodrs.saqrcode.ui.theme.ThemePack.fromJson(importJson)
+            if (p != null) { ui.onApplyPack(p); toast(ctx, R.string.studio_applied); err = null } else err = R.string.studio_bad_json
+        }, icon = Lucide.Upload)
+        err?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger) }
+    }
+}
+
+@Composable
+private fun PackChip(p: com.ctodrs.saqrcode.ui.theme.ThemePack, modifier: Modifier, active: Boolean, onClick: () -> Unit) {
+    val c = Saqr.colors
+    Column(
+        modifier.heightIn(min = 52.dp).clip(RoundedCornerShape(Radius.sm))
+            .background(if (active) c.accentSoft else c.surface2)
+            .border(1.dp, if (active) c.accent.copy(alpha = 0.55f) else c.border, RoundedCornerShape(Radius.sm))
+            .clickable(onClick = onClick).padding(horizontal = Sp.md, vertical = 6.dp),
+    ) {
+        Text(p.name, style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1, maxLines = 1)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(p.nameEn, style = Saqr.type.micro, color = c.text3, maxLines = 1, modifier = Modifier.weight(1f))
+            ColorDot(p.colors.accent); Spacer(Modifier.width(4.dp)); ColorDot(p.colors.bg)
+        }
+    }
+}
+
+@Composable
+private fun ColorDot(argb: Int) {
+    val c = Saqr.colors
+    Box(Modifier.size(12.dp).clip(CircleShape).background(androidx.compose.ui.graphics.Color(argb)).border(1.dp, c.border, CircleShape))
+}
+
+@Composable
+private fun PreviewRow(p: com.ctodrs.saqrcode.ui.theme.ThemePack, onApply: () -> Unit, onSave: () -> Unit, onCopy: () -> Unit) {
+    val c = Saqr.colors
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2)
+            .border(1.dp, c.accent.copy(alpha = 0.45f), RoundedCornerShape(Radius.sm)).padding(Sp.md),
+        verticalArrangement = Arrangement.spacedBy(Sp.sm),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(p.name, style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1, maxLines = 1)
+                Text(p.nameEn.ifBlank { p.mood }, style = Saqr.type.micro, color = c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            ColorDot(p.colors.bg); Spacer(Modifier.width(4.dp)); ColorDot(p.colors.surface1); Spacer(Modifier.width(4.dp)); ColorDot(p.colors.accent)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
+            PrimaryButton(stringResource(R.string.studio_apply), onApply, icon = Lucide.Check)
+            GhostButton(stringResource(R.string.studio_save), onSave, icon = Lucide.Save)
+            GhostButton(stringResource(R.string.studio_copy), onCopy, icon = Lucide.Copy)
+        }
+    }
+}
+
+private fun toast(ctx: android.content.Context, res: Int) =
+    android.widget.Toast.makeText(ctx, res, android.widget.Toast.LENGTH_SHORT).show()

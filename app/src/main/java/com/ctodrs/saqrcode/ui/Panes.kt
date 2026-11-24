@@ -180,6 +180,10 @@ fun FilesPaneContent(
     onOpen: (String) -> Unit, onLongPress: (FsNode) -> Unit, onNewFile: () -> Unit, onNewFolder: () -> Unit, onRefresh: () -> Unit,
 ) {
     val c = Saqr.colors
+    // v0.12: editor font size + line wrap come from settings and apply live.
+    val editorSettings = com.ctodrs.saqrcode.SaqrApp.instance.settings
+    val editorVersion by editorSettings.version.collectAsState()
+    editorVersion
     Column(Modifier.fillMaxSize()) {
         // ---- tab strip
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -266,7 +270,7 @@ fun FilesPaneContent(
             if (cur == null) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 EmptyState(stringResource(R.string.no_open_file_title), stringResource(R.string.open_file_hint), icon = Lucide.FileCode,
                     action = { SecondaryButton(stringResource(R.string.browse_files), { onShowTree(true) }, icon = Lucide.FolderOpen) })
-            } else CodeEditor(cur)
+            } else CodeEditor(cur, editorSettings.editorFontSize, editorSettings.editorWrap)
         }
     }
 }

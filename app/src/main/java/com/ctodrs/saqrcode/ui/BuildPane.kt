@@ -72,6 +72,15 @@ fun BuildPane(ws: Workspace, onPaywall: () -> Unit = {}) {
     val logs by build.log.collectAsState()
     val line by build.progressLine.collectAsState()
     val apk by build.apk.collectAsState()
+    // v0.12: keep the last build result per project for the live home cards.
+    val builds = remember { com.ctodrs.saqrcode.data.BuildHistory(ctx.applicationContext) }
+    androidx.compose.runtime.LaunchedEffect(phase, apk) {
+        when (phase) {
+            OnDeviceBuild.Phase.BUILT -> apk?.let { builds.record(ws.name, true, it.name) }
+            OnDeviceBuild.Phase.FAILED -> builds.record(ws.name, false, "")
+            else -> Unit
+        }
+    }
     var crashes by remember { mutableStateOf<List<String>?>(null) }
     var verify by remember { mutableStateOf<com.ctodrs.saqrcode.ondevice.ApkVerify.Result?>(null) }
     var storageTick by remember { mutableIntStateOf(0) }
