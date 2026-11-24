@@ -136,6 +136,9 @@ class AgentSession(
     var contextTokens by mutableIntStateOf(0); private set
     val plan = mutableStateListOf<PlanItem>()
     val checkpoints = Checkpoints(projectDir, File(checkpointRoot, projectName))
+    /** v0.13: this project's memory bank — auto-recalled each turn, edited by the model and the user. */
+    private val memory = MemoryBank(File(projectDir, ".saqr"))
+    val memoryBank: MemoryBank get() = memory
     /** Tokens used in this chat session, per model. */
     val sessionUsage = mutableStateMapOf<String, Usage>()
     /** Bumps on every recorded model call so the meter can re-read today / this month. */
@@ -486,7 +489,8 @@ class AgentSession(
             val bubble = ChatItem.Assistant()
             items += bubble
             val sys = withContext(Dispatchers.IO) {
-                SystemPrompt.build(projectDir, touched, linux.ready, settings.agentMode == "team", mcpSpecs.map { it.name })
+                SystemPrompt.build(projectDir, touched, linux.ready, settings.agentMode == "team", mcpSpecs.map { it.name },
+                    memory = memory.render())
             }
             val inputChars = sys.length + history.sumOf { size(it) }
             contextTokens = (inputChars / 3.6).toInt()
@@ -777,6 +781,11 @@ class AgentSession(
             name == Tools.WEB_FETCH -> WebTools.fetch(a.optString("url"), a.optInt("max_chars", 8_000))
             name == Tools.LINT -> lintProject()
             name == Tools.TESTS -> runProjectTests()
+            name == Tools.MEMORY_SAVE -> memory.save(
+                a.optString("key"), a.optString("value"),
+                MemoryBank.Kind.byId(a.optString("kind", "fact")),
+            )
+            name == Tools.MEMORY_FORGET -> memory.forget(a.optString("key"))
             else -> "Error: unknown tool $name"
         }
     }
@@ -954,7 +963,7 @@ class AgentSession(
 }
 
 object SystemPrompt {
-    fun build(projectDir: File, touched: Collection<String>, linuxReady: Boolean, teamMode: Boolean = false, mcpToolNames: List<String> = emptyList()): String {
+    fun build(projectDir: File, touched: Collection<String>, linuxReady: Boolean, teamMode: Boolean = false, mcpToolNames: List<String> = emptyList(), memory: String = ""): String {
         val rules = File(projectDir, "AGENTS.md").takeIf { it.isFile }?.readText()?.take(4000)
         return buildString {
             appendLine("""You are Saqr (صقر), an expert software engineer working as a coding agent inside the Saqr Code Android app.
@@ -973,6 +982,7 @@ You operate on the user's project through tools. The project root is the current
 - When a decision from the user materially changes the work (stack/platform choice, design direction, scope) and you can't infer it, call ask_user instead of asking in prose: at most ~4 short questions, each with a recommended option and sensible defaults, written in the user's language. Don't ask about things you can decide yourself or discover from the code. If the answer is {"skipped":true}, go with your recommended defaults.
 - For tasks with 3+ distinct steps, call update_plan first with a short step list, then update it as steps finish (statuses: pending, in_progress, done).
 - If the user mentions a file as @path, read it before answering.
+- MEMORY: the "# MEMORY" section holds durable decisions, preferences and facts remembered from earlier sessions. Honor them without re-asking (e.g. don't suggest a stack the user already rejected). When the user states something durable — a decision, a preference, a project convention — call memory_save once with a concise key; when they correct or retract one, call memory_forget. Never store secrets there.
 - Be concise. When done, give a short summary of what changed and how to run it. Do not paste whole files back to the user.
 
 # Git
@@ -993,6 +1003,11 @@ You operate on the user's project through tools. The project root is the current
                 appendLine("- MCP tools (names starting with mcp_) call the user's configured external servers. Available now: ${mcpToolNames.take(12).joinToString(", ")}. Their arguments follow the schema in each tool spec; never call an MCP tool that is not listed.")
             }
             appendLine()
+            if (memory.isNotBlank()) {
+                appendLine("# MEMORY (remembered from earlier sessions — honor it, keep it fresh with memory_save/memory_forget)")
+                appendLine(memory)
+                appendLine()
+            }
             appendLine("# PROJECT MAP")
             appendLine(Tools.projectMap(projectDir))
             if (touched.isNotEmpty()) {

@@ -652,4 +652,20 @@
     <string name="field_copy_md">Copy Markdown table</string>
     <string name="field_copied">Table copied</string>
     <string name="field_share">Share CSV</string>
+    <!-- v0.13 Memory bank -->
+    <string name="memory_title">Memory bank</string>
+    <string name="memory_hint">What Saqr remembers about this project — decisions, preferences and facts recalled in every new session. Saqr keeps it fresh on its own; you can edit anything.</string>
+    <string name="memory_empty_title">Nothing remembered yet</string>
+    <string name="memory_empty_body">When you tell Saqr something durable — a stack choice, a naming style, a rule — it saves it here automatically.</string>
+    <string name="memory_add">Remember something</string>
+    <string name="memory_edit">Edit memory</string>
+    <string name="memory_key">Key</string>
+    <string name="memory_key_ph">e.g. State management</string>
+    <string name="memory_value">Memory</string>
+    <string name="memory_value_ph">e.g. We agreed on Riverpod, not BLoC</string>
+    <string name="memory_kind_preference">Preference</string>
+    <string name="memory_kind_decision">Decision</string>
+    <string name="memory_kind_fact">Fact</string>
+    <string name="memory_clear">Empty the memory bank?</string>
+    <string name="memory_clear_q">Every remembered decision and preference for this project will be gone. This cannot be undone.</string>
 </resources>

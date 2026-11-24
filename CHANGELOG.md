@@ -1,5 +1,17 @@
 # Changelog · سجل التغييرات
 
+## [0.13.0] — 2026-11-24 — Falcon Mind · عقل الصقر: the memory bank
+
+### Productivity · الإنتاجية
+- **Memory bank (بنك الذاكرة):** every project gains a durable memory of decisions, preferences and facts, stored in the project at `.saqr/memory.json` (schema-versioned JSON, atomic writes, corrupt-file recovery). The bank is rendered into the system prompt at the start of **every turn** inside a ~2000-character budget — preferences → decisions → facts, newest first — so Saqr honors «نستعمل Riverpod» and «كل الردود بالعربية» from previous sessions instead of re-asking. The file is git-ignored by Saqr's default `.gitignore` and hidden from the agent's project map.
+- **Arabic-aware keys (مفاتيح عربية):** key normalization unifies alef forms (أ إ آ ٱ → ا), yaa alif maqsura (ى → ي), taa marbouta (ة → ه), ؤ/ئ, strips diacritics and tatweel, and keeps only letters/digits — «إدارة الحالة»، «اداره الحاله» and «التّطبيق»-style variants collapse to one key, so the same fact is never stored twice. `memory_save` is an **upsert** (keeps `createdAt`, bumps `updatedAt`), capped at 60 entries with oldest-update eviction.
+- **The agent maintains its own memory:** two first-class tools — `memory_save(key, value, kind: preference|decision|fact)` and `memory_forget(key)` (exact normalized key first, then substring over keys/values) — with system-prompt guidance: honor memories without re-asking, save what the user states as durable, forget what they correct. A **secret guard** refuses memories that look like credentials: English assignment patterns (`password=`, `token:`, `api_key=`), Arabic secret words (كلمة السر، كلمة المرور، رمز الدخول، المفتاح الخاص), and known token shapes (`ghp_`, `sk-`, `AKIA`, `xoxb-`, 40+ char base64 runs) — memory is plain JSON, never a vault.
+- **Memory sheet (واجهة بنك الذاكرة):** the chat overflow menu (⋯) opens the bank: entries grouped with kind tags (تفضيل / قرار / حقيقة), relative timestamps, tap-to-edit dialog (key + value + kind chips), delete per entry, clear-all with confirmation, and an empty state that explains the feature. Fully bilingual (AR/EN strings in the same commit).
+
+### Infrastructure · البنية
+- 284 unit tests (11 new in `V013FeaturesTest`): Arabic normalization, upsert semantics with `createdAt` preservation, cap eviction of the oldest, secret refusal (English + Arabic + token shapes), oversize/empty rejection, exact-then-substring forget, normalized search, render grouping with budget enforcement, restart persistence + corrupt-file recovery, tool-spec contract, and the system-prompt `# MEMORY` section (present only when the bank is non-empty). `SystemPrompt.build` gained a `memory` parameter (default empty, old call sites unaffected). Version 0.13.0 (code 14) · APK 11.55 MB (release, signed).
+
+
 ## [0.12.1] — 2026-11-24 — Extra Plumage · ريش مكمّلة: image→theme, Material You, semantic haptics & the field kit
 
 ### Appearance · المظهر

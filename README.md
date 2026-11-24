@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.12.1** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.13.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -35,6 +35,15 @@
 | لوحة الأوامر العربية من أي تبويب: ملفات، أوامر شرطة بأسمائها العربية، وجهات الإعدادات، والجلسات — بمطابقة تفهم صيغ الهمزات والحركات | ✅ |
 | البطاقات الحية في الرئيسية: نتيجة آخر بناء على الجهاز وفرع git الحالي لكل مشروع | ✅ |
 | المحرر: حجم خط (12–20sp) والتفاف أسطر — من الإعدادات وشريط أدوات المحرر، وتطبيق فوري | ✅ |
+
+### الجديد في 0.13
+| الميزة | الحالة |
+|---|---|
+| بنك الذاكرة: ما يتذكره صقر عن مشروعك وقراراتك يُحفظ في `.saqr/memory.json` (مستثنى من git افتراضيًا) ويُسترجع تلقائيًا في موجه كل جلسة — بلا إعادة سؤال | ✅ |
+| مفاتيح عربية ذكية: توحيد الهمزات (أ إ آ ← ا) والتاء المربوطة والألف المقصورة والتشكيل والمدّ فلا تُخزَّن الحقيقة نفسها مرتين، والتحديث بالـ upsert بحدّ 60 مدخلة | ✅ |
+| الوكيل يدير ذاكرته: `memory_save` لحفظ قرار أو تفضيل أو حقيقة، و`memory_forget` للتصحيح، مع رفض صريح للأسرار (كلمات السر والرموز بالعربي والإنجليزي) | ✅ |
+| استرجاع محدود الميزانية (~2000 حرف) مرتّب: التفضيلات فالقرارات فالحقائق، الأحدث أولًا — لا يسرق سياق العمل | ✅ |
+| واجهة «بنك الذاكرة» من قائمة المحادثة: عرض وإضافة وتعديل وحذف وإفراغ — الذاكرة ملكك وقراءةً وتحريرًا | ✅ |
 
 ### الجديد في 0.12.1
 | الميزة | الحالة |
@@ -128,7 +137,7 @@
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `SaqrCode-v0.12.1-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.13.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -139,6 +148,12 @@
 ---
 
 ## English
+
+### New in v0.13
+- **Memory bank (the first «عقل الصقر» item):** every project gets a persistent memory the agent recalls automatically at the start of each turn — durable decisions (stack, architecture), user preferences (language, style, workflow) and project facts. The bank lives in the project at `.saqr/memory.json` (git-ignored by the default Saqr `.gitignore`, hidden from the project map) and is rendered into the system prompt inside a ~2000-char budget, ordered preferences → decisions → facts, newest first.
+- **Arabic-aware memory keys:** alef forms, taa marbouta, alef maqsura, diacritics and tatweel all collapse to one normalized key — «إدارة الحالة» and «اداره الحاله» are the same memory; saving over a key updates it (upsert) and the bank holds at most 60 entries, evicting the oldest update.
+- **The agent maintains its own memory:** `memory_save(key, value, kind)` (preference / decision / fact) and `memory_forget(key)` are first-class tools; secrets are refused by a heuristic that catches English assignment patterns (password/token/API key), Arabic secret words (كلمة السر، كلمة المرور…) and known token shapes (ghp_…, sk-…, AKIA…). The system prompt tells the model to honor memories instead of re-asking.
+- **Memory sheet:** the chat overflow menu opens the bank — view, add, edit, delete, clear — bilingual (AR/EN), so the user owns every remembered line.
 
 ### New in v0.12
 - **Theme Studio:** a mood phrase becomes a complete color theme via the active model (one-shot JSON, tolerant parsing) with a live swatch preview, apply / save / copy-JSON and JSON import, plus **six built-in community packs** (Najd, Tihama, Bahar, Wadi, Oman, Andalus). A pack is six colors; the rest of the palette (borders, states, code/terminal) is derived, so the app stays token-driven. A pure-black **OLED «ليل» theme** joins dark / light / system, and the editor gains a live font-size (12–20sp) and line-wrap control (Settings + toolbar).

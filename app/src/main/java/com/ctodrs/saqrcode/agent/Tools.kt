@@ -15,6 +15,8 @@ object Tools {
     const val SEARCH = "search"
     const val PLAN = "update_plan"
     const val ASK = "ask_user"
+    const val MEMORY_SAVE = "memory_save"
+    const val MEMORY_FORGET = "memory_forget"
     const val GIT_STATUS = "git_status"
     const val GIT_DIFF = "git_diff"
     const val GIT_LOG = "git_log"
@@ -87,6 +89,14 @@ object Tools {
                         .put("status", JSONObject().put("type", "string").put("enum", JSONArray(listOf("pending", "in_progress", "done")))))
                     .put("required", JSONArray(listOf("title", "status"))))), listOf("items"))),
         AskUserTool.spec,
+        ToolSpec(MEMORY_SAVE, "Save a durable memory about the user or this project (kept across sessions, auto-recalled): a decision (stack, architecture, naming), a user preference (language, style, workflow) or a project fact (entry points, conventions, how to run). Use one concise key + one short value; saving the same key again updates it. Never store secrets (passwords, tokens, API keys) — they are refused.",
+            schema(JSONObject()
+                .put("key", p("string", "Short stable name for the memory, e.g. 'state management' or 'لغة الواجهة'"))
+                .put("value", p("string", "The memory itself, one or two sentences"))
+                .put("kind", JSONObject().put("type", "string").put("enum", JSONArray(listOf("preference", "decision", "fact")))
+                    .put("description", "preference = how the user likes things, decision = what was agreed, fact = how the project is. Default fact")), listOf("key", "value"))),
+        ToolSpec(MEMORY_FORGET, "Delete memories by key, or by words that appear in a key or value. Use when the user corrects or retracts something remembered.",
+            schema(JSONObject().put("key", p("string", "Exact key, or words contained in the key/value to forget")), listOf("key"))),
     ) + GitTools.specs
 
     private val IGNORED_DIRS = setOf(".git", "node_modules", "build", ".gradle", "__pycache__", ".venv", "dist", ".saqr")

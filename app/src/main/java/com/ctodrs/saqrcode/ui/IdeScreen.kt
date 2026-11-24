@@ -201,6 +201,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
 
     // ---- v0.6: sessions, voice, background
     var showSessions by remember { mutableStateOf(false) }
+    var showMemory by remember { mutableStateOf(false) }
     // v0.12: command palette
     var showPalette by remember { mutableStateOf(false) }
     var batteryDialog by remember { mutableStateOf(false) }
@@ -278,7 +279,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
 
     val chatOverflow: @Composable () -> Unit = {
         ChatOverflow(onCheckpoints = { showCheckpoints = true }, onUsage = { showUsage = true }, onNewChat = { ws.agent.clear() },
-            onSessions = { showSessions = true })
+            onSessions = { showSessions = true }, onMemory = { showMemory = true })
     }
 
     ModalNavigationDrawer(
@@ -383,6 +384,10 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     }
     if (showSessions) {
         com.ctodrs.saqrcode.ui.chat.SessionsSheet(ws.agent, onOpened = { speaker.stop(); ws.tab = Pane.AGENT }, onDismiss = { showSessions = false })
+    }
+    // v0.13: the project's memory bank — what Saqr remembers about this user and project.
+    if (showMemory) {
+        com.ctodrs.saqrcode.ui.chat.MemorySheet(ws.agent, onDismiss = { showMemory = false })
     }
     // v0.12: the command palette — files, slash commands, settings destinations and sessions.
     if (showPalette) {
@@ -518,7 +523,7 @@ fun BatteryDialog(onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun ChatOverflow(onCheckpoints: () -> Unit, onUsage: () -> Unit, onNewChat: () -> Unit, onSessions: () -> Unit = {}) {
+private fun ChatOverflow(onCheckpoints: () -> Unit, onUsage: () -> Unit, onNewChat: () -> Unit, onSessions: () -> Unit = {}, onMemory: () -> Unit = {}) {
     val c = Saqr.colors
     var open by remember { mutableStateOf(false) }
     Box {
@@ -538,6 +543,11 @@ private fun ChatOverflow(onCheckpoints: () -> Unit, onUsage: () -> Unit, onNewCh
                 text = { Text(stringResource(R.string.usage_title), style = Saqr.type.label, color = c.text1) },
                 leadingIcon = { SIcon(Lucide.Zap, size = 16.dp, tint = c.accentText) },
                 onClick = { open = false; onUsage() },
+            )
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(stringResource(R.string.memory_title), style = Saqr.type.label, color = c.text1) },
+                leadingIcon = { SIcon(Lucide.BookMarked, size = 16.dp, tint = c.accentText) },
+                onClick = { open = false; onMemory() },
             )
             androidx.compose.material3.DropdownMenuItem(
                 text = { Text(stringResource(R.string.clear_chat), style = Saqr.type.label, color = c.text1) },

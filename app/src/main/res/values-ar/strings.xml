@@ -652,4 +652,20 @@
     <string name="field_copy_md">انسخ جدول Markdown</string>
     <string name="field_copied">نُسخ الجدول</string>
     <string name="field_share">شارك CSV</string>
+    <!-- v0.13 بنك الذاكرة -->
+    <string name="memory_title">بنك الذاكرة</string>
+    <string name="memory_hint">ما يتذكره صقر عن هذا المشروع — قرارات وتفضيلات وحقائق يسترجعها في كل جلسة جديدة. صقر يحدّثها بنفسه، ويمكنك تعديل أي شيء.</string>
+    <string name="memory_empty_title">لا شيء محفوظ بعد</string>
+    <string name="memory_empty_body">حين تخبر صقر شيئًا دائمًا — اختيار مكتبة، أسلوب تسمية، قاعدة عمل — يحفظه هنا تلقائيًا.</string>
+    <string name="memory_add">تذكّر شيئًا</string>
+    <string name="memory_edit">تعديل الذاكرة</string>
+    <string name="memory_key">المفتاح</string>
+    <string name="memory_key_ph">مثال: إدارة الحالة</string>
+    <string name="memory_value">الذاكرة</string>
+    <string name="memory_value_ph">مثال: اتفقنا على Riverpod لا BLoC</string>
+    <string name="memory_kind_preference">تفضيل</string>
+    <string name="memory_kind_decision">قرار</string>
+    <string name="memory_kind_fact">حقيقة</string>
+    <string name="memory_clear">إفراغ بنك الذاكرة؟</string>
+    <string name="memory_clear_q">ستحذف كل القرارات والتفضيلات المحفوظة لهذا المشروع. لا يمكن التراجع.</string>
 </resources>

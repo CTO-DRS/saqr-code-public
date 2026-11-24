@@ -6,49 +6,49 @@ The single source of direction is [ROADMAP.md](../ROADMAP.md); this file holds t
 
 ---
 
-## الإصدار الجاري · Current release: 0.12 «ريش جديدة · New Plumage» (ديسمبر 2026)
+## الإصدار الجاري · Current release: 0.13 «عقل الصقر · Falcon Mind» (يناير 2027)
 
-### 1. توكنات التصميم 2.0 · Design tokens 2.0
-- إكمال منظومة `SaqrColors` بتوكنات حركة ونصف قطر وظلال وطباعة، وثيم «ليل» OLED أسود نقي.
-- Complete the `SaqrColors` system with motion, radius, elevation and type tokens, plus a pure-black «Layl» OLED theme.
-- [x] تبديل الثيمات فوري بلا إعادة تشغيل (داكن/فاتح/OLED/مخصص/نظام)، ولا لون جديد خارج التوكنات في مسار الثيمات.
-- [x] Instant theme switching without restart; no hardcoded colors outside the tokens.
+### 1. بنك الذاكرة · Memory bank
+- ذاكرة دائمة لكل مشروع (`.saqr/memory.json`): قرار، تفضيل، حقيقة — يسترجعها الوكيل تلقائيًا في كل دورة عبر موجه النظام، ويحفظها بنفسه بأدوات `memory_save` / `memory_forget`.
+- Persistent per-project memory (`.saqr/memory.json`): decisions, preferences, facts — auto-recalled into the system prompt every turn; the agent saves them itself with `memory_save` / `memory_forget`.
+- [x] مفاتيح عربية تُوحَّد (الهمزات، التاء المربوطة، التشكيل) فلا تُخزَّن الحقيقة نفسها مرتين — تحديث بالـ upsert وحدّ أقصى 60 مدخلة بإزاحة الأقدم.
+- [x] Arabic keys are normalized (alef forms, taa marbouta, diacritics) so the same fact is never stored twice — upsert semantics with a 60-entry cap evicting the oldest.
+- [x] استرجاع محدود الميزانية (~2000 حرف) مرتّب: التفضيلات ثم القرارات ثم الحقائق، والأحدث أولًا — لا يسرق سياق العمل.
+- [x] Budgeted recall (~2000 chars), ordered preferences → decisions → facts, newest first — it never crowds out working context.
+- [x] واجهة «بنك الذاكرة» من قائمة المحادثة: عرض، إضافة، تعديل، حذف، إفراغ — والمستخدم يملك الذاكرة كاملة.
+- [x] «Memory bank» sheet from the chat menu: view, add, edit, delete, clear — the user fully owns the memory.
+- [ ] لقطة ميدانية: نسبة المحادثات التي يسترجع فيها الوكيل قرارًا سابقًا دون إعادة سؤال المستخدم (قبل/بعد).
+- [ ] Field note: share of turns where the agent recalls a prior decision without re-asking (before/after).
 
-### 2. استوديو الثيمات v1 · Theme Studio v1
-- توليد ثيم كامل من صورة أو كلمة مزاج عبر النموذج النشط، معاينة حية، حفظ وتصدير/استيراد JSON.
-- Generate a full theme from an image or a mood phrase via the active model, with live preview and JSON export/import.
-- [x] ثيم من كلمة المزاج خلال ثوانٍ، و6 حزم جاهزة (نجد، تهامة، البحر، الوادي، عُمان، الأندلس) — ومن صورة تبقى للإصدار التالي.
-- [x] Mood → theme in seconds; six built-in packs — image → theme moves to the next release.
+### 2. فهرس المشروع · Project index
+- فهرس رموز خفيف (ملفات/دوال/أصناف) يتولد عند فتح المشروع ويغذي بحث الوكيل بدل قراءة ملفات كاملة.
+- A lightweight symbol index (files/functions/classes) built when the project opens, feeding the agent's search instead of full-file reads.
+- [ ] أول نتيجة أقل من 200ms على مشروع 500 ملف.
+- [ ] First result under 200 ms on a 500-file project.
 
-### 3. لوحة الأوامر العربية · Arabic command palette
-- بحث موحد من أي تبويب: ملفات، أوامر شرطة، إعدادات، جلسات، أدوات MCP.
-- Unified search from any tab: files, slash commands, settings, sessions, MCP tools.
-- [x] أول نتيجة سريعة على مشاريع كبيرة، وتفهم المرادفات العربية وصيغ الهمزات.
-- [x] Fast first result on large projects; understands Arabic synonyms and alef forms.
+### 3. موجّه النماذج · Falcon Router
+- توجيه المهمة للنموذج الأرخص المناسب (خطة/كود/مراجعة/تلخيص) بهدف توفير ≥25% من التكلفة، مع رقم معلن.
+- Route each stage to the cheapest capable model (plan/code/review/summarise) targeting ≥25% cost savings, published as a number.
+- [ ] توفير مقاس على حمل حقيقي مع بقاء جودة المراجعة.
+- [ ] Measured savings on a real workload with review quality intact.
 
-### 4. الشاشة الرئيسية الحية · Live home dashboard
-- بطاقة لكل مشروع: جلسة نشطة، آخر بناء وحالته، فرع git وفروقاته، حجم مخزون البناء.
-- Per-project card: active session, last build + status, git branch & diffs, build-cache size.
-- [x] تحديث لحظي (آخر بناء + الفرع)، وحذف المشروع يزيل سجله — الجلسة النشطة عبر لوحة الأوامر وقائمة الجلسات.
-- [x] Live updates (last build + branch); deleting clears the record — active session via the palette and sessions sheet.
+### 4. مدرّب صقر · Saqr Coach
+- إرشاد أول استخدام ومسار تعلم مختصر داخل التطبيق (أمثلة أوامر بالعربية).
+- In-app first-run guidance and a short learning path (Arabic command examples).
+- [ ] مستخدم جديد يصل لأول بناء ناجح دون مساعدة خارجية.
+- [ ] A new user reaches a first successful build without external help.
 
-### 5. لمسات المحرر والحركة · Editor & motion polish
-- حجم خط المحرر (12–20sp)، التفاف أسطر، شريط أدوات سريع، توكنات الحركة وانتقالات التبويبات، ولمس اهتزازي دلالي.
-- Editor font size (12–20sp), line wrap, quick toolbar, motion tokens, shared-axis tab transitions, haptic feedback.
-- [x] تطبيق فوري وحفظ في الإعدادات — من الإعدادات وشريط أدوات المحرر معًا.
-- [x] Applied instantly and persisted — from Settings and the editor toolbar both.
+### 5. صوت بلا يدين · Hands-free voice
+- إملاء مستمر مع إيقاظ «يا صقر» وتشغيل/إيقاف من الإشعار.
+- Continuous dictation with a «Ya Saqr» wake phrase and notification toggle.
+- [ ] دقة إملاء عربية مقبولة على ضوضاء خفيفة.
+- [ ] Acceptable Arabic dictation accuracy in light noise.
 
-### 6. الأرقام الميدانية الأولى · First field numbers
-- اختبار خطوات التجهيز والبناء (تنزيل مثبت، apt، sdkmanager، aapt2، قالب Lite، إصدار موقّع) على أجهزة Snapdragon وMediaTek.
-- Run every build step on Snapdragon + MediaTek devices and publish numbers.
-- [x] عدّة الميدان داخل التطبيق (0.12.1): توقيت تلقائي لكل خطوة مع هوية الجهاز والذاكرة والبطارية وحجم APK، وتصدير جدول Markdown/CSV بضغطة — الجدول الفعلي يُجمع من الأجهزة الحقيقية ويُلصق في README.
-- [x] In-app field kit (0.12.1): automatic per-step timings with device identity, exported as a Markdown table / CSV in one tap — actual device numbers get pasted into the README from real phones.
-- [ ] جدول أزمنة وأحجام وذاكرة وبطارية لجهازين على الأقل في README.
-- [ ] A README table with time, size, memory and battery for at least two devices.
-
-### المتبقي من 0.12 · Remaining from 0.12
-- المتبقي عمليًا: الجدول الميداني نفسه (يُجمع من أجهزة Snapdragon وMediaTek حقيقية عبر عدّة الميدان الجاهزة) — وبقية بنود دفعة 0.12.x (الثيم من صورة، Material You، توكنات الاهتزاز) شُحنت في 0.12.1.
-- Practically remaining: the field table itself (gathered from real Snapdragon + MediaTek phones via the shipped field kit) — the rest of the 0.12.x batch (image → theme, Material You, haptics tokens) shipped in 0.12.1.
+### 6. وضع صحراوي · Desert mode
+- وضع انقطاع الشبكة: قوائم أوامر محلية، إلغاء الميزات السحابية تلقائيًا، ومتابعة البناء المحلي.
+- Offline-first mode: local command lists, cloud features gracefully off, on-device build keeps working.
+- [ ] كل ميزة سحابية تتعامل مع الانقطاع برسالة واضحة بلا انهيار.
+- [ ] Every cloud feature degrades gracefully with a clear message, no crash.
 
 ---
 
@@ -60,6 +60,6 @@ The single source of direction is [ROADMAP.md](../ROADMAP.md); this file holds t
 - تحديث README وCHANGELOG وROADMAP في نفس الـ commit الأخير.
 - README / CHANGELOG / ROADMAP updated with the release commit.
 
-## بعد 0.12 · After 0.12
-- تُفتح هذه الوثيقة مجددًا لتعكس 0.13 «عقل الصقر»: بنك الذاكرة، فهرس المشروع، موجّه النماذج، مدرّب صقر، صوت بلا يدين، وضع صحراوي.
-- This file is reopened for 0.13 «Falcon Mind»: memory bank, project index, model router, Saqr Coach, hands-free voice, desert mode.
+## بعد 0.13 · After 0.13
+- تُفتح هذه الوثيقة مجددًا لتعكس 0.14 «أجنحة مفتوحة»: MCP OAuth، حزم `.saqrpack`، بناء سحابي BYOC، مزامنة مشفرة، صقر الحارس، ويجت/Tile، معرض مجتمع، استوديو بصري.
+- This file is reopened for 0.14 «Open Wings»: MCP OAuth, .saqrpack bundles, BYOC cloud build, encrypted sync, Saqr Guard, widget/Tile, community gallery, visual studio.
