@@ -146,14 +146,23 @@ class SettingsUi(
     /** v0.10: «keep only the last APK» — auto-clean after a successful build. */
     val keepLastApk: Boolean = false,
     val onKeepLastApk: (Boolean) -> Unit = {},
+    /** v0.11 billing: the tier in force, its expiry line, and the paywall navigation. */
+    val planTier: com.ctodrs.saqrcode.billing.PlanTier = com.ctodrs.saqrcode.billing.PlanTier.FREE,
+    val planUntil: String = "",
+    val onPaywall: () -> Unit = {},
+    /** v0.11: MCP servers speaking stdio through the terminal env. */
+    val mcpStdioServers: List<com.ctodrs.saqrcode.agent.McpStdio.StdioServer> = emptyList(),
+    val onMcpStdioAdd: (name: String, command: String, env: String) -> String? = { _, _, _ -> null },
+    val onMcpStdioRemove: (String) -> Unit = {},
 )
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
+fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: () -> Unit = {}) {
     val settings = SaqrApp.instance.settings
     val version by settings.version.collectAsState()
     version
     var showBattery by remember { mutableStateOf(false) }
+    var teamGate by remember { mutableStateOf(false) }
     val ui = SettingsUi(
         themeMode = settings.themeMode,
         langTag = AppCompatDelegate.getApplicationLocales().toLanguageTags(),
@@ -193,7 +202,11 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
         onKeepInBackground = { settings.keepInBackground = it },
         onBatterySettings = { showBattery = true },
         teamMode = settings.agentMode == "team",
-        onTeamMode = { settings.agentMode = if (it) "team" else "single" },
+        onTeamMode = {
+            // v0.11: team agents are a paid-tier feature — free users get the paywall gate.
+            if (it && !settings.limits().teamAgents) teamGate = true
+            else settings.agentMode = if (it) "team" else "single"
+        },
         reviewModel = settings.reviewModel,
         onReviewModel = { settings.reviewModel = it },
         autoCompact = settings.autoCompact,
@@ -206,10 +219,16 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
         onMcpAdd = { name, url, auth ->
             val err = McpSettings.validate(name, url, settings.mcpServers)
             if (err == null) {
-                settings.mcpServers = settings.mcpServers + com.ctodrs.saqrcode.agent.Mcp.Server(name, url)
-                settings.setMcpAuth(name, auth.ifBlank { null })
-            }
-            err
+                // v0.11: HTTP + stdio servers share the plan's MCP budget.
+                if (settings.mcpServers.size + settings.mcpStdioServers.size >= settings.limits().maxMcpServers) {
+                    teamGate = true
+                    "Free plan: only 1 MCP server — upgrade to Pro for more."
+                } else {
+                    settings.mcpServers = settings.mcpServers + com.ctodrs.saqrcode.agent.Mcp.Server(name, url)
+                    settings.setMcpAuth(name, auth.ifBlank { null })
+                    null
+                }
+            } else err
         },
         onMcpRemove = { name ->
             settings.mcpServers = settings.mcpServers.filter { it.name != name }
@@ -223,8 +242,30 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}) {
         onAapt2Mirror = { settings.aapt2Mirror = it },
         keepLastApk = settings.keepLastApk,
         onKeepLastApk = { settings.keepLastApk = it },
+        planTier = settings.planTier(),
+        planUntil = settings.entitlement()?.expiresAt?.let { exp ->
+            java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM).format(java.util.Date(exp))
+        } ?: "",
+        onPaywall = onPaywall,
+        mcpStdioServers = settings.mcpStdioServers,
+        onMcpStdioAdd = { name, command, env ->
+            val err = McpStdioSettings.validate(name, command, settings.mcpStdioServers)
+            if (err == null) {
+                if (settings.mcpServers.size + settings.mcpStdioServers.size >= settings.limits().maxMcpServers) {
+                    teamGate = true
+                    "Free plan: only 1 MCP server — upgrade to Pro for more."
+                } else {
+                    settings.mcpStdioServers = settings.mcpStdioServers + com.ctodrs.saqrcode.agent.McpStdio.StdioServer(name, command, env)
+                    null
+                }
+            } else err
+        },
+        onMcpStdioRemove = { name -> settings.mcpStdioServers = settings.mcpStdioServers.filter { it.name != name } },
     )
     if (showBattery) BatteryDialog(onDismiss = { showBattery = false })
+    com.ctodrs.saqrcode.billing.PaywallDialog(
+        show = teamGate, onDismiss = { teamGate = false }, onOpenPaywall = onPaywall,
+    )
     SettingsContent(ui, onBack)
 }
 
@@ -332,6 +373,26 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 }
             }
             Group { McpSettings(ui) }
+            // ---- v0.11: stdio MCP servers (run inside the terminal env)
+            if (ui.mcpStdioServers.isNotEmpty()) {
+                Group {
+                    Column {
+                        ui.mcpStdioServers.forEachIndexed { i, s ->
+                            if (i > 0) RowDivider()
+                            ListRow(
+                                title = s.name, subtitle = s.command,
+                                icon = Lucide.SquareTerminal,
+                                trailing = {
+                                    Box(Modifier.size(44.dp).clip(CircleShape).clickable { ui.onMcpStdioRemove(s.name) }, contentAlignment = Alignment.Center) {
+                                        SIcon(Lucide.Trash2, size = 18.dp, tint = Saqr.colors.danger, contentDescription = stringResource(R.string.delete))
+                                    }
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+            Group { McpStdioSettings(ui) }
             browsingServer?.let { server ->
                 McpToolsBrowser(
                     server = server,
@@ -412,6 +473,32 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 )
             }
 
+            // ---- v0.11 billing & licensing
+            SectionLabel(stringResource(R.string.billing_section), Modifier.padding(top = Sp.md))
+            Group {
+                Column {
+                    ListRow(
+                        title = stringResource(when (ui.planTier) {
+                            com.ctodrs.saqrcode.billing.PlanTier.PRO -> R.string.tier_pro
+                            com.ctodrs.saqrcode.billing.PlanTier.STUDENT -> R.string.tier_student
+                            com.ctodrs.saqrcode.billing.PlanTier.LIFETIME -> R.string.tier_lifetime
+                            com.ctodrs.saqrcode.billing.PlanTier.FREE -> R.string.tier_free
+                        }),
+                        subtitle = stringResource(R.string.billing_row_desc, ui.planUntil.ifBlank { "—" }),
+                        icon = Lucide.Star,
+                        onClick = ui.onPaywall,
+                        trailing = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Tag(stringResource(R.string.manage), color = Saqr.colors.accentText, dot = false)
+                                Spacer(Modifier.width(Sp.xs))
+                                SIcon(Lucide.ChevronRight, size = 18.dp, tint = Saqr.colors.text3)
+                            }
+                        },
+                    )
+                }
+            }
+            Group { com.ctodrs.saqrcode.billing.MerchantToolsCard(settings = SaqrApp.instance.settings) }
+
             // ---- about
             SectionLabel(stringResource(R.string.about), Modifier.padding(top = Sp.md))
             Group {
@@ -491,7 +578,40 @@ private fun ModelPickerField(value: String, onChange: (String) -> Unit, suggesti
     }
 }
 
-/** v0.8 MCP servers: add (name + URL + optional auth header) or remove. */
+/** v0.11: stdio MCP servers — name + one-line command (+ optional K=V env lines). */
+object McpStdioSettings {
+    fun validate(
+        name: String, command: String,
+        existing: List<com.ctodrs.saqrcode.agent.McpStdio.StdioServer>,
+    ): String? = when {
+        name.isBlank() -> "The server needs a name."
+        com.ctodrs.saqrcode.agent.McpStdio.validateCommand(command) != null -> "The command must be one non-empty shell line."
+        existing.any { it.name.equals(name.trim(), ignoreCase = true) } -> "A server with this name already exists."
+        else -> null
+    }
+
+    @Composable
+    operator fun invoke(ui: SettingsUi) {
+        val c = Saqr.colors
+        var name by remember { mutableStateOf("") }
+        var command by remember { mutableStateOf("") }
+        var env by remember { mutableStateOf("") }
+        var err by remember { mutableStateOf<String?>(null) }
+        Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+            LabeledIcon(Lucide.SquareTerminal, stringResource(R.string.mcp_stdio_add))
+            Text(stringResource(R.string.mcp_stdio_desc), style = Saqr.type.caption, color = Saqr.colors.text3)
+            SaqrField(value = name, onChange = { name = it }, label = stringResource(R.string.mcp_name))
+            SaqrField(value = command, onChange = { command = it }, label = stringResource(R.string.mcp_stdio_command), mono = true)
+            SaqrField(value = env, onChange = { env = it }, label = stringResource(R.string.mcp_stdio_env), mono = true, singleLine = false)
+            err?.let { Text(it, style = Saqr.type.caption, color = Saqr.colors.danger) }
+            PrimaryButton(stringResource(R.string.add), {
+                err = ui.onMcpStdioAdd(name, command, env)
+                if (err == null) { name = ""; command = ""; env = "" }
+            })
+        }
+    }
+}
+
 object McpSettings {
     fun validate(name: String, url: String, existing: List<com.ctodrs.saqrcode.agent.Mcp.Server>): String? = when {
         name.isBlank() -> "The server needs a name."

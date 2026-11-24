@@ -9,16 +9,22 @@ import androidx.security.crypto.MasterKey
 /**
  * Secrets (API keys, GitHub token) live in EncryptedSharedPreferences whose master key
  * is held by the Android Keystore (AES-256-GCM). Never logged, never backed up.
+ * If the keystore is unavailable (corrupted keyset, broken OEM keystore, unit tests on the
+ * JVM), the store resets once and finally falls back to plain prefs — degraded but alive.
  */
 class SecureStore(context: Context) : KeyValue {
-    private val prefs: SharedPreferences = try {
-        create(context)
-    } catch (e: Exception) {
-        // Corrupted keyset (e.g. after restore). Reset rather than crash.
-        Log.w("SecureStore", "Resetting encrypted prefs: ${e.javaClass.simpleName}")
-        context.deleteSharedPreferences(FILE)
-        create(context)
-    }
+    private val prefs: SharedPreferences = runCatching { create(context) }
+        .recoverCatching {
+            // Corrupted keyset (e.g. after restore). Reset rather than crash.
+            Log.w("SecureStore", "Resetting encrypted prefs: ${it.javaClass.simpleName}")
+            context.deleteSharedPreferences(FILE)
+            create(context)
+        }
+        .recoverCatching {
+            // v0.11: no keystore at all — keep the app working (secrets at rest unencrypted).
+            Log.w("SecureStore", "Falling back to plain prefs: ${it.javaClass.simpleName}")
+            context.getSharedPreferences("${FILE}_plain", Context.MODE_PRIVATE)
+        }.getOrThrow()
 
     private fun create(context: Context): SharedPreferences {
         val key = MasterKey.Builder(context)

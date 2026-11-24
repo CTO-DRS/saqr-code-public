@@ -65,8 +65,12 @@ class LinuxEnv(private val context: Context) {
         }
     }
 
-    /** Builds a process for [shellArgs] (e.g. ["-c", cmd] or ["-i"]) inside the env, cwd = project. */
-    fun processBuilder(projectDir: File, shellArgs: List<String>): ProcessBuilder {
+    /**
+     * Builds a process for [shellArgs] (e.g. ["-c", cmd] or ["-i"]) inside the env, cwd = project.
+     * [mergeStderr] stays true for one-shot commands; stdio MCP servers need it false so stderr
+     * banners never pollute the JSON-RPC stream on stdout.
+     */
+    fun processBuilder(projectDir: File, shellArgs: List<String>, mergeStderr: Boolean = true): ProcessBuilder {
         val pb: ProcessBuilder
         if (ready) {
             val tmp = File(context.cacheDir, "proot-tmp").apply { mkdirs() }
@@ -82,7 +86,7 @@ class LinuxEnv(private val context: Context) {
             pb.environment()["HOME"] = projectDir.absolutePath
         }
         pb.directory(projectDir)
-        pb.redirectErrorStream(true)
+        if (mergeStderr) pb.redirectErrorStream(true)
         return pb
     }
 

@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.10.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.11.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 
 ---
 
@@ -25,6 +25,16 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.11
+| الميزة | الحالة |
+|---|---|
+| خطط بالريال: المجانية (3 مشاريع، خادم MCP واحد، مضيف git واحد) · برو 15 ر.س/شهر · الطلاب 5 ر.س/شهر · مدى الحياة 149 ر.س | ✅ |
+| فواتير جوجل بلاي (PBL 8) بمنتجات شهرية ومدى الحياة، وتُستعاد تلقائياً عند كل تشغيل | ✅ |
+| مويسر: صفحة دفع مستضافة (مدى / Apple Pay / STC Pay) + أدوات تاجر لإنشاء الفواتير ومتابعتها | ✅ |
+| رموز ترخيص دون اتصال (SQ1. HMAC-SHA256) تُصنع من التطبيق أو `scripts/license_tool.py` | ✅ |
+| بوابات صادقة للحدود المجانية: مشروع رابع، خادم MCP ثانٍ، مضيف ثانٍ، فريق الوكلاء، الإصدار الموقّع | ✅ |
+| MCP عبر stdio: خوادم محلية تعمل داخل طرفية التطبيق بـ JSON-RPC على stdin/stdout | ✅ |
 
 ### الجديد في 0.10
 | الميزة | الحالة |
@@ -100,7 +110,7 @@
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `SaqrCode-v0.10.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.11.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -111,6 +121,13 @@
 ---
 
 ## English
+
+### New in v0.11
+- **Plans in SAR with honest gating:** Free keeps everything (3 projects, 1 MCP server, 1 git host); **Pro SAR 15/mo**, **Student SAR 5/mo** (honors-system), **Lifetime SAR 149** lift the caps and unlock team agents + signed release builds. Every limit attempt opens the paywall with an explanation instead of failing silently.
+- **Google Play Billing (PBL 8.0):** `saqr_pro_monthly` / `saqr_student_monthly` / `saqr_lifetime` — purchases acknowledged immediately, re-read from Play on every connect (re-installs keep their plan); devices without Play services fall back to Moyasar. Tier merge / 31-day monthly trust / 3-day grace live in pure, tested code.
+- **Moyasar + offline license tokens:** the paywall opens the merchant's hosted Moyasar page (mada, Apple Pay, STC Pay, cards) and accepts `SQ1.` license tokens (HMAC-SHA256) minted via Settings → Billing → merchant tools (create invoice, poll status, mint token) or `scripts/license_tool.py`. The HMAC key ships from `keystore.properties` (private repo); the public fallback is explicitly non-secret.
+- **MCP over stdio:** local MCP servers (filesystem, git, sqlite…) run inside the app's terminal env (proot Linux or /system/bin/sh) — newline-delimited JSON-RPC over stdin/stdout, full initialize handshake, per-call timeouts, EOF/flood detection, same `mcp_<server>_<tool>` namespace and plan budget as HTTP servers.
+- **SecureStore hardening:** a broken device keystore now degrades to plain prefs with a warning instead of crashing, and the real store can boot in JVM tests.
 
 ### New in v0.10
 - **In-app APK signature verification:** a from-scratch implementation of APK Signature Scheme v2/v3 verification (no apksigner download) — the Build tab's «تحقق من التوقيع» checks the signature with the embedded key (RSA PSS/PKCS1, ECDSA, DSA), recomputes the chunked content digests, and shows the signer certificate's SHA-256 fingerprint, subject and expiry before you tap Install; any modification after the build is rejected loudly.

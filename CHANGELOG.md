@@ -1,5 +1,28 @@
 # Changelog · سجل التغييرات
 
+## [0.11.0] — 2026-11-24 — Plans, payments & stdio MCP · الخطط والمدفوعات وMCP عبر stdio
+
+### Monetization · الدفع والترخيص
+- **Plans in SAR:** Free (everything shipped so far, capped at 3 projects / 1 MCP server / 1 git host, no signed release builds, no team agents), **Pro SAR 15/mo**, **Student SAR 5/mo** (same features as Pro, honors-system), **Lifetime SAR 149**. The paywall (Home ★ or Settings → الاشتراك والترخيص) shows plan cards with SAR prices and the current status (active until / lifetime).
+  خطط بالريال: المجانية (كل ما شُحن سابقاً بحدود: 3 مشاريع، خادم MCP واحد، مضيف git واحد، بلا إصدارات موقّعة ولا فريق وكلاء)، برو 15 ر.س شهرياً، الطلاب 5 ر.س شهرياً، ومدى الحياة 149 ر.س — وصفحة خطط عربية أولاً تظهر الخطة الحالية وتاريخها.
+- **Google Play Billing (PBL 8.0):** products `saqr_pro_monthly` / `saqr_student_monthly` / `saqr_lifetime`; purchases are acknowledged immediately, re-read from Play on every connect (re-installs keep their plan), and devices without Play services fall back to the Moyasar path. Billing logic (tier merge, 31-day monthly trust, 3-day grace before expiry) lives in pure, tested code.
+  فواتير جوجل بلاي: الشراء يُعتمد فوراً ويُقرأ من بلاي عند كل تشغيل، والأجهزة بلا بلاي تنتقل لمسار مويسر. منطق الاستحقاق (الدمج، الثقة الشهرية، سماح 3 أيام قبل الانتهاء) كله مُختبر.
+- **Moyasar invoices + offline license tokens:** the paywall offers the merchant's public Moyasar payment page (mada, Apple Pay, STC Pay, cards — hosted by Moyasar) and a license-token field. Tokens (`SQ1.<payload>.<hmac>`, HMAC-SHA256) are minted by the developer after payment — Settings → Billing → **merchant tools** (create invoice per plan, open the hosted page, poll status, mint the token) or `scripts/license_tool.py` in the repo. The HMAC key comes from `keystore.properties` → `licenseKey` (private repo); the public fallback is explicitly non-secret.
+  فواتير مويسر + رموز ترخيص دون اتصال: الدفع عبر صفحة مويسر المستضافة (مدى / Apple Pay / STC Pay)، والرمز `SQ1.` يُصنع بعد الدفع من أدوات التاجر داخل الإعدادات أو سكربت license_tool.py، ومفتاح التوقيع من keystore.properties (المفتاح العام الافتراضي غير سري عمداً).
+- **Honest gating:** free users hit the paywall dialog when creating a 4th project, adding a 2nd MCP server, linking a 2nd git host, enabling team mode, or switching the Build tab to signed release — every gate explains the limit instead of failing silently.
+  بوابات صادقة: محاولة تجاوز أي حد (مشروع رابع، خادم MCP ثانٍ، مضيف git ثانٍ، فريق الوكلاء، الإصدار الموقّع) تفتح نافذة الخطط وتشرح الحد بدل الفشل الصامت.
+- **SecureStore hardening:** if the device keystore is unavailable (broken OEM keystore), the encrypted store resets once and finally falls back to plain prefs with a warning — degraded but alive, and unit tests can now boot the real store.
+  تحصين المخزن السري: عند غياب الكيستور (بعض الأجهزة) يعيد المحاولة ثم ينتقل لتخزين عادي مع تحذير — يعمل بدل أن ينهار.
+
+### Agent reach · وصول أوسع للوكيل
+- **MCP over stdio:** the long tail of local MCP servers (filesystem, git, sqlite…) now works — a Settings form takes a name + one-line command (+ `K=V` env lines) and the server runs **inside the app's terminal env** (proot Linux when installed, /system/bin/sh otherwise), speaking newline-delimited JSON-RPC over stdin/stdout with a proper initialize handshake, per-call timeouts (20s handshake / 120s call), EOF and flood detection. stdio tools join the same `mcp_<server>_<tool>` namespace as HTTP servers and share the same plan budget.
+  MCP عبر stdio: خوادم MCP المحلية تعمل الآن داخل بيئة الطرفية نفسها (proot أو sh)، بند MCP سطر واحد مع متغيرات بيئة اختيارية، ومصافحة initialize كاملة ومهل زمنية واكتشاف انقطاع، وتُدمج أدواتها في نفس مساحة أسماء أدوات خوادم HTTP.
+
+### Infrastructure · البنية
+- 269 unit tests (26 new in `V011FeaturesTest`): plan catalog/limits, entitlement states (grace/expiry/renew/merge + JSON round-trip), Moyasar amounts (halalas), Basic auth, invoice body/status parsing/error extraction, license token sign/verify (round-trip, lifetime, tamper, wrong key, expiry, Python-tool interop), SettingsStore purchase/license application, stdio config validation/env parsing/JSON-RPC framing.
+- Google Play Billing Library 8.0.0 (8.3.0 needs Kotlin 2.2 metadata; v7 is no longer accepted by Play); bilingual strings for every new surface (54 pairs); versionCode 11.
+
+
 ## [0.10.0] — 2026-11-24 — Trust the APK, control the tools, own the forge · التحقق من التوقيع والتحكم بالأدوات ودعم GitLab/Gitea
 
 ### Build flexibility · مرونة البناء

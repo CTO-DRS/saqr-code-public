@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.SaqrApp
+import com.ctodrs.saqrcode.billing.PaywallDialog
 import com.ctodrs.saqrcode.data.Project
 import com.ctodrs.saqrcode.data.Template
 import com.ctodrs.saqrcode.ui.components.FalconMark
@@ -86,19 +87,28 @@ fun Project.toCard(): ProjectCard {
 }
 
 @Composable
-fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit) {
+fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -> Unit = {}) {
     val app = SaqrApp.instance
     val version by app.settings.version.collectAsState()
     var refresh by remember { mutableIntStateOf(0) }
     val projects = remember(refresh) { app.projects.list().map { it.toCard() } }
     var create by remember { mutableStateOf<Template?>(null) }
     var toDelete by remember { mutableStateOf<String?>(null) }
+    var gate by remember { mutableStateOf(false) }
     val c = Saqr.colors
+
+    // v0.11: free tier caps the project count — attempts to create beyond it open the paywall.
+    val limits = app.settings.limits()
+    val capReached = !limits.unlimitedProjects && projects.size >= limits.maxProjects
 
     HomeContent(
         projects = projects, needsProvider = version.let { !app.settings.activeReady() },
-        onOpen = onOpen, onSettings = onSettings, onCreate = { create = it ?: Template.WEB }, onDelete = { toDelete = it },
+        projectCapReached = capReached,
+        onOpen = onOpen, onSettings = onSettings, onPaywall = onPaywall,
+        onCreate = { if (capReached) gate = true else create = it ?: Template.WEB }, onDelete = { toDelete = it },
     )
+
+    PaywallDialog(show = gate, onDismiss = { gate = false }, onOpenPaywall = onPaywall)
 
     create?.let { tpl ->
         CreateProjectDialog(
@@ -125,7 +135,8 @@ fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit) {
 @Composable
 fun HomeContent(
     projects: List<ProjectCard>, needsProvider: Boolean,
-    onOpen: (String) -> Unit, onSettings: () -> Unit, onCreate: (Template?) -> Unit, onDelete: (String) -> Unit,
+    projectCapReached: Boolean = false,
+    onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -> Unit = {}, onCreate: (Template?) -> Unit, onDelete: (String) -> Unit,
     now: Long = System.currentTimeMillis(),
 ) {
     val c = Saqr.colors
@@ -142,11 +153,14 @@ fun HomeContent(
                     Text(stringResource(R.string.app_name), style = Saqr.type.title2.copy(fontWeight = FontWeight.Bold), color = c.text1)
                     Text(stringResource(R.string.tagline), style = Saqr.type.caption, color = c.text2, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
+                GlassIconButton(Lucide.Star, stringResource(R.string.paywall_title), onPaywall)
+                Spacer(Modifier.width(Sp.sm))
                 GlassIconButton(Lucide.Settings, stringResource(R.string.settings), onSettings)
             }
         }
         item { Hero(onNew = { onCreate(null) }) }
         if (needsProvider) item { SetupBanner(onSettings) }
+        if (projectCapReached) item { UpgradeBanner(onPaywall) }
         if (projects.isNotEmpty()) {
             item { SectionLabel(stringResource(R.string.recent), Modifier.padding(top = Sp.md)) { Text("${projects.size}", style = Saqr.type.monoMicro, color = c.text3) } }
             items(projects, key = { it.name }) { p -> ProjectRow(p, now, { onOpen(p.name) }, { onDelete(p.name) }) }
@@ -209,6 +223,23 @@ private fun SetupBanner(onSettings: () -> Unit) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.setup_title), style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1)
                 Text(stringResource(R.string.setup_body), style = Saqr.type.caption, color = c.text2)
+            }
+            SIcon(Lucide.ChevronRight, size = 18.dp, tint = c.text3)
+        }
+    }
+}
+
+/** v0.11: shown when the free tier's project cap is reached — taps open the paywall. */
+@Composable
+private fun UpgradeBanner(onPaywall: () -> Unit) {
+    val c = Saqr.colors
+    SaqrCard(Modifier.fillMaxWidth(), color = c.accentSoft, onClick = onPaywall, padding = PaddingValues(Sp.lg)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SIcon(Lucide.Star, size = 20.dp, tint = c.accentText)
+            Spacer(Modifier.width(Sp.md))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.upgrade_banner_title), style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1)
+                Text(stringResource(R.string.upgrade_banner_body), style = Saqr.type.caption, color = c.text2)
             }
             SIcon(Lucide.ChevronRight, size = 18.dp, tint = c.text3)
         }

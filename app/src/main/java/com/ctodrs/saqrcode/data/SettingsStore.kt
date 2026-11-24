@@ -7,6 +7,13 @@ import com.ctodrs.saqrcode.agent.ProviderKind
 import com.ctodrs.saqrcode.agent.Providers
 import com.ctodrs.saqrcode.agent.SlashCommand
 import com.ctodrs.saqrcode.agent.SlashCommands
+import com.ctodrs.saqrcode.billing.Entitlement
+import com.ctodrs.saqrcode.billing.Entitlements
+import com.ctodrs.saqrcode.billing.Plan
+import com.ctodrs.saqrcode.billing.PlanLimits
+import com.ctodrs.saqrcode.billing.PlanTier
+import com.ctodrs.saqrcode.billing.Plans
+import com.ctodrs.saqrcode.payments.LicenseCodec
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -211,6 +218,62 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
     fun visionMode(model: String): String = visionOverrides[com.ctodrs.saqrcode.agent.Vision.normalizeKey(model)] ?: com.ctodrs.saqrcode.agent.Vision.AUTO
 
     fun supportsVision(model: String) = com.ctodrs.saqrcode.agent.Vision.supports(model, visionOverrides)
+
+    // ------------------------------------------------ v0.11 billing & licensing
+
+    /** v0.11: the persisted entitlement JSON (plan tier, source, expiry). Empty = free tier. */
+    var entitlementJson: String
+        get() = prefs.getString("entitlement", "") ?: ""
+        set(v) { prefs.edit().putString("entitlement", v).apply(); bump() }
+
+    fun entitlement(): Entitlement? = Entitlements.decode(entitlementJson)
+
+    fun setEntitlement(e: Entitlement?) {
+        entitlementJson = e?.let { Entitlements.encode(it) } ?: ""
+    }
+
+    /** The tier in force right now (grace keeps the paid tier, expiry falls back to FREE). */
+    fun planTier(): PlanTier = Entitlements.effectiveTier(entitlement(), System.currentTimeMillis())
+
+    /** Project/MCP/host limits and feature flags for the current tier. */
+    fun limits(): PlanLimits = Plans.limitsFor(planTier())
+
+    /** v0.11: a Play purchase is its own proof — acknowledged and re-verified at every start. */
+    fun applyPlayPurchase(plan: Plan, purchaseTime: Long, orderId: String) {
+        val cur = entitlement()
+        val exp = if (plan.monthly) Entitlements.renewMonthly(cur, purchaseTime) else null
+        setEntitlement(Entitlements.merge(cur, Entitlement(plan.tier, Entitlements.SOURCE_PLAY, exp, orderId)))
+    }
+
+    /** v0.11: a verified license token grants (or extends) the plan it names. */
+    fun applyLicense(verified: LicenseCodec.Verified) {
+        val cur = entitlement()
+        val inc = Entitlement(
+            tier = verified.tier,
+            source = Entitlements.SOURCE_LICENSE,
+            expiresAt = verified.expiresAt,
+            orderId = verified.orderId.ifBlank { "license" },
+            email = verified.email,
+        )
+        setEntitlement(Entitlements.merge(cur, inc))
+    }
+
+    /** v0.11: the merchant's public Moyasar payment page (safe to show to users; no secrets). */
+    var moyasarPayLink: String
+        get() = prefs.getString("moyasar_pay_link", "") ?: ""
+        set(v) { prefs.edit().putString("moyasar_pay_link", v.trim()).apply(); bump() }
+
+    /** v0.11: Moyasar secret key — merchant tools only, lives in [SecureStore] on one device. */
+    fun moyasarSecret(): String? = secure.get("moyasar_secret")
+
+    fun setMoyasarSecret(value: String?) {
+        secure.put("moyasar_secret", value?.trim()?.takeIf { it.isNotBlank() })
+    }
+
+    /** v0.11: MCP servers speaking stdio, run inside the terminal env (proot or /system/bin/sh). */
+    var mcpStdioServers: List<com.ctodrs.saqrcode.agent.McpStdio.StdioServer>
+        get() = com.ctodrs.saqrcode.agent.McpStdio.decodeConfig(prefs.getString("mcp_stdio_servers", null))
+        set(v) { prefs.edit().putString("mcp_stdio_servers", com.ctodrs.saqrcode.agent.McpStdio.encodeConfig(v)).apply(); bump() }
 
     fun config(id: String): ProviderConfig {
         val def = Providers.byId(id)

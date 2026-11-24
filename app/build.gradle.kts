@@ -11,6 +11,12 @@ val keystoreProps = Properties().apply {
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
+// v0.11 offline licensing: HMAC key for license tokens. Set `licenseKey=<64 hex chars>` in
+// keystore.properties (private repo only). The fallback is a PUBLIC dev key — anyone can mint
+// tokens against it; real distributions must ship the private key. See NOTICE.md.
+val devLicenseKey = "0000000000000000000000000000000000000000000000000000000000000064"
+val licenseKeyHex = keystoreProps.getProperty("licenseKey") ?: devLicenseKey
+
 android {
     namespace = "com.ctodrs.saqrcode"
     compileSdk = 35
@@ -20,11 +26,12 @@ android {
         applicationId = "com.ctodrs.saqrcode"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10
-        versionName = "0.10.0"
+        versionCode = 11
+        versionName = "0.11.0"
         ndk { abiFilters += "arm64-v8a" }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += listOf("en", "ar")
+        buildConfigField("String", "SAQR_LICENSE_KEY", "\"$licenseKeyHex\"")
     }
 
     signingConfigs {
@@ -103,6 +110,9 @@ dependencies {
     implementation("org.eclipse.jgit:org.eclipse.jgit:5.13.3.202401111512-r")
     implementation("org.slf4j:slf4j-nop:1.7.36")
     implementation("com.github.termux.termux-app:terminal-emulator:v0.118.1")
+    // v0.11 Google Play Billing (PBL 8.x — v7 is no longer accepted by Play).
+    // 8.0.0: last 8.x line compatible with this project's Kotlin 2.0 metadata reader.
+    implementation("com.android.billingclient:billing-ktx:8.0.0")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")

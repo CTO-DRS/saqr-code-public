@@ -1,10 +1,10 @@
 # Development plan · خطة التطوير
 
-## الوضع بعد 0.10.0 · Where we are after 0.10.0
+## الوضع بعد 0.11.0 · Where we are after 0.11.0
 
-شُحنت في 0.10.0: **التحقق من توقيع الـ APK داخل التطبيق** (مخطط v2/v3 كامل مع بصمة شهادة الموقّع قبل زر التثبيت)، وخيار «احتفظ بآخر إصدار فقط» الذي ينظف APKs القديمة ومخلفات البناء بعد كل نجاح، وسماح/منع أدوات MCP لكل خادم (أدوات مخفية لا يراها الوكيل ولا يستدعيها)، ودعم GitLab وGitea من البداية للنهاية (ربط المضيفين بنوع API، وإنشاء المستودعات، وفتح طلبات الدمج/السحب من تبويب Git).
+شُحنت في 0.11.0: **الخطط والمدفوعات** — خطط بالريال (مجانية / برو 15 / طلاب 5 / مدى الحياة 149)، Google Play Billing (PBL 8) بمنتجات شهرية ومدى الحياة مع استعادة تلقائية، مويسر (فواتير مستضافة + أدوات تاجر داخل الإعدادات) ورموز ترخيص دون اتصال `SQ1.` بصنعها من التطبيق أو `scripts/license_tool.py`، وبوابات صادقة لكل الحدود المجانية — و **MCP عبر stdio** (خوادم محلية داخل بيئة الطرفية بـ JSON-RPC على stdin/stdout).
 
-Shipped in 0.10.0: **in-app APK signature verification** (full v2/v3 with the signer's SHA-256 fingerprint before Install), the «keep only the last APK» auto-clean after successful builds, per-server MCP tool allow/deny (hidden tools never reach the agent), and end-to-end GitLab/Gitea support (host linking with an API dialect, create-repository publish, MR/PR from the Git tab).
+Shipped in 0.11.0: **plans & payments** — SAR pricing (Free / Pro 15 / Student 5 / Lifetime 149), Google Play Billing (PBL 8) with monthly + lifetime products and automatic restore, Moyasar (hosted invoices + merchant tools in Settings) and offline `SQ1.` license tokens minted from the app or `scripts/license_tool.py`, honest gates on every free-tier limit — plus **MCP over stdio** (local servers inside the terminal env over stdin/stdout JSON-RPC).
 
 ---
 
@@ -29,6 +29,9 @@ Shipped in 0.10.0: **in-app APK signature verification** (full v2/v3 with the si
 - MCP: stdio transport bridged through the terminal for advanced users; OAuth for servers requiring sign-in.
 - ~~واجهة اختيار أدوات MCP~~ — شُحنت في 0.10 (منع/سماح لكل خادم من مستعرض الأدوات).
 - ~~Per-server MCP tool allow/deny lists~~ — shipped in 0.10 (eye toggle in the tools browser).
+- ~~stdio عبر الطرفية~~ — شُحن في 0.11: خوادم محلية داخل proot/sh بـ JSON-RPC على stdin/stdout.
+- ~~stdio through the terminal~~ — shipped in 0.11: local servers inside proot/sh over stdin/stdout JSON-RPC.
+- OAuth لخوادم MCP (متبقٍ) · OAuth for MCP servers (remaining).
 
 ### 4. GitLab / Gitea · قوائم المستودعات والطلبات
 - ~~شاشة حسابات تدعم GitLab وGitea~~ — شُحنت في 0.10: ربط المضيفين وإنشاء المستودعات وطلبات الدمج.
@@ -37,8 +40,10 @@ Shipped in 0.10.0: **in-app APK signature verification** (full v2/v3 with the si
 ## الأولوية 3 · Priority 3 — العمل · Business
 
 ### 5. النشر والدفع · Distribution & payments
-- Google Play Billing + **Moyasar** (mada، Apple Pay، STC Pay) بأسعار بالريال وخطة للطلاب.
-- Google Play Billing + **Moyasar** (mada, Apple Pay, STC Pay), SAR pricing, student plan.
+- ~~Google Play Billing + **Moyasar** بأسعار بالريال وخطة للطلاب~~ — شُحن في 0.11: بلاي (PBL 8) بمنتجات شهرية ومدى الحياة، مويسر بفواتير مستضافة وأدوات تاجر، ورموز `SQ1.` وخطة طلاب.
+- ~~Google Play Billing + **Moyasar**, SAR pricing, student plan~~ — shipped in 0.11: Play Billing (PBL 8) monthly + lifetime products, Moyasar hosted invoices + merchant tools, `SQ1.` tokens, student plan.
+- إعداد منتجات بلاي في Play Console وربط صفحة مويسر العامة قبل النشر.
+- Configure the Play Console products and the merchant's public Moyasar page before launch.
 - صفحات المتاجر بالعربية والإنجليزية مع لقطات التبويبات الجديدة (البناء، المراجعة، MCP).
 - Store listings in Arabic and English with screenshots of the new tabs (Build, Review, MCP).
 - مستندات ودروس فيديو قصيرة: «ابنِ أول تطبيق من هاتفك في 10 دقائق».

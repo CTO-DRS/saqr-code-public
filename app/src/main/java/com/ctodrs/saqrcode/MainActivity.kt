@@ -91,7 +91,13 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     BackHandler(enabled = screen != "home" && screen != "onboarding") {
-                        screen = when (screen) { "settings" -> returnTo; "accounts" -> accountsReturn; else -> "home" }
+                        screen = when (screen) { "settings" -> returnTo; "accounts" -> accountsReturn; "paywall" -> returnTo; else -> "home" }
+                    }
+                    // v0.11: one Play Billing client for the whole app; the paywall drives it.
+                    val play = androidx.compose.runtime.remember { com.ctodrs.saqrcode.billing.PlayBilling(this@MainActivity, settings) }
+                    androidx.compose.runtime.DisposableEffect(Unit) {
+                        play.connect()
+                        onDispose { play.close() }
                     }
                     AnimatedContent(screen, transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) }, label = "nav") { s ->
                         when {
@@ -100,17 +106,20 @@ class MainActivity : AppCompatActivity() {
                                 returnTo = "home"
                                 screen = if (openSettings && !settings.activeReady()) "settings" else "home"
                             })
-                            s == "settings" -> SettingsScreen(onBack = { screen = returnTo }, onAccounts = { accountsReturn = "settings"; screen = "accounts" })
+                            s == "settings" -> SettingsScreen(onBack = { screen = returnTo }, onAccounts = { accountsReturn = "settings"; screen = "accounts" }, onPaywall = { returnTo = "settings"; screen = "paywall" })
                             s == "accounts" -> AccountsScreen(onBack = { screen = accountsReturn })
+                            s == "paywall" -> com.ctodrs.saqrcode.billing.PaywallScreen(onBack = { screen = returnTo }, settings = settings, play = play)
                             s.startsWith("project:") -> IdeScreen(
                                 projectName = s.removePrefix("project:"),
                                 onBack = { screen = "home" },
                                 onSettings = { returnTo = s; screen = "settings" },
                                 onAccounts = { accountsReturn = s; screen = "accounts" },
+                                onPaywall = { returnTo = s; screen = "paywall" },
                             )
                             else -> HomeScreen(
                                 onOpen = { screen = "project:$it" },
                                 onSettings = { returnTo = "home"; screen = "settings" },
+                                onPaywall = { returnTo = "home"; screen = "paywall" },
                             )
                         }
                     }

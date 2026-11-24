@@ -548,4 +548,68 @@
 
     <!-- v0.10 · السماح/المنع لأدوات MCP -->
     <string name="mcp_tool_hidden">مخفية عن الوكيل — لن يراها ولا يستدعيها أبداً.</string>
+
+    <!-- v0.11 · الخطط والدفع والترخيص -->
+    <string name="add">إضافة</string>
+    <string name="manage">إدارة</string>
+    <string name="ok">حسناً</string>
+    <string name="sar">ر.س</string>
+    <string name="per_month">/ شهرياً</string>
+    <string name="one_time">مرة واحدة</string>
+    <string name="paywall_title">الخطط والترخيص</string>
+    <string name="paywall_status">النتيجة</string>
+    <string name="paywall_gate_title">هذه ميزة من صقر برو</string>
+    <string name="paywall_gate_body">الخطة المجانية محدودة (3 مشاريع، خادم MCP واحد، مضيف git واحد، بلا إصدارات موقّعة). برو يرفع الحدود ويفتح فريق الوكلاء.</string>
+    <string name="paywall_gate_cta">استعرض الخطط</string>
+    <string name="tier_free">المجانية</string>
+    <string name="tier_pro">برو · شهري</string>
+    <string name="tier_student">الطلاب · شهري</string>
+    <string name="tier_lifetime">مدى الحياة</string>
+    <string name="tier_free_sub">3 مشاريع · خادم MCP واحد · مضيف git واحد · فريق الوكلاء معطّل</string>
+    <string name="tier_never">ترخيص مدى الحياة — لا ينتهي أبداً.</string>
+    <string name="tier_until">مفعّل حتى %1$s</string>
+    <string name="plan_pro">برو</string>
+    <string name="plan_pro_desc">مشاريع وخوادم MCP بلا حدود، 8 مضيفات git، فريق الوكلاء (مخطط + مراجع)، وبناء إصدارات موقّعة.</string>
+    <string name="plan_student">الطلاب</string>
+    <string name="plan_student_desc">كل ميزات برو بسعر الطلاب — على نظام الثقة: استخدمها إن كنت طالباً فعلاً.</string>
+    <string name="plan_lifetime">مدى الحياة</string>
+    <string name="plan_lifetime_desc">ادفع مرة واحدة واحتفظ بكل ميزات برو للأبد — بما فيها المقبلة.</string>
+    <string name="current_plan">خطتك الحالية</string>
+    <string name="paywall_buy_play">اشترِ عبر جوجل بلاي</string>
+    <string name="paywall_play_unavailable">جوجل بلاي غير متاح على هذا الجهاز — استخدم رابط الدفع عبر مويسر أو رمز الترخيص بالأسفل.</string>
+    <string name="paywall_manual">طرق دفع أخرى</string>
+    <string name="paywall_manual_desc">ادفع عبر صفحة مويسر الخاصة بالتاجر (مدى، Apple Pay، STC Pay أو بطاقة)، ثم ألصق رمز الترخيص الذي وصلك.</string>
+    <string name="paywall_open_link">افتح صفحة الدفع</string>
+    <string name="paywall_token_hint">رمز الترخيص (SQ1.…)</string>
+    <string name="paywall_activate">تفعيل الرمز</string>
+    <string name="paywall_activated_ok">تم — الخطط مفعّلة الآن. شكراً لدعمك صقر كود!</string>
+    <string name="paywall_activated_err">فشل التفعيل: %1$s</string>
+    <string name="paywall_restore">استعادة المشتريات</string>
+    <string name="paywall_restore_done">تحققنا من جوجل بلاي وطبّقنا المشتريات النشطة.</string>
+    <string name="paywall_student_note">خطة الطلاب: بريد أكاديمي في الترخيص يساعدنا على احترام الخصم.</string>
+    <string name="upgrade_banner_title">وصلت إلى حد المشاريع</string>
+    <string name="upgrade_banner_body">الخطة المجانية تحفظ 3 مشاريع. رقِّ إلى برو لمشاريع بلا حدود وفريق الوكلاء.</string>
+    <string name="billing_section">الاشتراك والترخيص</string>
+    <string name="billing_row_desc">الخطة: %1$s — اضغط للإدارة أو الترقية.</string>
+
+    <!-- v0.11 · أدوات التاجر (مويسر) -->
+    <string name="merchant_title">أدوات التاجر · مويسر</string>
+    <string name="merchant_desc">للمطوّر فقط: مفتاح مويسر السري يبقى في المخزن المشفّر على هذا الجهاز. أنشئ فاتورة لكل خطة، افتح الصفحة المستضافة (مدى / Apple Pay / STC Pay)، ثم اصنع رمز الترخيص بعد الدفع.</string>
+    <string name="merchant_pay_link">رابط صفحة الدفع العام (يظهر في صفحة الخطط)</string>
+    <string name="merchant_secret">مفتاح مويسر السري (sk_…)</string>
+    <string name="merchant_save">حفظ إعدادات التاجر</string>
+    <string name="merchant_saved">تم الحفظ.</string>
+    <string name="merchant_email">بريد العميل (اختياري، يُوضع في الرمز)</string>
+    <string name="merchant_invoice_status">حالة الفاتورة: %1$s</string>
+    <string name="merchant_open_invoice">افتح صفحة دفع الفاتورة</string>
+    <string name="merchant_refresh">تحديث الحالة</string>
+    <string name="merchant_mint_token">اصنع رمز ترخيص</string>
+    <string name="merchant_token_ready">الرمز جاهز — أرسله للعميل.</string>
+    <string name="merchant_copy_token">نسخ الرمز</string>
+
+    <!-- v0.11 · MCP عبر stdio -->
+    <string name="mcp_stdio_add">أضف خادم MCP عبر stdio</string>
+    <string name="mcp_stdio_desc">للمتقدمين: يُنفّذ الأمر داخل طرفية التطبيق (لينكس proot إن كانت مثبتة) ويتخاطب JSON-RPC عبر stdin/stdout. مثال: `npx -y @modelcontextprotocol/server-filesystem /workspace`.</string>
+    <string name="mcp_stdio_command">الأمر (سطر شل واحد)</string>
+    <string name="mcp_stdio_env">متغيرات البيئة (K=V لكل سطر، اختياري)</string>
 </resources>

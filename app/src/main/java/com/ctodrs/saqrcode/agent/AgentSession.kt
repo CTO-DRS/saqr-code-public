@@ -156,6 +156,9 @@ class AgentSession(
     /** MCP tools discovered for the current turn (empty in single mode or when no server). */
     private var mcpSpecs: List<ToolSpec> = emptyList()
     private var mcpClients: List<Pair<Mcp.Server, McpClient>> = emptyList()
+
+    /** v0.11: stdio MCP servers, one child process each (created per turn, closed on reset). */
+    private var stdioClients: List<Pair<McpStdio.StdioServer, McpStdioClient>> = emptyList()
     /** v0.8: the reviewer's own token spend, per model — shown separately in the meter. */
     val reviewUsage = mutableStateMapOf<String, Usage>()
     /** v0.8: the planner's own token spend, per model. */
@@ -203,6 +206,7 @@ class AgentSession(
         step = 0; contextTokens = 0; currentUser = null; pendingNote = null; usageVersion++
         pendingReview = null; reviewRounds = 0; loopPrints.clear(); loopNudged = false
         reviewUsage.clear(); plannerUsage.clear(); mcpSpecs = emptyList(); mcpClients = emptyList()
+        stdioClients.forEach { runCatching { it.second.close() } }; stdioClients = emptyList()
         // checkpoints that no longer exist lose their "Restore to here"
         val cps = runCatching { checkpoints.list().map { it.id }.toSet() }.getOrDefault(emptySet())
         items.filterIsInstance<ChatItem.User>().forEach { if (it.checkpointId != null && it.checkpointId !in cps) it.checkpointId = null }
@@ -264,6 +268,7 @@ class AgentSession(
         sessionUsage.clear(); currentUser = null; pendingNote = null; usageVersion++; interrupted = false
         pendingReview = null; reviewRounds = 0; loopPrints.clear(); loopNudged = false
         reviewUsage.clear(); plannerUsage.clear(); mcpSpecs = emptyList(); mcpClients = emptyList()
+        stdioClients.forEach { runCatching { it.second.close() } }; stdioClients = emptyList()
     }
 
     /** Switch to a saved session. Refused while a turn runs. */
@@ -779,11 +784,14 @@ class AgentSession(
     /** The tool list the model sees: built-ins plus the MCP tools discovered this turn. */
     private fun specs(): List<ToolSpec> = Tools.specs + mcpSpecs
 
-    /** v0.8: connects to the user's MCP servers once per turn and collects their tools. */
+    /** v0.8: connects to the user's MCP servers once per turn and collects their tools.
+     *  v0.11: HTTP servers first, then stdio servers, sharing the same [MAX_MCP_SERVERS] budget. */
     private suspend fun refreshMcpTools() {
         mcpSpecs = emptyList(); mcpClients = emptyList()
+        stdioClients.forEach { runCatching { it.second.close() } }; stdioClients = emptyList()
         val servers = settings.mcpServers.take(MAX_MCP_SERVERS)
-        if (servers.isEmpty()) return
+        var budget = MAX_MCP_SERVERS - servers.size
+        if (servers.isEmpty() && settings.mcpStdioServers.isEmpty()) return
         var anyOk = false
         for (s in servers) {
             val cl = McpClient(Mcp.Server(s.name, s.url, settings.mcpAuth(s.name)))
@@ -809,20 +817,42 @@ class AgentSession(
             mcpSpecs = mcpSpecs + visible.map { ToolSpec(it.name, it.description, it.inputSchema) }
             anyOk = true
         }
+        // v0.11: stdio servers through the terminal env (proot Linux when installed)
+        for (s in settings.mcpStdioServers.take(budget)) {
+            val cl = McpStdioClient(s, linux, projectDir)
+            val started = withContext(Dispatchers.IO) { runCatching { cl.start() }.getOrDefault(false) }
+            val tools = if (started) withContext(Dispatchers.IO) { runCatching { cl.listTools() }.getOrNull() } else null
+            if (tools == null || tools.isEmpty()) {
+                runCatching { cl.close() }
+                items += ChatItem.Notice(
+                    "MCP “${s.name}” (stdio): ${cl.endpointError ?: "no tools found"} — its tools are skipped this turn.",
+                    isError = false, kind = ChatItem.Notice.Kind.MCP,
+                )
+                continue
+            }
+            val visible = Mcp.filterTools(tools, settings.mcpDisabledTools[s.slug].orEmpty())
+            if (visible.isEmpty()) { runCatching { cl.close() }; continue }
+            stdioClients += s to cl
+            mcpSpecs = mcpSpecs + visible.map { ToolSpec(it.name, it.description, it.inputSchema) }
+            anyOk = true
+        }
         if (anyOk) markDirty()
     }
 
-    /** Executes one `mcp_<server>_<tool>` call against the matching client. */
+    /** Executes one `mcp_<server>_<tool>` call against the matching client (HTTP or stdio). */
     private suspend fun runMcpTool(full: String, a: JSONObject): String = withContext(Dispatchers.IO) {
         val (slug, tool) = Mcp.splitToolName(full)
             ?: return@withContext "Error: malformed MCP tool name '$full' (expected mcp_<server>_<tool>)"
-        val cl = mcpClients.firstOrNull { it.first.slug == slug }?.second
-            ?: return@withContext "Error: MCP server '$slug' is not connected this turn. Tell the user to check Settings → MCP servers."
+        val http = mcpClients.firstOrNull { it.first.slug == slug }?.second
+        val stdio = if (http == null) stdioClients.firstOrNull { it.first.slug == slug }?.second else null
+        if (http == null && stdio == null) {
+            return@withContext "Error: MCP server '$slug' is not connected this turn. Tell the user to check Settings → MCP servers."
+        }
         // v0.10 defense in depth: a tool hidden by the user is refused even if the model calls it.
         if (tool in settings.mcpDisabledTools[slug].orEmpty()) {
             return@withContext "Error: tool '$tool' is disabled by the user for this MCP server. Do not retry it."
         }
-        cl.callTool(tool, a)
+        return@withContext if (http != null) http.callTool(tool, a) else stdio!!.callTool(tool, a)
     }
 
     /**

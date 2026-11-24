@@ -59,7 +59,7 @@ import kotlinx.coroutines.launch
  * logcat, and reclaim build-cache storage (v0.9).
  */
 @Composable
-fun BuildPane(ws: Workspace) {
+fun BuildPane(ws: Workspace, onPaywall: () -> Unit = {}) {
     val ctx = LocalContext.current
     val settings = SaqrApp.instance.settings
     val build = remember(ws.name) {
@@ -81,6 +81,11 @@ fun BuildPane(ws: Workspace) {
 
     // v0.9 signed release state — passwords stay in memory only
     var signOn by remember { mutableStateOf(false) }
+    // v0.11: signed release builds are a paid-tier feature
+    var releaseGate by remember { mutableStateOf(false) }
+    com.ctodrs.saqrcode.billing.PaywallDialog(
+        show = releaseGate, onDismiss = { releaseGate = false }, onOpenPaywall = onPaywall,
+    )
     var ksPath by remember { mutableStateOf(settings.releaseKeystorePath) }
     var ksAlias by remember { mutableStateOf(settings.releaseKeyAlias) }
     var ksPass by remember { mutableStateOf("") }
@@ -122,7 +127,10 @@ fun BuildPane(ws: Workspace) {
         // ---- v0.9 signed release
         ReleaseCard(
             visible = phase == OnDeviceBuild.Phase.READY || phase == OnDeviceBuild.Phase.BUILT,
-            signOn = signOn, onSignOn = { signOn = it },
+            signOn = signOn, onSignOn = {
+                // v0.11: gating — free users get the paywall instead of the release fields
+                if (it && !settings.limits().signedRelease) releaseGate = true else signOn = it
+            },
             ksPath = ksPath, onKsPath = { ksPath = it },
             ksAlias = ksAlias, onKsAlias = { ksAlias = it },
             ksPass = ksPass, onKsPass = { ksPass = it },

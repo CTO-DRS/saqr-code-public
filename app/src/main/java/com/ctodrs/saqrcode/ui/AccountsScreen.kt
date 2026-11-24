@@ -103,6 +103,8 @@ fun AccountsScreen(onBack: () -> Unit) {
     val version by settings.version.collectAsState()
     version
     val ctx = LocalContext.current
+    // v0.11: opened when a free-tier user tries to link a second git host
+    var hostGate by remember { mutableStateOf(false) }
     val ui = AccountsUi(
         github = settings.accounts.github,
         gitName = settings.gitName,
@@ -128,13 +130,25 @@ fun AccountsScreen(onBack: () -> Unit) {
         hostKind = { settings.accounts.hostKind(it) },
         onAddHost = { h, u, t ->
             try {
-                settings.accounts.saveHost(h, u, t); settings.accountsChanged(); null
+                // v0.11: free tier links one git host — the rest need Pro.
+                val existing = settings.accounts.hosts()
+                if (!existing.any { it.host.equals(h.trim(), ignoreCase = true) } &&
+                    !settings.limits().unlimitedHosts && existing.size >= settings.limits().maxGitHosts
+                ) {
+                    hostGate = true
+                    "Free plan: 1 git host — upgrade to Pro to link more."
+                } else {
+                    settings.accounts.saveHost(h, u, t); settings.accountsChanged(); null
+                }
             } catch (e: Exception) {
                 e.message ?: e.javaClass.simpleName
             }
         },
         onHostKind = { h, k -> settings.accounts.setHostKind(h, k); settings.accountsChanged() },
         onRemoveHost = { h -> settings.accounts.removeHost(h); settings.accountsChanged() },
+    )
+    com.ctodrs.saqrcode.billing.PaywallDialog(
+        show = hostGate, onDismiss = { hostGate = false }, onOpenPaywall = onBack,
     )
     AccountsContent(ui, onBack)
 }
