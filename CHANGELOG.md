@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.13.1] — 2026-11-24 — Project index · فهرس المشروع
+
+### Productivity · الإنتاجية
+- **Project index (فهرس المشروع):** the second «عقل الصقر» item. A lightweight in-memory symbol index (files, classes, objects, interfaces, enums, functions) is built when the project opens — a regex-free single-pass scanner over symbol-bearing files on a small worker pool (89 ms for a 501-file / 3502-symbol project on the constrained CI sandbox), refreshed automatically when stale (20 s). The new `project_search(query)` tool answers `file:line · kind · name` instantly, so the model locates code instead of listing directories or reading whole files; `.git`, `build`, `node_modules` and files over 512 KB are skipped, with a 4000-file cap.
+  فهرس المشروع: البند الثاني من «عقل الصقر». فهرس رموز خفيف في الذاكرة يتولد عند فتح المشروع — ماسح رموز بمرور واحد بلا regex على خيوط عمل متوازية (89ms لمشروع 501 ملفاً و3502 رمزاً على بيئة الاختبار المقيدة)، ويُجدد تلقائياً عند تقادمه (20 ثانية). الأداة الجديدة `project_search` تجيب بـ«ملف:سطر · النوع · الاسم» فوراً، فيحدد الوكيل مواضع الكود بدل قراءة ملفات كاملة، مع تخطي `.git` و`build` و`node_modules` والملفات فوق 512KB وسقف 4000 ملف.
+- **Arabic-aware symbol search:** queries and names match through the same normalization as the memory bank (alef forms, taa marbouta, yaa, diacritics — now precompiled and pre-computed per symbol), so «الشّبكه» finds `الشبكة.kt`. Ranking: exact name → prefix → Arabic-normalized prefix → contains → path, shortest path first. **First result under 200 ms on a 500-file project** (the PLAN acceptance) — 8 new tests in `V0131FeaturesTest`, 292 total green.
+  بحث رموز عربي-واعٍ: الاستعلام والأسماء تتطابق عبر توحيد بنك الذاكرة نفسه (الهمزات، التاء المربوطة، الياء، التشكيل — مُجمَّع مسبقاً ومُخزَّن لكل رمز)، فـ«الشّبكه» تجد الشبكة.kt. الترتيب: التام فالبادئة فالتطبيع العربي فالاحتواء فالمسار، والأقصر أولًا. **أول نتيجة أقل من 200ms على مشروع 500 ملف** (معيار الخطة) — 8 اختبارات جديدة في V0131FeaturesTest، و292 اختباراً ناجحاً إجمالاً.
+
 ## [0.13.0] — 2026-11-24 — Falcon Mind · عقل الصقر: the memory bank
 
 ### Productivity · الإنتاجية

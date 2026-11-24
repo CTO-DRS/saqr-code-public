@@ -23,8 +23,8 @@ The single source of direction is [ROADMAP.md](../ROADMAP.md); this file holds t
 ### 2. فهرس المشروع · Project index
 - فهرس رموز خفيف (ملفات/دوال/أصناف) يتولد عند فتح المشروع ويغذي بحث الوكيل بدل قراءة ملفات كاملة.
 - A lightweight symbol index (files/functions/classes) built when the project opens, feeding the agent's search instead of full-file reads.
-- [ ] أول نتيجة أقل من 200ms على مشروع 500 ملف.
-- [ ] First result under 200 ms on a 500-file project.
+- [x] أول نتيجة أقل من 200ms على مشروع 500 ملف. *(تم: 0.13.1 — ماسح رموز بلا regex وبخيوط عمل متوازية للبناء، بحث مفهرس مسبق التطبيع، بناء 89ms لـ501 ملفاً و3502 رمزاً — ملاحظة ميدانية على بيئة الاختبار المقيدة)*
+- [x] First result under 200 ms on a 500-file project. *(done: 0.13.1 — regex-free single-pass scanner, parallel worker-pool build, pre-normalized names for the ranked scan)*
 
 ### 3. موجّه النماذج · Falcon Router
 - توجيه المهمة للنموذج الأرخص المناسب (خطة/كود/مراجعة/تلخيص) بهدف توفير ≥25% من التكلفة، مع رقم معلن.

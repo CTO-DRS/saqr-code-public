@@ -26,8 +26,8 @@ android {
         applicationId = "com.ctodrs.saqrcode"
         minSdk = 26
         targetSdk = 35
-        versionCode = 14
-        versionName = "0.13.0"
+        versionCode = 15
+        versionName = "0.13.1"
         ndk { abiFilters += "arm64-v8a" }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += listOf("en", "ar")

@@ -216,6 +216,10 @@ class MemoryBank(private val dir: File) {
 
         // ------------------------------------------------ Arabic-aware key normalization
 
+        // precompiled once — normalize() runs per key in recall and per symbol in the project index
+        private val HARAKAT_RE = Regex("[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u0640]")
+        private val ALEF_RE = Regex("[أإآٱ]")
+
         /**
          * Unifies Arabic spelling variants so «التطبيق», «التّطبيق» and «إلتطبيق» are one key:
          * diacritics + tatweel removed, alef forms (أ إ آ ٱ) → ا, ى → ي, ة → ه, ؤ → و, ئ → ي,
@@ -224,8 +228,8 @@ class MemoryBank(private val dir: File) {
         fun normalize(s: String): String {
             var t = s
             // strip harakat, sukun, shadda, small Qur'anic marks, dagger alef, tatweel
-            t = t.replace(Regex("[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u0640]"), "")
-            t = t.replace(Regex("[أإآٱ]"), "ا")
+            t = t.replace(HARAKAT_RE, "")
+            t = t.replace(ALEF_RE, "ا")
             t = t.replace('ى', 'ي').replace('ة', 'ه').replace('ؤ', 'و').replace('ئ', 'ي')
             return t.filter { it.isLetterOrDigit() }.lowercase()
         }

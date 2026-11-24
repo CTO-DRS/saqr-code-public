@@ -139,6 +139,8 @@ class AgentSession(
     /** v0.13: this project's memory bank — auto-recalled each turn, edited by the model and the user. */
     private val memory = MemoryBank(File(projectDir, ".saqr"))
     val memoryBank: MemoryBank get() = memory
+    /** v0.13: lightweight symbol index feeding project_search (files, classes, functions; <200ms). */
+    private val projectIndex = ProjectIndex(projectDir)
     /** Tokens used in this chat session, per model. */
     val sessionUsage = mutableStateMapOf<String, Usage>()
     /** Bumps on every recorded model call so the meter can re-read today / this month. */
@@ -765,6 +767,7 @@ class AgentSession(
             name == Tools.READ -> Tools.readFile(projectDir, a.optString("path"),
                 a.optInt("start_line", 0).takeIf { it > 0 }, a.optInt("end_line", 0).takeIf { it > 0 })
             name == Tools.SEARCH -> Tools.search(projectDir, a.optString("query"), a.optBoolean("regex"), a.optString("path", "."))
+            name == Tools.PROJECT_SEARCH -> projectIndex.render(a.optString("query"))
             name == Tools.RUN -> {
                 val cmd = a.optString("command")
                 val v = SafetyPolicy.check(cmd)

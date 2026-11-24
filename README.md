@@ -27,14 +27,12 @@
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
 
-### الجديد في 0.12
+### الجديد في 0.13.1
 | الميزة | الحالة |
 |---|---|
-| استوديو الثيمات: كلمة المزاج تتحول عبر النموذج النشط إلى ثيم كامل بمعاينة حية، حفظ ونسخ JSON واستيراده، وستّ حزم مجتمعية جاهزة (نجد، تهامة، البحر، الوادي، عُمان، الأندلس) | ✅ |
-| ثيم «ليل» OLED أسود نقي بذهب أفتح — وضع رابع بجانب الداكن والفاتح والنظام، بتبديل فوري | ✅ |
-| لوحة الأوامر العربية من أي تبويب: ملفات، أوامر شرطة بأسمائها العربية، وجهات الإعدادات، والجلسات — بمطابقة تفهم صيغ الهمزات والحركات | ✅ |
-| البطاقات الحية في الرئيسية: نتيجة آخر بناء على الجهاز وفرع git الحالي لكل مشروع | ✅ |
-| المحرر: حجم خط (12–20sp) والتفاف أسطر — من الإعدادات وشريط أدوات المحرر، وتطبيق فوري | ✅ |
+| فهرس المشروع: فهرس رموز خفيف (ملفات/أصناف/دوال) يتولد عند فتح المشروع على خيوط خلفية، وأداة `project_search` تُعيد «ملف:سطر» فوراً بدل قراءة ملفات كاملة | ✅ |
+| بحث عربي-واعٍ: «الشّبكه» تجد الشبكة.kt (توحيد الهمزات والتاء المربوطة والتشكيل)، والترتيب: التطابق التام ثم البادئة ثم الاحتواء | ✅ |
+| أول نتيجة < 200ms على مشروع 500 ملف (~3000 رمز)، مع تخطي `.git` و`build` و`node_modules` والملفات > 512KB | ✅ |
 
 ### الجديد في 0.13
 | الميزة | الحالة |
@@ -52,6 +50,15 @@
 | ثيم «ديناميكي» Material You على أندرويد 12+: عائلة اللون المميز وحدها تتلوّن من بذرة الخلفية فوق الحياديات الصقرية الثابتة | ✅ |
 | توكنات الاهتزاز الدلالي: TICK / POP / CONFIRM / REJECT / HEAVY مع بدائل للأجهزة الأقدم — على تطبيق الثيم ونجاح/فشل البناء | ✅ |
 | عدّة الميدان: توقيت تلقائي لكل خطوة بناء (rootfs، apt، cmdline-tools، sdkmanager، aapt2، gradle) مع هوية الجهاز والذاكرة والبطارية وحجم APK، وتصدير جدول Markdown أو CSV بضغطة | ✅ |
+
+### الجديد في 0.12
+| الميزة | الحالة |
+|---|---|
+| استوديو الثيمات: كلمة المزاج تتحول عبر النموذج النشط إلى ثيم كامل بمعاينة حية، حفظ ونسخ JSON واستيراده، وستّ حزم مجتمعية جاهزة (نجد، تهامة، البحر، الوادي، عُمان، الأندلس) | ✅ |
+| ثيم «ليل» OLED أسود نقي بذهب أفتح — وضع رابع بجانب الداكن والفاتح والنظام، بتبديل فوري | ✅ |
+| لوحة الأوامر العربية من أي تبويب: ملفات، أوامر شرطة بأسمائها العربية، وجهات الإعدادات، والجلسات — بمطابقة تفهم صيغ الهمزات والحركات | ✅ |
+| البطاقات الحية في الرئيسية: نتيجة آخر بناء على الجهاز وفرع git الحالي لكل مشروع | ✅ |
+| المحرر: حجم خط (12–20sp) والتفاف أسطر — من الإعدادات وشريط أدوات المحرر، وتطبيق فوري | ✅ |
 
 ### الجديد في 0.11
 | الميزة | الحالة |
@@ -148,6 +155,10 @@
 ---
 
 ## English
+
+### New in v0.13.1
+- **Project index (فهرس المشروع):** a lightweight symbol index (files, classes, objects, interfaces, enums, functions) built on a small worker pool when the project opens, refreshed when stale. The new `project_search(query)` tool answers «file:line · kind · name» instantly, so the agent locates code instead of listing directories or reading whole files.
+- **Arabic-aware symbol search:** queries and names match through the same normalization as memory keys — «الشّبكه» finds `الشبكة.kt` (alef forms, taa marbouta, diacritics); ranking is exact → prefix → Arabic-normalized → contains → path. First result under 200 ms on a 500-file / ~3000-symbol project; `.git`, `build`, `node_modules` and files over 512 KB are skipped.
 
 ### New in v0.13
 - **Memory bank (the first «عقل الصقر» item):** every project gets a persistent memory the agent recalls automatically at the start of each turn — durable decisions (stack, architecture), user preferences (language, style, workflow) and project facts. The bank lives in the project at `.saqr/memory.json` (git-ignored by the default Saqr `.gitignore`, hidden from the project map) and is rendered into the system prompt inside a ~2000-char budget, ordered preferences → decisions → facts, newest first.

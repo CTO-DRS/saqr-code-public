@@ -13,6 +13,7 @@ object Tools {
     const val DELETE = "delete_file"
     const val RUN = "run_command"
     const val SEARCH = "search"
+    const val PROJECT_SEARCH = "project_search"
     const val PLAN = "update_plan"
     const val ASK = "ask_user"
     const val MEMORY_SAVE = "memory_save"
@@ -69,6 +70,9 @@ object Tools {
                 .put("query", p("string", "Text or regex to search for"))
                 .put("regex", p("boolean", "Treat query as a regular expression"))
                 .put("path", p("string", "Folder to search, default '.'")), listOf("query"))),
+        ToolSpec(PROJECT_SEARCH, "Search the project's symbol index (files, classes, objects, interfaces, enums, functions) — instant. Use this FIRST to locate where something lives (file:line) instead of listing directories or reading whole files. Understands Arabic and English names.",
+            schema(JSONObject()
+                .put("query", p("string", "A symbol/class/function/file name or path fragment (Arabic or English)")), listOf("query"))),
         ToolSpec(WEB_SEARCH, "Search the public web (DuckDuckGo) for current docs, API references and error messages. Returns titles, URLs and snippets; follow a URL with web_fetch to read the full page.",
             schema(JSONObject()
                 .put("query", p("string", "Search keywords"))
@@ -99,7 +103,7 @@ object Tools {
             schema(JSONObject().put("key", p("string", "Exact key, or words contained in the key/value to forget")), listOf("key"))),
     ) + GitTools.specs
 
-    private val IGNORED_DIRS = setOf(".git", "node_modules", "build", ".gradle", "__pycache__", ".venv", "dist", ".saqr")
+    val IGNORED_DIRS = setOf(".git", "node_modules", "build", ".gradle", "__pycache__", ".venv", "dist", ".saqr")
 
     /** Resolve a model-supplied path safely inside [root]. */
     fun resolve(root: File, path: String?): File {
