@@ -11,7 +11,7 @@
 - **Field kit (عدّة الميدان):** closes the 0.12 «field numbers» item the practical way — every bootstrap/build step (rootfs, apt JDK, cmdline-tools, sdkmanager, aapt2, gradle) is timed automatically on-device with the device identity (model, SoC family detection for Snapdragon / MediaTek / Exynos / Tensor / Unisoc / Kirin, total RAM, battery %, APK size) and persisted per run; the Build tab shows the last build time and exports the records as a README-ready **Markdown table** (copy) or **CSV** (share) in one tap, so real Snapdragon + MediaTek numbers land in the repo straight from the phone. Failed runs never enter the table.
 
 ### Infrastructure · البنية
-- 273 unit tests (9 new in `V0121FeaturesTest`): image palette (dark/light extraction, accent saturation + distinctness, WCAG text guard, empty-image rejection, pack round-trip), DynamicAccent (neutrals untouched, tint family, soft alpha), haptic token mapping with fallbacks, and FieldKit (SoC families, time formatting, Markdown/CSV export with quote escaping, JSON round-trip and junk rejection). Bilingual strings for every new surface (13 pairs); versionCode 13 · APK 16.0 MB (debug).
+- 273 unit tests (12 new in `V0121FeaturesTest`): image palette (dark/light extraction, accent saturation + distinctness, WCAG text guard, empty-image rejection, pack round-trip), DynamicAccent (neutrals untouched, tint family, soft alpha), haptic token mapping with fallbacks, and FieldKit (SoC families, time formatting, Markdown/CSV export with quote escaping, JSON round-trip and junk rejection). Bilingual strings for every new surface (13 pairs); versionCode 13 · APK 16.0 MB (debug).
 
 ## [0.12.0] — 2026-11-24 — New Plumage · ريش جديدة: design system 2.0, Theme Studio & the command palette
 
