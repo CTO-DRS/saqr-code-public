@@ -227,18 +227,20 @@ object Saqr {
     val type: SaqrType @Composable @ReadOnlyComposable get() = LocalSaqrType.current
 }
 
-/** "system" | "dark" | "light" | "oled" | "custom" (when a Theme Studio pack is active) */
+/** "system" | "dark" | "light" | "oled" | "custom" (Theme Studio pack) | "dynamic" (Material You, 12+) */
 @Composable
-fun SaqrTheme(themeMode: String = "dark", customPack: ThemePack? = null, content: @Composable () -> Unit) {
+fun SaqrTheme(themeMode: String = "dark", customPack: ThemePack? = null, dynamicAccent: Int? = null, content: @Composable () -> Unit) {
     val dark = when {
         themeMode == "light" -> false
-        themeMode == "system" -> isSystemInDarkTheme()
+        themeMode == "system" || themeMode == "dynamic" -> isSystemInDarkTheme()
         themeMode == "custom" -> customPack?.dark ?: true
         else -> true
     }
     val c = when (themeMode) {
         "oled" -> NightSaqr
         "custom" -> customPack?.toSaqrColors() ?: DarkSaqr
+        // v0.12.1: Material You seed over the fixed Saqr neutrals; gold until the system seed arrives.
+        "dynamic" -> DynamicAccent.withAccent(if (dark) DarkSaqr else LightSaqr, dynamicAccent ?: 0xFFE9B44C.toInt())
         else -> if (dark) DarkSaqr else LightSaqr
     }
     val type = SaqrType()

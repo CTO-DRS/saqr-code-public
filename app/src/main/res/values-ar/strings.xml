@@ -640,4 +640,16 @@
     <string name="palette_no_results">لا نتائج</string>
     <string name="build_last_ok">بُني %1$s</string>
     <string name="build_last_failed">فشل بناء %1$s</string>
+    <!-- v0.12.1 ريش مكمّلة -->
+    <string name="theme_dynamic">ديناميكي (Material You)</string>
+    <string name="studio_from_image">من صورة</string>
+    <string name="studio_image_theme">ثيم من صورة</string>
+    <string name="studio_image_mood">ألوان مستخرجة من صورة</string>
+    <string name="studio_image_fail">تعذّر قراءة الصورة — جرّب صورة أخرى</string>
+    <string name="field_title">عدّة الميدان</string>
+    <string name="field_records">%1$d قياسًا</string>
+    <string name="field_last">آخر بناء: %1$s على %2$s</string>
+    <string name="field_copy_md">انسخ جدول Markdown</string>
+    <string name="field_copied">نُسخ الجدول</string>
+    <string name="field_share">شارك CSV</string>
 </resources>

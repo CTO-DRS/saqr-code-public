@@ -48,6 +48,12 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
     private val proot = File(nativeDir, "libproot.so")
     private val readyMarker = File(context.filesDir, "linux/.saqr_build_ok")
 
+    // v0.12.1 field kit: persistent, per-device build-step timings for the README field table.
+    private val fieldFile = File(context.filesDir, "field_kit.json")
+    private val _field = MutableStateFlow(FieldKit.decode(runCatching { fieldFile.readText() }.getOrNull()))
+    val field: StateFlow<List<FieldKit.Record>> = _field
+    private var fieldSession = mutableListOf<FieldKit.Record>()
+
     private val _phase = MutableStateFlow(if (readyMarker.exists()) Phase.READY else Phase.NOT_SETUP)
     val phase: StateFlow<Phase> = _phase
     private val _log = MutableStateFlow<List<String>>(emptyList())
@@ -91,6 +97,48 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
         _log.value = (_log.value + l).takeLast(MAX_LOG_LINES)
     }
 
+    // ------------------------------------------------------------ v0.12.1 field kit
+
+    /** Device identity snapshot (model + SoC family) for the field kit. */
+    private fun deviceIdentity(): Pair<String, String> {
+        val soc = FieldKit.socFamily(
+            runCatching { android.os.Build.HARDWARE }.getOrDefault(""),
+            if (android.os.Build.VERSION.SDK_INT >= 31) runCatching { android.os.Build.SOC_MODEL }.getOrDefault("") else "",
+            runCatching { android.os.Build.BOARD }.getOrDefault(""),
+        )
+        return Pair(runCatching { android.os.Build.MODEL }.getOrDefault("?"), soc)
+    }
+
+    private fun totalRamMB(): Int = runCatching {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        val mi = android.app.ActivityManager.MemoryInfo()
+        am.getMemoryInfo(mi)
+        (mi.totalMem / (1024L * 1024L)).toInt()
+    }.getOrDefault(0)
+
+    private fun batteryPct(): Int = runCatching {
+        val bm = context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
+        bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY).takeIf { it in 1..100 } ?: -1
+    }.getOrDefault(-1)
+
+    /** Records one finished step into the current field-kit session. */
+    private fun measured(run: String, step: String, t0: Long) {
+        val (device, soc) = deviceIdentity()
+        fieldSession.add(FieldKit.Record(run, step, System.currentTimeMillis() - t0, device, soc,
+            totalRamMB(), batteryPct(), 0, System.currentTimeMillis()))
+    }
+
+    /** Persists the session (the gradle step carries the APK size) — success runs only. */
+    private fun flushField(run: String, apkMB: Int = 0) {
+        val recs = fieldSession.map { if (it.step == "gradle") it.copy(apkMB = apkMB) else it }
+        fieldSession = mutableListOf()
+        if (recs.isEmpty()) return
+        _field.value = (_field.value + recs).takeLast(120)
+        runCatching { fieldFile.writeText(FieldKit.encode(_field.value)) }
+    }
+
+    private fun dropFieldSession() { fieldSession = mutableListOf() }
+
     private fun findApk(): File? {
         val dir = File(projectDir, "dist")
         return dir.listFiles()?.filter { it.isFile && it.name.endsWith(".apk") }?.maxByOrNull { it.lastModified() }
@@ -103,6 +151,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
         _phase.value = Phase.BOOTSTRAPPING
         try {
             if (!File(rootfs, ".saqr_installed").isFile) {
+                val t0 = System.currentTimeMillis()
                 val gz = fetch(ART_ROOTFS, "Downloading Debian base (ubuntu-base arm64)…", "rootfs (~34 MB)")
                 rootfs.deleteRecursively(); rootfs.mkdirs()
                 gz.inputStream().use { TarExtractor.extractGz(it, rootfs) { } }
@@ -111,9 +160,11 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
                 File(rootfs, "etc/hosts").writeText("127.0.0.1 localhost\n::1 localhost\n")
                 File(rootfs, ".saqr_installed").writeText("ubuntu-base")
                 addLog("✓ rootfs ready")
+                measured("bootstrap", "rootfs", t0)
             }
 
             if (!File(rootfs, javaHome + "/bin/java").isFile) {
+                val t0 = System.currentTimeMillis()
                 _line.value = "Installing OpenJDK 17 (apt)…"
                 addLog("• apt-get install openjdk-17-jdk-headless unzip (several minutes on first run)…")
                 val code = prootRun(
@@ -122,9 +173,11 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
                 )
                 if (code != 0) error("apt-get failed (exit $code) — check the log below")
                 addLog("✓ JDK 17 ready")
+                measured("bootstrap", "jdk17", t0)
             }
 
             if (!File(sdkDir, "cmdline-tools/latest/bin/sdkmanager").isFile) {
+                val t0 = System.currentTimeMillis()
                 val zip = fetch(ART_CMDTOOLS, "Downloading Android cmdline-tools…", "cmdline-tools (~150 MB)")
                 addLog("• Extracting cmdline-tools…")
                 val tmp = File(context.cacheDir, "sdk-cmdtools")
@@ -137,9 +190,11 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
                 moved.renameTo(latest)
                 zip.delete(); tmp.deleteRecursively()
                 addLog("✓ cmdline-tools ready")
+                measured("bootstrap", "cmdline-tools", t0)
             }
 
             if (!File(sdkDir, "platforms/android-35").isDirectory) {
+                val t0 = System.currentTimeMillis()
                 _line.value = "Installing android-35 platform (sdkmanager)…"
                 addLog("• sdkmanager platforms;android-35…")
                 val code = prootRun(
@@ -150,11 +205,14 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
                 )
                 if (code != 0) error("sdkmanager failed (exit $code)")
                 addLog("✓ android-35 platform ready")
+                measured("bootstrap", "android35", t0)
             }
 
-            fetchAapt2()
+            val tAapt = System.currentTimeMillis()
+            if (fetchAapt2()) measured("bootstrap", "aapt2", tAapt)
 
             if (!File(gradleDir, "gradle-8.11.1/bin/gradle").isFile) {
+                val t0 = System.currentTimeMillis()
                 val zip = fetch(ART_GRADLE, "Downloading Gradle 8.11.1…", "Gradle (~130 MB)")
                 val tmp = File(context.cacheDir, "gradle-unz")
                 tmp.deleteRecursively(); tmp.mkdirs()
@@ -163,24 +221,27 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
                 File(tmp, "gradle-8.11.1").renameTo(File(gradleDir, "gradle-8.11.1"))
                 zip.delete(); tmp.deleteRecursively()
                 addLog("✓ Gradle ready")
+                measured("bootstrap", "gradle-download", t0)
             }
 
             readyMarker.writeText("ok")
             _line.value = ""
             _phase.value = Phase.READY
             addLog("✓ Build environment ready — “Build APK” is unlocked.")
+            flushField("bootstrap")
             true
         } catch (e: Exception) {
+            dropFieldSession()
             failWithHints("Bootstrap", e)
             false
         }
     }
 
-    /** v0.8/v0.9: fetches the arm64 aapt2 through the curated mirrors and ELF-validates it. */
-    private fun fetchAapt2() {
+    /** v0.8/v0.9: fetches the arm64 aapt2 through the curated mirrors; true when a fresh download happened. */
+    private fun fetchAapt2(): Boolean {
         val aapt2 = File(sdkDir, "build-tools/35.0.0/aapt2")
         if (aapt2.isFile) {
-            if (Elf.isArm64(aapt2)) { addLog("✓ aapt2 arm64 ready (cached)"); return }
+            if (Elf.isArm64(aapt2)) { addLog("✓ aapt2 arm64 ready (cached)"); return false }
             addLog("! cached aapt2 is not an arm64 ELF — refetching")
             aapt2.delete()
         }
@@ -215,6 +276,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
         }
         aapt2.setExecutable(true, false)
         addLog("✓ aapt2 arm64 ready")
+        return true
     }
 
     /** One pinned artifact into the cache dir, logging progress. Returns the local file. */
@@ -290,6 +352,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             val cmd = "export JAVA_HOME=$javaHome ANDROID_HOME=$sdkRoot ANDROID_SDK_ROOT=$sdkRoot; " +
                 "$gradleHome/bin/gradle --no-daemon -p /workspace $task$scriptArg --console=plain -Dorg.gradle.jvmargs=-Xmx1400m"
             val binds = if (initScript != null) listOf(initScript.absolutePath to SigningInit.SCRIPT_PATH) else emptyList()
+            val t0 = System.currentTimeMillis()
             val code = prootRun(cmd, timeoutSec = 2_400, extraEnv = env, extraBinds = binds)
             if (code != 0) error("gradle exited $code")
             val variant = if (release) "release" else "debug"
@@ -302,9 +365,12 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             _apk.value = target
             _phase.value = Phase.BUILT
             addLog("✓ APK ready: dist/" + target.name + " (" + target.length() / 1024 + " KB)")
+            measured(if (release) "build-release" else "build-debug", "gradle", t0)
             if (keepLastApk) autoClean(target)
+            flushField(if (release) "build-release" else "build-debug", (target.length() / (1024 * 1024)).toInt())
             true
         } catch (e: Exception) {
+            dropFieldSession()
             failWithHints("Build", e)
             false
         }

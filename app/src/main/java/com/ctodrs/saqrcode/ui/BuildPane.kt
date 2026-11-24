@@ -72,6 +72,16 @@ fun BuildPane(ws: Workspace, onPaywall: () -> Unit = {}) {
     val logs by build.log.collectAsState()
     val line by build.progressLine.collectAsState()
     val apk by build.apk.collectAsState()
+    // v0.12.1: field-kit timings + semantic haptics for build outcomes.
+    val fieldRecords by build.field.collectAsState()
+    val haptics = com.ctodrs.saqrcode.ui.theme.rememberSaqrHaptics()
+    androidx.compose.runtime.LaunchedEffect(phase) {
+        when (phase) {
+            OnDeviceBuild.Phase.BUILT -> haptics.perform(com.ctodrs.saqrcode.ui.theme.HapticKind.CONFIRM)
+            OnDeviceBuild.Phase.FAILED -> haptics.perform(com.ctodrs.saqrcode.ui.theme.HapticKind.REJECT)
+            else -> Unit
+        }
+    }
     // v0.12: keep the last build result per project for the live home cards.
     val builds = remember { com.ctodrs.saqrcode.data.BuildHistory(ctx.applicationContext) }
     androidx.compose.runtime.LaunchedEffect(phase, apk) {
@@ -132,6 +142,9 @@ fun BuildPane(ws: Workspace, onPaywall: () -> Unit = {}) {
                 }
             }
         }
+
+        // ---- v0.12.1 field kit: build-step timings for the README field table
+        FieldKitCard(fieldRecords)
 
         // ---- v0.9 signed release
         ReleaseCard(
@@ -347,4 +360,55 @@ private fun BuildPhaseTag(phase: OnDeviceBuild.Phase) {
         OnDeviceBuild.Phase.FAILED -> R.string.build_phase_failed to c.danger
     }
     com.ctodrs.saqrcode.ui.components.Tag(stringResource(res), color = color, dot = true)
+}
+
+/**
+ * v0.12.1 · عدّة الميدان · Field kit card: the recorded build-step timings with one-tap
+ * export — a README-ready Markdown table and a shareable CSV — so field numbers on
+ * Snapdragon/MediaTek hardware land in the repo straight from the device.
+ */
+@Composable
+private fun FieldKitCard(records: List<com.ctodrs.saqrcode.ondevice.FieldKit.Record>) {
+    if (records.isEmpty()) return
+    val c = Saqr.colors
+    val ctx = LocalContext.current
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.lg))
+            .background(c.surface1).border(1.dp, c.border, RoundedCornerShape(Radius.lg)).padding(Sp.md),
+        verticalArrangement = Arrangement.spacedBy(Sp.xs),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SIcon(Lucide.Crosshair, size = 16.dp, tint = c.accentText)
+            Spacer(Modifier.width(Sp.sm))
+            Text(
+                stringResource(R.string.field_title),
+                style = Saqr.type.label.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
+                color = c.text1, modifier = Modifier.weight(1f),
+            )
+            Text(stringResource(R.string.field_records, records.size.toString()), style = Saqr.type.micro, color = c.text3)
+        }
+        val lastBuild = records.lastOrNull { it.step == "gradle" }
+        lastBuild?.let {
+            Text(
+                stringResource(R.string.field_last, com.ctodrs.saqrcode.ondevice.FieldKit.formatMs(it.ms), it.device),
+                style = Saqr.type.caption, color = c.text2,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
+            GhostButton(stringResource(R.string.field_copy_md), {
+                val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                cm.setPrimaryClip(android.content.ClipData.newPlainText(
+                    "saqr-field", com.ctodrs.saqrcode.ondevice.FieldKit.markdown(records)))
+                android.widget.Toast.makeText(ctx, R.string.field_copied, android.widget.Toast.LENGTH_SHORT).show()
+            }, icon = Lucide.Copy)
+            GhostButton(stringResource(R.string.field_share), {
+                val i = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(android.content.Intent.EXTRA_SUBJECT, "Saqr Code — field numbers")
+                    putExtra(android.content.Intent.EXTRA_TEXT, com.ctodrs.saqrcode.ondevice.FieldKit.csv(records))
+                }
+                runCatching { ctx.startActivity(android.content.Intent.createChooser(i, null)) }
+            }, icon = Lucide.Upload)
+        }
+    }
 }

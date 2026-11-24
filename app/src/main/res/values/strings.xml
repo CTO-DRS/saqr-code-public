@@ -640,4 +640,16 @@
     <string name="palette_no_results">No results</string>
     <string name="build_last_ok">Built %1$s</string>
     <string name="build_last_failed">Build failed %1$s</string>
+    <!-- v0.12.1 Extra plumage -->
+    <string name="theme_dynamic">Dynamic (Material You)</string>
+    <string name="studio_from_image">From an image</string>
+    <string name="studio_image_theme">Image theme</string>
+    <string name="studio_image_mood">Colors extracted from a photo</string>
+    <string name="studio_image_fail">Couldn’t read that image — try another one</string>
+    <string name="field_title">Field kit</string>
+    <string name="field_records">%1$d measurements</string>
+    <string name="field_last">Last build: %1$s on %2$s</string>
+    <string name="field_copy_md">Copy Markdown table</string>
+    <string name="field_copied">Table copied</string>
+    <string name="field_share">Share CSV</string>
 </resources>

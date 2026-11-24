@@ -1,5 +1,18 @@
 # Changelog · سجل التغييرات
 
+## [0.12.1] — 2026-11-24 — Extra Plumage · ريش مكمّلة: image→theme, Material You, semantic haptics & the field kit
+
+### Appearance · المظهر
+- **Image → theme (الثيم من صورة):** the Theme Studio now accepts a photo — pick any image and a deterministic offline pipeline (RGB histogram quantization, most-frequent buckets for the neutrals, the most saturated *distinct* bucket for the accent, WCAG-contrast text guard) derives a full six-color pack in milliseconds, fully on-device; a live preview row then applies / saves / copies it like any other pack. الخاتمة الفعلية لبند «الثيم من صورة» الذي كان مؤجلًا من 0.12.
+- **Material You dynamic theme («ديناميكي»):** a fifth theme mode on Android 12+ re-tints only the accent family (accent / accentText / accentSoft / onAccent) from the wallpaper seed via `dynamicColorScheme`, over the fixed Saqr neutrals — the identity stays, the personality follows the phone; below 12 it falls back to the Saqr gold.
+- **Semantic haptics tokens (توكنات الاهتزاز الدلالي):** every acknowledged touch maps to one token — TICK / POP / CONFIRM / REJECT / HEAVY — resolved to `HapticFeedbackConstants` with API-level fallbacks (CONFIRM/REJECT only exist on 30+). Wired to theme application (studio apply), build success/failure in the Build tab, and the image picker; system haptics settings still govern everything.
+
+### Build · البناء
+- **Field kit (عدّة الميدان):** closes the 0.12 «field numbers» item the practical way — every bootstrap/build step (rootfs, apt JDK, cmdline-tools, sdkmanager, aapt2, gradle) is timed automatically on-device with the device identity (model, SoC family detection for Snapdragon / MediaTek / Exynos / Tensor / Unisoc / Kirin, total RAM, battery %, APK size) and persisted per run; the Build tab shows the last build time and exports the records as a README-ready **Markdown table** (copy) or **CSV** (share) in one tap, so real Snapdragon + MediaTek numbers land in the repo straight from the phone. Failed runs never enter the table.
+
+### Infrastructure · البنية
+- 273 unit tests (9 new in `V0121FeaturesTest`): image palette (dark/light extraction, accent saturation + distinctness, WCAG text guard, empty-image rejection, pack round-trip), DynamicAccent (neutrals untouched, tint family, soft alpha), haptic token mapping with fallbacks, and FieldKit (SoC families, time formatting, Markdown/CSV export with quote escaping, JSON round-trip and junk rejection). Bilingual strings for every new surface (13 pairs); versionCode 13 · APK 16.0 MB (debug).
+
 ## [0.12.0] — 2026-11-24 — New Plumage · ريش جديدة: design system 2.0, Theme Studio & the command palette
 
 ### Appearance · المظهر

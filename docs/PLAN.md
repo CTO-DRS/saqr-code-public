@@ -41,12 +41,14 @@ The single source of direction is [ROADMAP.md](../ROADMAP.md); this file holds t
 ### 6. الأرقام الميدانية الأولى · First field numbers
 - اختبار خطوات التجهيز والبناء (تنزيل مثبت، apt، sdkmanager، aapt2، قالب Lite، إصدار موقّع) على أجهزة Snapdragon وMediaTek.
 - Run every build step on Snapdragon + MediaTek devices and publish numbers.
+- [x] عدّة الميدان داخل التطبيق (0.12.1): توقيت تلقائي لكل خطوة مع هوية الجهاز والذاكرة والبطارية وحجم APK، وتصدير جدول Markdown/CSV بضغطة — الجدول الفعلي يُجمع من الأجهزة الحقيقية ويُلصق في README.
+- [x] In-app field kit (0.12.1): automatic per-step timings with device identity, exported as a Markdown table / CSV in one tap — actual device numbers get pasted into the README from real phones.
 - [ ] جدول أزمنة وأحجام وذاكرة وبطارية لجهازين على الأقل في README.
 - [ ] A README table with time, size, memory and battery for at least two devices.
 
 ### المتبقي من 0.12 · Remaining from 0.12
-- ديناميكي Material You (أندرويد 12+)، توكنات الحركة والاهتزاز كاملة، الثيم من صورة، والأرقام الميدانية — تُستكمل في دفعة 0.12.x أو مع 0.13.
-- Material You dynamic color (12+), full motion/haptics tokens, image → theme, and the field numbers — completed in a 0.12.x batch or with 0.13.
+- المتبقي عمليًا: الجدول الميداني نفسه (يُجمع من أجهزة Snapdragon وMediaTek حقيقية عبر عدّة الميدان الجاهزة) — وبقية بنود دفعة 0.12.x (الثيم من صورة، Material You، توكنات الاهتزاز) شُحنت في 0.12.1.
+- Practically remaining: the field table itself (gathered from real Snapdragon + MediaTek phones via the shipped field kit) — the rest of the 0.12.x batch (image → theme, Material You, haptics tokens) shipped in 0.12.1.
 
 ---
 

@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
@@ -65,7 +66,18 @@ class MainActivity : AppCompatActivity() {
             val customPack = androidx.compose.runtime.remember(version) {
                 runCatching { com.ctodrs.saqrcode.ui.theme.ThemePack.fromJson(settings.customThemeJson) }.getOrNull()
             }
-            SaqrTheme(themeMode = settings.themeMode, customPack = customPack) {
+            // v0.12.1: the Material You seed (API 31+), resolved once per settings/system change.
+            val sysDark = isSystemInDarkTheme()
+            val dynAccent = if (settings.themeMode == "dynamic") androidx.compose.runtime.remember(version, sysDark) {
+                runCatching {
+                    if (android.os.Build.VERSION.SDK_INT >= 31) {
+                        val scheme = if (sysDark) androidx.compose.material3.dynamicDarkColorScheme(this@MainActivity)
+                        else androidx.compose.material3.dynamicLightColorScheme(this@MainActivity)
+                        scheme.primary.toArgb()
+                    } else null
+                }.getOrNull()
+            } else null
+            SaqrTheme(themeMode = settings.themeMode, customPack = customPack, dynamicAccent = dynAccent) {
                 val c = Saqr.colors
                 LaunchedEffect(c.isDark) {
                     val style = if (c.isDark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)

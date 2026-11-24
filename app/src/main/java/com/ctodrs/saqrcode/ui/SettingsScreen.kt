@@ -341,9 +341,17 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             Group {
                 Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
                     LabeledIcon(Lucide.Palette, stringResource(R.string.theme))
-                    val themes = listOf("dark", "light", "oled", "system")
-                    Segmented(listOf(stringResource(R.string.theme_dark), stringResource(R.string.theme_light), stringResource(R.string.theme_oled), stringResource(R.string.theme_system)),
-                        themes.indexOf(ui.themeMode).coerceAtLeast(0), { ui.onTheme(themes[it]) })
+                    val themes = buildList {
+                        addAll(listOf("dark", "light", "oled", "system"))
+                        if (android.os.Build.VERSION.SDK_INT >= 31) add("dynamic")
+                    }
+                    Segmented(themes.map { t ->
+                        stringResource(when (t) {
+                            "dark" -> R.string.theme_dark; "light" -> R.string.theme_light
+                            "oled" -> R.string.theme_oled; "system" -> R.string.theme_system
+                            else -> R.string.theme_dynamic
+                        })
+                    }, themes.indexOf(ui.themeMode).coerceAtLeast(0), { ui.onTheme(themes[it]) })
                     Spacer(Modifier.height(Sp.xs))
                     ThemeStudioCard(ui)
                     Spacer(Modifier.height(Sp.xs))
@@ -1086,12 +1094,37 @@ private fun VisionEditor(ui: SettingsUi) {
 private fun ThemeStudioCard(ui: SettingsUi) {
     val c = Saqr.colors
     val ctx = LocalContext.current
+    val haptics = com.ctodrs.saqrcode.ui.theme.rememberSaqrHaptics()
     var mood by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var genPack by remember { mutableStateOf<com.ctodrs.saqrcode.ui.theme.ThemePack?>(null) }
     var importJson by remember { mutableStateOf("") }
     var err by remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
+
+    fun apply(p: com.ctodrs.saqrcode.ui.theme.ThemePack) {
+        ui.onApplyPack(p)
+        haptics.perform(com.ctodrs.saqrcode.ui.theme.HapticKind.CONFIRM)
+    }
+
+    // v0.12.1: image → theme. The bitmap is down-sampled in-process; the palette itself
+    // is extracted offline by ImagePalette (histogram + saturation pick) in milliseconds.
+    val imgPicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.GetContent(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        busy = true; err = null
+        val pack = runCatching {
+            val px = imagePixels(ctx, uri) ?: error("decode")
+            com.ctodrs.saqrcode.ui.theme.ImagePalette.packFromImage(
+                px, ctx.getString(R.string.studio_image_theme), "From image", ctx.getString(R.string.studio_image_mood),
+            )
+        }.getOrNull()
+        busy = false
+        genPack = pack
+        if (pack != null) haptics.perform(com.ctodrs.saqrcode.ui.theme.HapticKind.POP)
+        else err = R.string.studio_image_fail
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
         LabeledIcon(Lucide.Sparkles, stringResource(R.string.studio_section))
@@ -1101,7 +1134,7 @@ private fun ThemeStudioCard(ui: SettingsUi) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     row.forEach { p ->
                         PackChip(p, Modifier.weight(1f), active = ui.activePackId == p.id) {
-                            ui.onApplyPack(p); toast(ctx, R.string.studio_applied)
+                            apply(p); toast(ctx, R.string.studio_applied)
                         }
                     }
                 }
@@ -1129,7 +1162,7 @@ private fun ThemeStudioCard(ui: SettingsUi) {
                         Box(Modifier.size(30.dp).clip(CircleShape).clickable { ui.onDeletePack(p.id) }, contentAlignment = Alignment.Center) {
                             SIcon(Lucide.Trash2, size = 14.dp, tint = c.danger, contentDescription = stringResource(R.string.delete))
                         }
-                        Box(Modifier.size(30.dp).clip(CircleShape).clickable { ui.onApplyPack(p); toast(ctx, R.string.studio_applied) }, contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(30.dp).clip(CircleShape).clickable { apply(p); toast(ctx, R.string.studio_applied) }, contentAlignment = Alignment.Center) {
                             SIcon(Lucide.Check, size = 15.dp, tint = c.accentText, contentDescription = stringResource(R.string.studio_apply))
                         }
                     }
@@ -1151,17 +1184,18 @@ private fun ThemeStudioCard(ui: SettingsUi) {
                 },
                 icon = Lucide.Sparkles, enabled = !busy && mood.isNotBlank(),
             )
+            GhostButton(stringResource(R.string.studio_from_image), { imgPicker.launch("image/*") }, icon = Lucide.Image, enabled = !busy)
         }
         genPack?.let { p ->
             PreviewRow(p,
-                onApply = { ui.onApplyPack(p); toast(ctx, R.string.studio_applied) },
+                onApply = { apply(p); toast(ctx, R.string.studio_applied) },
                 onSave = { ui.onSavePack(p); toast(ctx, R.string.studio_saved) },
                 onCopy = { ui.onCopyPack(p) })
         }
         SaqrField(importJson, { importJson = it }, label = stringResource(R.string.studio_import), placeholder = "{\"name\":…}", mono = true)
         GhostButton(stringResource(R.string.studio_import_apply), {
             val p = com.ctodrs.saqrcode.ui.theme.ThemePack.fromJson(importJson)
-            if (p != null) { ui.onApplyPack(p); toast(ctx, R.string.studio_applied); err = null } else err = R.string.studio_bad_json
+            if (p != null) { apply(p); toast(ctx, R.string.studio_applied); err = null } else err = R.string.studio_bad_json
         }, icon = Lucide.Upload)
         err?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger) }
     }
@@ -1215,3 +1249,16 @@ private fun PreviewRow(p: com.ctodrs.saqrcode.ui.theme.ThemePack, onApply: () ->
 
 private fun toast(ctx: android.content.Context, res: Int) =
     android.widget.Toast.makeText(ctx, res, android.widget.Toast.LENGTH_SHORT).show()
+
+/** v0.12.1: decodes a picked image into a small pixel array (≤128px on the long side). */
+private fun imagePixels(ctx: android.content.Context, uri: android.net.Uri): IntArray? = runCatching {
+    val src = android.graphics.BitmapFactory.decodeStream(ctx.contentResolver.openInputStream(uri)) ?: error("decode")
+    val maxSide = 128
+    val scale = maxOf(1, maxOf(src.width, src.height) / maxSide)
+    val bmp = if (scale > 1) android.graphics.Bitmap.createScaledBitmap(src, src.width / scale, src.height / scale, true) else src
+    val px = IntArray(bmp.width * bmp.height)
+    bmp.getPixels(px, 0, bmp.width, 0, 0, bmp.width, bmp.height)
+    if (bmp !== src) bmp.recycle()
+    if (src != bmp) src.recycle()
+    px
+}.getOrNull()

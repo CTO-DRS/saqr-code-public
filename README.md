@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.12.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.12.1** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -35,6 +35,14 @@
 | لوحة الأوامر العربية من أي تبويب: ملفات، أوامر شرطة بأسمائها العربية، وجهات الإعدادات، والجلسات — بمطابقة تفهم صيغ الهمزات والحركات | ✅ |
 | البطاقات الحية في الرئيسية: نتيجة آخر بناء على الجهاز وفرع git الحالي لكل مشروع | ✅ |
 | المحرر: حجم خط (12–20sp) والتفاف أسطر — من الإعدادات وشريط أدوات المحرر، وتطبيق فوري | ✅ |
+
+### الجديد في 0.12.1
+| الميزة | الحالة |
+|---|---|
+| الثيم من صورة: أي صورة تتحول محليًا (بدون شبكة) إلى ثيم كامل — أعمدة الألوان الأكثر تكرارًا للنيوترال وأعلى تشبع مميّز للّون المميز وحارس تباين WCAG للنص | ✅ |
+| ثيم «ديناميكي» Material You على أندرويد 12+: عائلة اللون المميز وحدها تتلوّن من بذرة الخلفية فوق الحياديات الصقرية الثابتة | ✅ |
+| توكنات الاهتزاز الدلالي: TICK / POP / CONFIRM / REJECT / HEAVY مع بدائل للأجهزة الأقدم — على تطبيق الثيم ونجاح/فشل البناء | ✅ |
+| عدّة الميدان: توقيت تلقائي لكل خطوة بناء (rootfs، apt، cmdline-tools، sdkmanager، aapt2، gradle) مع هوية الجهاز والذاكرة والبطارية وحجم APK، وتصدير جدول Markdown أو CSV بضغطة | ✅ |
 
 ### الجديد في 0.11
 | الميزة | الحالة |
@@ -120,7 +128,7 @@
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `SaqrCode-v0.12.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.12.1-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -134,6 +142,10 @@
 
 ### New in v0.12
 - **Theme Studio:** a mood phrase becomes a complete color theme via the active model (one-shot JSON, tolerant parsing) with a live swatch preview, apply / save / copy-JSON and JSON import, plus **six built-in community packs** (Najd, Tihama, Bahar, Wadi, Oman, Andalus). A pack is six colors; the rest of the palette (borders, states, code/terminal) is derived, so the app stays token-driven. A pure-black **OLED «ليل» theme** joins dark / light / system, and the editor gains a live font-size (12–20sp) and line-wrap control (Settings + toolbar).
+- **Image → theme (0.12.1):** pick any photo and a deterministic offline pipeline (RGB histogram, saturated-distinct accent, WCAG text guard) derives the full pack on-device — the Theme Studio's deferred item, closed without a network call.
+- **Material You «Dynamic» (0.12.1):** a fifth theme mode on Android 12+ re-tints only the accent family from the wallpaper seed over the fixed Saqr neutrals; gold fallback below 12.
+- **Semantic haptics (0.12.1):** one token per acknowledged touch (TICK / POP / CONFIRM / REJECT / HEAVY) with API-level fallbacks, wired to theme application and build outcomes.
+- **Field kit (0.12.1):** every build step is timed automatically with the device identity (SoC family, RAM, battery, APK size); the Build tab exports a README-ready Markdown table or CSV in one tap — real Snapdragon/MediaTek field numbers straight from the phone.
 - **Arabic command palette:** the IDE top bar gains a search button — one box that reaches files, slash commands (Arabic aliases), settings destinations and the sessions sheet, with Arabic-aware ranked matching (alef forms, diacritics, tatweel).
 - **Live home cards:** each project shows its last on-device build result (✓/✗ + when) and the current git branch (read from `.git/HEAD`).
 
