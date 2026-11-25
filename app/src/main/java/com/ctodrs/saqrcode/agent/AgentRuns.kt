@@ -272,6 +272,12 @@ object NotifText {
     fun channelAttention(lang: String) = if (isArabic(lang)) "يحتاج ردّك" else "Needs your answer"
     fun channelDone(lang: String) = if (isArabic(lang)) "انتهاء المهام" else "Task results"
 
+    /** v0.13.4: the ongoing hands-free dictation notification. */
+    fun dictationTitle(lang: String) = if (isArabic(lang)) "الإملاء بلا يدين يعمل" else "Hands-free dictation is on"
+    fun dictationBody(lang: String) =
+        if (isArabic(lang)) "قل «يا صقر» ثم أمرك — أوقفه من الإشعار متى شئت"
+        else "Say «Ya Saqr» then your command — stop any time from here"
+
     /** Short plain summary of a reply for the "finished" notification (markdown and code removed). */
     fun summary(text: String): String = SpeechText.clean(text).replace(Regex("\\s+"), " ").trim().take(300)
 }

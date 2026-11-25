@@ -424,6 +424,13 @@
     <string name="voice_language">لغة الإملاء</string>
     <string name="voice_follow_app">لغة التطبيق</string>
     <string name="voice_language_hint">نصيحة: اضغط مطوّلًا على الميكروفون للتبديل بين العربية والإنجليزية.</string>
+    <!-- v0.13.4 صوت بلا يدين -->
+    <string name="hands_free">صوت بلا يدين</string>
+    <string name="hands_free_off">إيقاف</string>
+    <string name="hands_free_typing">إملاء مستمر</string>
+    <string name="hands_free_wake">إيقاظ «يا صقر»</string>
+    <string name="hands_free_hint">يبقى الصقر في إنصات ما دام المشروع مفتوحًا. في وضع الإيقاظ قل «يا صقر» ثم أمرك فيُرسل تلقائيًا. أوقفه متى شئت من الإشعار أو زر الميكروفون.</string>
+    <string name="hands_free_stopped">أُوقف الإملاء بلا يدين</string>
     <!-- v0.7 بناء -->
     <string name="tab_build">بناء</string>
     <string name="build_title">بناء APK على الجهاز</string>

@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 object Lucide {
     val Mic: ImageVector by lazy { stroked("mic", false, "M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z", "M19 10v2a7 7 0 0 1-14 0v-2", "M12,19L12,22") }
+    val AudioLines: ImageVector by lazy { stroked("audio-lines", false, "M2 10v3", "M6 6v11", "M10 3v18", "M14 8v7", "M18 5v13", "M22 10v3") }
     val Volume2: ImageVector by lazy { stroked("volume-2", false, "M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z", "M16 9a5 5 0 0 1 0 6", "M19.364 18.364a9 9 0 0 0 0-12.728") }
     val MessagesSquare: ImageVector by lazy { stroked("messages-square", true, "M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z", "M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1") }
     val BatteryCharging: ImageVector by lazy { stroked("battery-charging", false, "M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2", "M6 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h1", "m11 7-3 5h4l-3 5", "M22,11L22,13") }

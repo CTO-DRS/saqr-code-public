@@ -424,6 +424,13 @@
     <string name="voice_language">Dictation language</string>
     <string name="voice_follow_app">App language</string>
     <string name="voice_language_hint">Tip: long-press the mic to switch between Arabic and English.</string>
+    <!-- v0.13.4 hands-free -->
+    <string name="hands_free">Hands-free</string>
+    <string name="hands_free_off">Off</string>
+    <string name="hands_free_typing">Continuous</string>
+    <string name="hands_free_wake">“Ya Saqr” wake</string>
+    <string name="hands_free_hint">Keeps listening while a project is open. In wake mode, say “Ya Saqr” then your command and it sends itself. Stop any time from the notification or the mic button.</string>
+    <string name="hands_free_stopped">Hands-free off</string>
     <!-- v0.7 build tab -->
     <string name="tab_build">Build</string>
     <string name="build_title">On-device APK build</string>

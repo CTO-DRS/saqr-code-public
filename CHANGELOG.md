@@ -1,5 +1,22 @@
 # Changelog · سجل التغييرات
 
+## [0.13.4] — 2026-11-25 — Hands-free voice · صوت بلا يدين
+
+### Productivity · الإنتاجية
+- **Hands-free voice (صوت بلا يدين):** the fifth «عقل الصقر» item. Two modes in Settings → Voice: **«إملاء مستمر»** keeps dictating into the composer while a project is open — each recognizer utterance chains into the next automatically — and **«إيقاظ يا صقر»** waits for the wake phrase, then the command that follows **sends itself** to the agent (guarded: a running task is never interrupted, the text waits in the composer instead).
+  صوت بلا يدين: البند الخامس من «عقل الصقر». وضعان في الإعدادات ← الصوت: **«إملاء مستمر»** يواصل الإملاء في صندوق الكتابة ما دام المشروع مفتوحًا — كل جملة تتبع سابقتها تلقائيًا — و**«إيقاظ يا صقر»** ينتظر كلمة الإيقاظ ثم **يرسل الأمر الذي يليها** إلى الوكيل وحده (بحراسة: المهمة الجارية لا تُقاطع، ويبقى النص في الصندوق بدل ذلك).
+- **A flexible Arabic wake phrase:** detection runs on the Arabic-aware normalizer rather than exact strings — diacritics (يَا صَقَر), alef forms, the fused «ياصقر», «صَقرا»-like endings, and latin spellings («Ya Saqr», «hey saqer», «OK SAQR») all trigger it; «الصقر طائر» or «صقر افتح الملف» (no greeting) never do. Pre-wake speech is never typed or sent.
+  إيقاظ عربي مرن: الكشف يعمل عبر المعوّد العربي-واعٍ لا على نص دقيق — التشكيل (يَا صَقَر) وأشكال الهمزة والدمج «ياصقر» ونهايات مثل «صَقرا» والكتابة اللاتينية («Ya Saqr», «hey saqer», «OK SAQR») كلها تُوقظه؛ و«الصقر طائر» أو «صقر افتح الملف» (بلا تنبيه) لا تُوقظه أبدًا. وما قبل الإيقاظ لا يُكتب ولا يُرسل.
+- **Notification toggle (تشغيل/إيقاف من الإشعار):** while dictation listens, a silent ongoing notification mirrors it with a Stop action that flips the persisted mode instantly (a tiny receiver flips the setting; the project screen tears the recognizer down reactively). Starting mic capture *from* the notification is deliberately unsupported — Android restricts background microphone access, and Saqr never listens without the app in hand.
+  تشغيل/إيقاف من الإشعار: أثناء الإنصات يظهر إشعار صامت دائم يطابق الحالة بزر «إيقاف» يقلب الوضع المحفوظ فورًا (مستقبِل صغير يقلب الإعداد، وشاشة المشروع تفكّ المُعرِّف ردًّا على ذلك). وبدء التسجيل *من* الإشعار مقصودًا غير مدعوم — أندرويد يقيّد الميكروفون من الخلفية، وصقر لا يسمع بلا التطبيق في يدك.
+- **No closed loops:** transient errors (silence/no-match, busy recognizer, network) re-listen with a gentle back-off (350ms → 4s); fatal ones (permission, client, audio) end the mode with a clear message and flip it off so it cannot linger dead; 4 consecutive failures give up politely. The mic button stops hands-free with one tap while it is on, and a long-press still toggles the dictation language.
+  لا حلقات مغلقة: الأخطاء العابرة (صمت/بلا تطابق، انشغال المُعرِّف، الشبكة) تعيد الإنصات بتراجع لطيف (350 مللي ← 4 ثوانٍ)، والقاتلة (الصلاحيات، العميل، الصوت) تُنهي الوضع برسالة واضحة وتقلبه رفضًا ليبقى ميتًا؛ و4 إخفاقات متتالية تستسلم بأدب. زر الميكروفون يوقف «بلا يدين» بضغطة وهو يعمل، والضغط المطوّل يبدّل لغة الإملاء كما هي.
+
+### Infrastructure · البنية
+- New `agent/WakePhrase.kt` (pure wake detection on `MemoryBank.normalize` word-pairs) and `agent/Dictation.kt` (the `Mode` enum stored in settings, the retryable/fatal error matrix, and a `CommandBuffer` that arms on wake, feeds on partials, caps at 2000 chars and finalizes exactly once). New `ui/chat/ContinuousVoice.kt` wraps `VoiceInput` with the restart loop (buffer callback supplies each session's prefix).
+- Wiring: `IdeScreen` owns the lifecycle (`DisposableEffect(dMode, micGranted)`) — listening exactly while hands-free is on AND the project screen is open; `Notifs.dictation` posts the silent mirror notification; `service/DictationReceiver.kt` handles the Stop action; Settings → Voice gained the three-way segmented control; a new `AudioLines` Lucide icon.
+- 331 unit tests (15 new in `V0134FeaturesTest`): wake variants + false-positive guards, mode round-trips, the retryable matrix, buffer accumulate/replace/re-arm/cap semantics, settings persistence and the bilingual notification. Version 0.13.4 (code 18), lint clean, release APK 11.07MB.
+
 ## [0.13.3] — 2026-11-25 — Saqr Coach · مدرّب صقر
 
 ### Productivity · الإنتاجية

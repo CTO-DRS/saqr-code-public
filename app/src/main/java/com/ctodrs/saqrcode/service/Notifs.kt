@@ -134,4 +134,32 @@ object Notifs {
     }
 
     fun cancelResumeOffer(ctx: Context) = NotificationManagerCompat.from(ctx).cancel(ID_RESUME)
+
+    // ---- v0.13.4: hands-free dictation
+
+    private const val ID_DICTATION = 4102
+
+    /** Ongoing, silent note while continuous dictation listens; Stop flips the persisted mode. */
+    @SuppressLint("MissingPermission") // checked by canPost()
+    fun dictation(ctx: Context, lang: String) {
+        if (!canPost(ctx)) return
+        ensureChannels(ctx, lang)
+        val n = NotificationCompat.Builder(ctx, CH_RUN)
+            .setSmallIcon(R.drawable.ic_stat_saqr).setColor(GOLD)
+            .setOngoing(true).setSilent(true).setOnlyAlertOnce(true)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setContentTitle(NotifText.dictationTitle(lang))
+            .setContentText(NotifText.dictationBody(lang))
+            .setContentIntent(openIntent(ctx, null, req = 7))
+            .addAction(0, NotifText.stop(lang), dictationStopIntent(ctx))
+            .build()
+        runCatching { NotificationManagerCompat.from(ctx).notify(ID_DICTATION, n) }
+    }
+
+    fun cancelDictation(ctx: Context) = NotificationManagerCompat.from(ctx).cancel(ID_DICTATION)
+
+    private fun dictationStopIntent(ctx: Context): PendingIntent {
+        val i = Intent(ctx, DictationReceiver::class.java).setAction(DictationReceiver.ACTION_STOP)
+        return PendingIntent.getBroadcast(ctx, 41, i, IMMUTABLE)
+    }
 }

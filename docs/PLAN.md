@@ -43,8 +43,14 @@ The single source of direction is [ROADMAP.md](../ROADMAP.md); this file holds t
 ### 5. صوت بلا يدين · Hands-free voice
 - إملاء مستمر مع إيقاظ «يا صقر» وتشغيل/إيقاف من الإشعار.
 - Continuous dictation with a «Ya Saqr» wake phrase and notification toggle.
-- [ ] دقة إملاء عربية مقبولة على ضوضاء خفيفة.
-- [ ] Acceptable Arabic dictation accuracy in light noise.
+- [x] إملاء مستمر يعيد الإنصات تلقائيًا بعد كل جملة، ووضعان: كتابة في الصندوق أو أوامر بلا يدين، مع تراجع تدريجي عند الأخطاء العابرة وتوقف مهذّب عند القاتلة. *(تم: 0.13.4 — `agent/WakePhrase.kt` و`agent/Dictation.kt` منطق نقي، و`ui/chat/ContinuousVoice.kt` التوصيل، و15 اختبارًا في `V0134FeaturesTest`)*
+- [x] Continuous dictation re-listens after every utterance; two modes (typing vs hands-free commands) with back-off on transient errors and a graceful stop on fatal ones. *(done: 0.13.4 — pure logic in `agent/WakePhrase.kt` + `agent/Dictation.kt`, wiring in `ui/chat/ContinuousVoice.kt`, 15 tests in `V0134FeaturesTest`)*
+- [x] إيقاظ «يا صقر» بمرونة عربية (التشكيل، الهمزات، الدمج «ياصقر») ولاتينية «Ya Saqr»، والأمر الذي يليه يُرسل نفسه، وما قبل الإيقاظ لا يُكتب ولا يُرسل أبدًا. *(تم: 0.13.4)*
+- [x] Flexible «Ya Saqr» wake (diacritics, alef forms, fused «ياصقر», latin spellings); the command after it sends itself, and pre-wake speech is never typed or sent. *(done: 0.13.4)*
+- [x] تشغيل/إيقاف من إشعار صامت دائم بزر إيقاف يقلب الوضع المحفوظ فورًا — والبدء من الإشعار مقصودًا غير مدعوم فلا يسمع صقر من الخلفية. *(تم: 0.13.4 — `service/DictationReceiver.kt`)*
+- [x] A silent ongoing notification with a Stop action that flips the persisted mode instantly; starting capture from the notification is deliberately unsupported so Saqr never listens while backgrounded. *(done: 0.13.4 — `service/DictationReceiver.kt`)*
+- [ ] دقة إملاء عربية مقبولة على ضوضاء خفيفة — تُقاس على أجهزة Snapdragon وMediaTek حقيقية مع الأرقام الميدانية.
+- [ ] Acceptable Arabic dictation accuracy in light noise — to be measured on real Snapdragon and MediaTek devices alongside the field numbers.
 
 ### 6. وضع صحراوي · Desert mode
 - وضع انقطاع الشبكة: قوائم أوامر محلية، إلغاء الميزات السحابية تلقائيًا، ومتابعة البناء المحلي.

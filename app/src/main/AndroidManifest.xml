@@ -72,6 +72,11 @@
             </intent-filter>
         </receiver>
 
+        <!-- v0.13.4: the hands-free dictation notification's Stop action (flips the persisted mode). -->
+        <receiver
+            android:name=".service.DictationReceiver"
+            android:exported="false" />
+
         <!-- Hands the camera app a cache file to write a chat photo into. -->
         <provider
             android:name="androidx.core.content.FileProvider"

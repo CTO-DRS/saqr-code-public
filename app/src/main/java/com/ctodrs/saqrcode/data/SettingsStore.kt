@@ -216,6 +216,11 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("voice_lang", "") ?: ""
         set(v) { prefs.edit().putString("voice_lang", v).apply(); bump() }
 
+    /** v0.13.4 hands-free: Dictation.Mode.key — "" off, "on" continuous typing, "wake" «يا صقر» commands. */
+    var dictation: String
+        get() = prefs.getString("dictation_mode", "") ?: ""
+        set(v) { prefs.edit().putString("dictation_mode", v).apply(); bump() }
+
     /** Terminal font size in sp. */
     var terminalFontSize: Int
         get() = prefs.getInt("term_font", 12)

@@ -209,6 +209,15 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     var micDenied by remember { mutableStateOf(false) }
     val voice = remember { com.ctodrs.saqrcode.ui.chat.VoiceInput(ctx) }
     val speaker = remember { com.ctodrs.saqrcode.ui.chat.Speaker(ctx) }
+    // v0.13.4 «صوت بلا يدين": continuous dictation + the «يا صقر» command buffer
+    val continuous = remember { com.ctodrs.saqrcode.ui.chat.ContinuousDictation(ctx) }
+    val cmdBuf = remember { com.ctodrs.saqrcode.agent.Dictation.CommandBuffer() }
+    var typedPrefix by remember { mutableStateOf("") }
+    var micGranted by remember {
+        mutableStateOf(androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED)
+    }
+    val dMode = com.ctodrs.saqrcode.agent.Dictation.Mode.from(settings.dictation.also { version })
     androidx.compose.runtime.DisposableEffect(Unit) {
         speaker.onFail = { p ->
             val msg = when (p) {
@@ -218,7 +227,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
             }
             android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
         }
-        onDispose { voice.release(); speaker.release() }
+        onDispose { voice.release(); speaker.release(); continuous.release() }
     }
     val appLang = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language
     val voiceLang = com.ctodrs.saqrcode.agent.VoiceLocale.pick(appLang, settings.voiceLang.also { version })
@@ -241,21 +250,89 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     }
     val activity = ctx as? android.app.Activity
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) startVoice()
-        else if (activity != null && !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, android.Manifest.permission.RECORD_AUDIO)) micDenied = true
+        micGranted = granted
+        // hands-free (if on) starts through the DisposableEffect below; one-shot only when it is off
+        if (granted && dMode == com.ctodrs.saqrcode.agent.Dictation.Mode.OFF) startVoice()
+        else if (!granted && activity != null && !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, android.Manifest.permission.RECORD_AUDIO)) micDenied = true
     }
     fun onMic() {
+        // v0.13.4: while hands-free is on, the mic button stops it (a long-press still toggles the language)
+        if (dMode != com.ctodrs.saqrcode.agent.Dictation.Mode.OFF) {
+            settings.dictation = com.ctodrs.saqrcode.agent.Dictation.Mode.OFF.key
+            android.widget.Toast.makeText(ctx, R.string.hands_free_stopped, android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
         if (voice.listening) { voice.stop(); return }
         if (!voice.available) { android.widget.Toast.makeText(ctx, R.string.voice_no_service, android.widget.Toast.LENGTH_LONG).show(); return }
-        val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) ==
-            android.content.pm.PackageManager.PERMISSION_GRANTED
-        if (granted) startVoice() else micRationale = true
+        if (micGranted) startVoice() else micRationale = true
     }
     fun onMicLongPress() {
         val next = com.ctodrs.saqrcode.agent.VoiceLocale.toggle(voiceLang)
         settings.voiceLang = next
         android.widget.Toast.makeText(ctx, if (next.startsWith("ar")) R.string.voice_lang_ar else R.string.voice_lang_en, android.widget.Toast.LENGTH_SHORT).show()
         if (voice.listening) { voice.cancel(); voice.start(next, input, { input = it }, { input = it }, { }) }
+    }
+
+    // ---- v0.13.4 «صوت بلا يدين»: the continuous dictation lifecycle.
+    // Listens exactly while hands-free is on AND this project screen is open; the notification
+    // mirrors the state and its Stop action flips the persisted mode back.
+    fun wakeFeed(raw: String) {
+        val after = com.ctodrs.saqrcode.agent.WakePhrase.after(raw)
+        if (after != null) {
+            if (!cmdBuf.armed) typedPrefix = input
+            cmdBuf.wake(after)
+        } else if (cmdBuf.armed) cmdBuf.feed(raw)
+    }
+    fun finishVoiceCommand(cmd: String) {
+        val full = com.ctodrs.saqrcode.agent.VoiceLocale.merge(typedPrefix, cmd).trim()
+        typedPrefix = ""; cmdBuf.disarm()
+        if (full.isBlank()) { input = ""; return }
+        if (!ws.agent.running) sendRef[0]?.invoke(full) else input = full
+    }
+    androidx.compose.runtime.DisposableEffect(dMode, micGranted) {
+        val off = dMode == com.ctodrs.saqrcode.agent.Dictation.Mode.OFF
+        val canRun = !off && micGranted && continuous.available
+        if (canRun) {
+            com.ctodrs.saqrcode.service.Notifs.dictation(ctx, appLang)
+            continuous.start(voiceLang,
+                buffer = { if (dMode == com.ctodrs.saqrcode.agent.Dictation.Mode.TYPING) input else "" },
+                onText = { raw ->
+                    if (dMode == com.ctodrs.saqrcode.agent.Dictation.Mode.TYPING) input = raw
+                    else { wakeFeed(raw); if (cmdBuf.armed) input = com.ctodrs.saqrcode.agent.VoiceLocale.merge(typedPrefix, cmdBuf.draft) }
+                },
+                onFinal = { raw ->
+                    if (dMode == com.ctodrs.saqrcode.agent.Dictation.Mode.TYPING) {
+                        input = raw
+                        if (settings.voiceAutoSend && raw.isNotBlank() && !ws.agent.running) sendRef[0]?.invoke(raw)
+                    } else {
+                        wakeFeed(raw)
+                        if (cmdBuf.armed && cmdBuf.draft.isNotBlank()) finishVoiceCommand(cmdBuf.draft)
+                    }
+                },
+                onError = { code ->
+                    if (dMode != com.ctodrs.saqrcode.agent.Dictation.Mode.OFF) {
+                        if (!com.ctodrs.saqrcode.agent.Dictation.retryable(code)) {
+                            // fatal: stop cleanly instead of leaving a dead «on» mode
+                            settings.dictation = com.ctodrs.saqrcode.agent.Dictation.Mode.OFF.key
+                            val msg = when (code) {
+                                android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> R.string.voice_permission_denied
+                                else -> R.string.voice_error
+                            }
+                            android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
+                        }
+                        // transient errors (silence, busy service, network) just keep listening
+                    }
+                },
+            )
+        } else {
+            com.ctodrs.saqrcode.service.Notifs.cancelDictation(ctx)
+            if (!off && !micGranted) micRationale = true
+        }
+        onDispose {
+            continuous.stop()
+            com.ctodrs.saqrcode.service.Notifs.cancelDictation(ctx)
+            cmdBuf.disarm(); typedPrefix = ""
+        }
     }
     /** First turn that may run in the background: explain battery killers once, ask for notifications. */
     fun beforeFirstBackgroundRun() {
@@ -339,7 +416,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                             budget = settings.monthlyBudget,
                             monthSpent = com.ctodrs.saqrcode.agent.PriceTable.cost(month, prices) ?: 0.0,
                             pendingImages = pendingImages.toList(), imageToCode = imageToCode,
-                            voice = com.ctodrs.saqrcode.ui.chat.VoiceUi(voice.available, voice.listening, voiceLang, voice.level),
+                            voice = com.ctodrs.saqrcode.ui.chat.VoiceUi(voice.available || continuous.available, voice.listening || continuous.listening, voiceLang, if (voice.listening) voice.level else continuous.level),
                             speakingKey = speaker.speakingKey,
                         )
                         sendRef[0] = { text ->

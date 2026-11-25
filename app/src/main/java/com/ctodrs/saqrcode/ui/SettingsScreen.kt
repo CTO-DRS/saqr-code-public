@@ -123,6 +123,9 @@ class SettingsUi(
     val onVoiceAutoSend: (Boolean) -> Unit = {},
     val voiceLang: String = "",
     val onVoiceLang: (String) -> Unit = {},
+    /** v0.13.4 hands-free: Dictation.Mode.key (""/"on"/"wake"). */
+    val dictation: String = "",
+    val onDictation: (String) -> Unit = {},
     val keepInBackground: Boolean = true,
     val onKeepInBackground: (Boolean) -> Unit = {},
     val onBatterySettings: () -> Unit = {},
@@ -239,6 +242,8 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
         onVoiceAutoSend = { settings.voiceAutoSend = it },
         voiceLang = settings.voiceLang,
         onVoiceLang = { settings.voiceLang = it },
+        dictation = settings.dictation,
+        onDictation = { settings.dictation = it },
         keepInBackground = settings.keepInBackground,
         onKeepInBackground = { settings.keepInBackground = it },
         onBatterySettings = { showBattery = true },
@@ -560,6 +565,15 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             SectionLabel(stringResource(R.string.voice_section), Modifier.padding(top = Sp.md))
             Group {
                 Column {
+                    Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+                        LabeledIcon(Lucide.AudioLines, stringResource(R.string.hands_free))
+                        val modes = com.ctodrs.saqrcode.agent.Dictation.Mode.entries
+                        val cur = modes.indexOfFirst { it.key == ui.dictation }.coerceAtLeast(0)
+                        Segmented(listOf(stringResource(R.string.hands_free_off), stringResource(R.string.hands_free_typing), stringResource(R.string.hands_free_wake)),
+                            cur, { ui.onDictation(modes[it].key) })
+                        Text(stringResource(R.string.hands_free_hint), style = Saqr.type.caption, color = Saqr.colors.text3)
+                    }
+                    RowDivider()
                     ListRow(
                         title = stringResource(R.string.voice_auto_send), subtitle = stringResource(R.string.voice_auto_send_desc), icon = Lucide.Mic,
                         trailing = { SaqrSwitch(ui.voiceAutoSend, ui.onVoiceAutoSend) },

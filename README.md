@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.13.3** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.13.4** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,14 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.13.4
+| الميزة | الحالة |
+|---|---|
+| صوت بلا يدين: إملاء مستمر يبقى في الإنصات ما دام المشروع مفتوحًا، يعيد الإنصات تلقائيًا بعد كل جملة مع تراجع تدريجي عند الأخطاء العابرة | ✅ |
+| إيقاظ «يا صقر»: تحوّت الإيقاظ بمرونة (التشكيل والهمزات والدمج «ياصقر» وباللاتينية «Ya Saqr») ثم يُرسل الأمر الذي يليه تلقائيًا — ولا يُرسل شيئًا قبل الإيقاظ | ✅ |
+| تشغيل/إيقاف من الإشعار: إشعار صامت دائم أثناء الإنصات بزر إيقاف يقلب الوضع من الإعدادات فورًا — والتطبيق لا يسمع من الخلفية أبدًا | ✅ |
+| حماية من الحلقات المغلقة: الأخطاء العابرة (صمت/شبكة/انشغال الخدمة) تعيد الإنصات، والقاتلة (صلاحيات/عميل/صوت) تُوقف الوضع برسالة واضحة، وبعد 4 أخطاء متتالية يستسلم بأدب | ✅ |
 
 ### الجديد في 0.13.3
 | الميزة | الحالة |
@@ -160,7 +168,7 @@
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `SaqrCode-v0.13.3-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.13.4-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -171,6 +179,12 @@
 ---
 
 ## English
+
+### New in v0.13.4
+- **Hands-free voice (صوت بلا يدين):** the fifth «عقل الصقر» item. Continuous dictation keeps re-listening while a project is open — each utterance chains into the next with a gentle back-off (350ms → 4s) on transient errors (silence, busy service, network), and a hard stop after 4 consecutive failures so a broken recognizer never spins forever.
+- **«Ya Saqr» wake phrase:** flexible matching through the Arabic-aware normalizer (diacritics, alef forms, fused «ياصقر») plus latin spellings («Ya Saqr», «hey saqer»…). In wake mode only a wake phrase starts a command, and the command that follows **sends itself**; speech before the wake is never typed or sent.
+- **Notification toggle:** a silent ongoing notification mirrors the listening state with a Stop action that flips the persisted mode instantly — the project screen tears the recognizer down reactively. Starting mic capture from the notification is deliberately not supported: Saqr never listens while backgrounded.
+- **Two modes:** «إملاء مستمر» types into the composer (auto-send follows the existing setting), «إيقاظ يا صقر» hands the agent voice commands hands-free; the mic button stops hands-free with one tap while it is on.
 
 ### New in v0.13.3
 - **Saqr Coach (مدرّب صقر):** a five-step learning path on the home screen — connect a key, create a project, send the first command, try the on-device build, reach the first successful build — with a live n/5 progress card and a full coach sheet listing the ordered steps.
