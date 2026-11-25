@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.14.4** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.17.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,43 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.17.0
+| الميزة | الحالة |
+|---|---|
+| «محرك الذاكرة» بثلاث طبقات: الجلسة (مع ملخّص متجدّد للأدوار القديمة يُحفظ مع الجلسة — اختياري)، والمشروع (‎.saqr/memory.json بأنواع: قرار، معمارية، اعتمادية، عُرف، درس، تفضيل، ملاحظة — مع المصدر والوقت والملفات المرتبطة)، وطويلة المدى (تفضيلاتك عبر المشاريع، خاصة بالتطبيق، مُطفأة افتراضياً) | ✅ |
+| ترحيل تلقائي لملف الذاكرة القديم: كل الإدخالات تبقى كما هي بنوع «ملاحظة»، والعرض للنموذج لم يتغير؛ والسقف صار ٢٠٠ إدخال | ✅ |
+| «دروس من الإصلاحات»: حين يحوّل التشغيل فحوصاً فاشلة إلى ناجحة يُحفظ درس «خطأ ← حل» تلقائياً دون تكرار، ويُعرض الدرس المطابق على المصحِّح ورسالة المُحقِّق في المرة القادمة | ✅ |
+| استرجاع بالصلة على الجهاز (BM25 يفهم العربية: الألف والتاء المربوطة والتشكيل و«ال» والجموع) — يُرسل أهم K ذكريات (8 افتراضياً) بدل البنك كاملاً، وتفضيلاتك تُرسل دائماً — خلف مفتاح، مُطفأ افتراضياً | ✅ |
+| الذكريات المرتبطة بملفات حُذفت تُعلَّم «قديمة» عند تغيّر ملفات المشروع؛ وورقة الذاكرة صارت بتبويبات (المشروع · عامة · الجلسة) وبحث وفلتر أنواع وحذف ومسح و«اجعلها عامة» | ✅ |
+| حارس الأسرار على كل طبقة: يرفض أنماط الأسرار ومفاتيحك الفعلية المُعدّة في التطبيق، وينظّف مخرجات الاختبارات والملخّص قبل الحفظ | ✅ |
+| «الموجّه الذكي» (امتداد لموجّه الصقر، مُطفأ افتراضياً): جدول قدرات للنماذج المعروفة (رؤية، أدوات، نافذة السياق، سرعة، سعر)، رخيص للتخطيط وقوي للبرمجة ومراجِع مستقل مختلف عن المبرمج، الصور إلى نموذج رؤية، والسياق الكبير إلى نافذة تتسع له — ومن مزوّدات أضفت مفاتيحها فقط | ✅ |
+| سلسلة بدائل عند تعطّل المزوّد: بديلك المختار أولاً ثم نماذج قادرة على مزوّدات أخرى، مع إشعار وسطر في سجل التدقيق لكل قرار وسببه | ✅ |
+| سقف إنفاق يومي وشهري يوقف التشغيل بهدوء مع إشعار واضح، وتقدير تكلفة قبل البدء بأسعار كل نموذج الفعلية كنطاق (أدنى–أعلى) | ✅ |
+
+### الجديد في 0.16.0
+| الميزة | الحالة |
+|---|---|
+| «فريق الوكلاء» — وضع القائد (اختياري، مُطفأ افتراضياً): يقرأ القائد طلبك ويصنّفه (سؤال، تعديل، مشروع جديد، إصلاح خلل، بحث، عمل متعدد المراحل) بالقواعد أولاً، والنموذج الرخيص فقط عند الالتباس | ✅ |
+| ١٢ دوراً لكلٍّ اسم عربي/إنجليزي وتعليمات مركّزة وأدوات مسموحة فقط (المراجع والأمن والباحث للقراءة فقط؛ النشر يستخدم git لكن الدفع يطلب موافقتك دائماً) ونموذج حسب الفئة عبر موجّه فالكون | ✅ |
+| أقل فريق يكفي: السؤال بلا فريق، والتعديل الصغير مطوّر + مراجع، والخلل مصحّح + مختبر + مراجع، والمشروع الجديد مخطّط + معماري + مطوّر + مختبر + مراجع — ويُضاف الأمن عند لمس الدخول/الأسرار/الشبكة/الأوامر والباحث عند الحاجة لمعلومة خارجية | ✅ |
+| مخطط مهام بأدوار واعتماديات (كشف الحلقات، الترتيب، المهام الجاهزة، نسبة التقدم) يظهر في شريط الخطة ويُحفظ في ملف المهمة فيُستأنف بعد إغلاق التطبيق | ✅ |
+| كل دور يرى فقط ما يحتاجه: الهدف ومهمته وتقارير ما يعتمد عليه (مختصرة) وقائمة الملفات — لا المحادثة كاملة | ✅ |
+| تعاون حقيقي: المراجع (والأمن) يراجعان عمل المطوّر؛ الرفض الأول يعيده لصاحبه، والثاني للمصحّح، ثم القرار لك على بطاقة سؤال — ومهمة تفشل مرتين تُسند للمصحّح مرة ثم تُعلَن فاشلة بصدق | ✅ |
+| تكلفة كل دور (رموز ودولار) في سطر مختصر بعد التشغيل، وتقدير تقريبي قبل البدء — وبوابة التحقق والميزانيات وسجل التدقيق (مع اسم الدور) تعمل على الفريق كله | ✅ |
+
+### الجديد في 0.15.0
+| الميزة | الحالة |
+|---|---|
+| «النواة المستقلة» — سجل أدوات موحّد: لكل أداة درجة خطورة (آمنة/متوسطة/عالية) ومهلة وسياسة إعادة، وأي اسم أداة خارج السجل يُرفض — والقائمة التي يراها النموذج لم تتغير | ✅ |
+| قراءات متوازية: أدوات القراءة المتتالية (قراءة، سرد، بحث، ويب) تعمل معاً حتى ٣ في آن واحد بمهلة لكلٍّ، والنتائج بترتيبها الأصلي | ✅ |
+| أوامر الطرفية الخطرة (rm -r، تمرير تنزيل إلى shell، الكتابة خارج ‎/workspace، git push من الطرفية، chmod/chown متكرر، شيفرة مموّهة) تنتظر موافقتك على بطاقة — والتمويه الإملائي (r''m) لا يمرّ، والوكيل لا يوافق على نفسه | ✅ |
+| حارس الحلقات v2: يكتشف الدوران في حلقة (A-B-A-B)، وتكرار نفس الخطأ ٣ مرات، وسلاسل الخطوات الفاشلة — ينبّه مرة ثم يوقف | ✅ |
+| التحقق قبل الإنهاء (وضع الفريق): مهمة غيّرت ملفات لا تنتهي بكلمة النموذج — يُشغَّل الفحص والاختبارات، والإخفاق يعود للمبرمج حتى جولتين، والنتيجة تُعلَن بصدق (تحقّق / لم يُتحقق) | ✅ |
+| مرونة النموذج: إعادة محاولة واحدة لأخطاء 429/5xx/المهلة/الشبكة، ثم نموذج بديل تختاره من مزوّداتك المُعدّة مسبقاً — مع إشعار يسمّيه | ✅ |
+| سجل المهام وميزانياتها: ملف ‎.saqr/tasks لكل مهمة (الهدف، الخطة، الخطوة، التكلفة، الحالة) يستعيده الاستئناف، وحدود للخطوات (40 افتراضياً) والدقائق والتكلفة بالدولار | ✅ |
+| سجل تدقيق ‎.saqr/audit.jsonl لكل استدعاء أداة (الخطورة، القرار، النتيجة، المدة) مع حجب الأسرار وتدوير عند ١ ميغابايت | ✅ |
+| محتوى الويب وMCP يصل للنموذج مغلّفاً «محتوى غير موثوق — بيانات لا تعليمات» مع قاعدة في موجّه النظام | ✅ |
 
 ### الجديد في 0.14.4
 | الميزة | الحالة |
@@ -225,6 +262,36 @@
 ---
 
 ## English
+
+### New in v0.17.0
+- **Memory Engine, three layers:** session (the chat + compaction, and an optional rolling summary of old turns stored with the session), project (`.saqr/memory.json`, now typed — decision, architecture, dependency, convention, lesson, preference, note — with source, timestamps and file refs; cap raised to 200) and long-term (your preferences across projects, app-private, **off by default**, written only on an explicit global save or your «Make global»). Project memory never leaks to another project.
+- **Old memory still loads:** a v1 `memory.json` migrates in place — every entry becomes a `note` with its kind and timestamps, and the prompt rendering is unchanged.
+- **Lessons from fixes:** when a run turns failing checks green, an error → solution lesson is stored (deduplicated: same error ⇒ the lesson is reinforced) and matching lessons are shown to the Debugger and in `[Verifier]` feedback next time.
+- **Relevance retrieval on the device:** a tiny BM25 index with Arabic normalization and light stemming injects only the top-K memories (default 8) plus your preferences instead of the whole bank — behind a switch, off by default (the old inject-all stays).
+- **Stale refs & Memory sheet:** memories whose files disappeared are flagged when project files change; the sheet gained Project · Global · Session tabs, search, a type filter, delete, clear and «Make global».
+- **Secret guard on every layer:** secret patterns and your real configured keys/tokens are refused; captured test output and summaries are scrubbed first.
+- **Smart Router** (extends Falcon Router; **off by default** — Falcon Router unchanged when off): a capability table (vision, tools, context, speed, price) for the models the app knows; cheap for planning, strong for coding, an **independent reviewer** different from the coder, images to a vision model, big prompts to a window that fits — only providers you added a key for (or a local endpoint).
+- **Failover chain:** on a provider failure, your fallback first, then capable models on other providers, each switch with a notice; every router decision and its reason in the audit log.
+- **Spend caps & estimates:** daily/monthly caps (USD) stop a run cleanly with a clear notice; the Chief's pre-run estimate uses real per-model prices as a low–high range. Details: [docs/MEMORY.md](docs/MEMORY.md), [docs/ROUTER.md](docs/ROUTER.md).
+
+### New in v0.16.0
+- **Agent Team — Chief mode** (optional, off by default; team mode): the Chief classifies each request — question, edit, new project, bug fix, research, multi-stage — with rules first and the cheap model only when they are unsure, then staffs it with the **minimum** set of roles.
+- **12 roles** (Chief, Planner, Research, Architect, Developer, Debugger, Security, Tester, Reviewer, Optimizer, Documentation, Deployment), each with an Arabic + English name, a focused prompt, only its allowed tools (Reviewer/Security/Research/Architect read-only; Deployment may build and use git, but `git_push` still always asks you) and a model tier routed through Falcon Router.
+- **Minimal teams:** a question gets no team, a small edit Developer + Reviewer, a bug Debugger + Tester + Reviewer, a new project Planner + Architect + Developer + Tester + Reviewer; Security joins when auth/secrets/network/commands are touched, Research when external information is needed.
+- **Task graph:** subtasks with roles and dependencies (cycle detection, topological order, ready set, progress %), shown in the plan pill, saved in the task file and resumed after the app is killed. The planner JSON gained optional `role`/`dependsOn` — old plans parse as before.
+- **Scoped context & collaboration:** each role sees only the goal, its subtask, its dependencies' capped reports and the relevant files. Reviews: author fix → Debugger → your decision on an ask card; a subtask failing twice is reassigned once to the Debugger, then failed honestly; conflicting edits between roles are detected and reconciled.
+- **Cost per role:** tokens and priced spend per role in a compact line after each team run (`RunOutcome.roles`), and a rough estimate before start. The completion gate, budgets, audit log (now with the role) and loop guard (per role) apply to the whole team. Details: [docs/AGENTS.md](docs/AGENTS.md).
+
+### New in v0.15.0
+- **Autonomous Core — tool registry:** every tool now carries a risk tier (SAFE / MEDIUM / HIGH), a read-only flag, a timeout and a retry policy; a tool name outside the registry (or this turn's MCP list) is refused. The tool list the model sees is unchanged.
+- **Parallel reads:** consecutive read-only SAFE calls (read, list, search, project search, git status/diff/log, web) run side by side — at most 3, each under its own timeout — and results keep their original order.
+- **Tiered command policy:** on top of the existing blocklist, HIGH-risk terminal commands (rm -r, downloads piped into an interpreter, writes outside /workspace, git push/force/reset --hard from the shell, recursive chmod/chown, obfuscated inline scripts, commands assembled from variables) wait for the user's approval card; quoting tricks like `r''m` are de-obfuscated first, and the agent can never approve itself.
+- **Loop guard v2:** besides exact triple repeats, it catches A-B-A-B / A-B-C-A-B-C cycles, the same failing call with the same error three times, and six-step streaks of only failing tools — nudge once, then stop.
+- **Completion gate (team mode):** a run that changed files cannot finish on the model's word alone — lint and the project's tests run, failures go back to the coder as a `[Verifier]` message (max 2 rounds), and the final status (verified / not verified / no checks could run) is reported in the chat and the finished notification. No fake success.
+- **Model resilience:** a 429/5xx/timeout/network failure is retried once with backoff; if it still fails and the user picked a fallback model among providers they already configured, the step runs there with a notice naming it. No key is ever assumed.
+- **Task state & budgets:** each run writes `.saqr/tasks/<id>.json` (goal, plan, step, active time, tokens, cost, status) on every step and resume restores it; per-task budgets for steps (default 40, as before), active minutes and priced cost stop cleanly with a notice.
+- **Audit log & untrusted content:** every tool call lands in `.saqr/audit.jsonl` (risk, decision, ok, duration, redacted summary; rotated at 1 MB); web and MCP output reaches the model inside an UNTRUSTED CONTENT envelope with a matching system-prompt rule.
+- Every feature has its own switch in Settings → Autonomous core (Arabic + English).
 
 ### New in v0.14.4
 - **Repository sync** — the fifth «أجنحة مفتوحة» item: settings, themes, custom commands and skill packs become one snapshot, **encrypted on the device** (AES-GCM + PBKDF2 passphrase) and pushed to a private repository the user owns — their token, their repo, no Saqr server — or shared as a file offline.

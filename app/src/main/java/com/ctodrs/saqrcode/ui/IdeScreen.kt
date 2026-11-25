@@ -196,7 +196,8 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     fun submit(text: String) {
         if (pendingImages.isEmpty()) { dispatch(text); return }
         val model = settings.config(settings.activeProvider).model
-        if (!settings.supportsVision(model)) visionPending = text else sendWithImages(text)
+        // v0.17: with the smart router on, an image turn goes to a configured vision model instead of the warning
+        if (!settings.supportsVision(model) && !ws.agent.visionRouteAvailable()) visionPending = text else sendWithImages(text)
     }
 
     // ---- v0.6: sessions, voice, background
@@ -400,7 +401,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                         val reviewTotal = ws.agent.reviewUsage.values.fold(Usage.ZERO) { a, b -> a + b }
                         val plannerTotal = ws.agent.plannerUsage.values.fold(Usage.ZERO) { a, b -> a + b }
                         val state = ChatUiState(
-                            items = ws.agent.items, running = ws.agent.running, step = ws.agent.step, maxSteps = AgentSession.MAX_STEPS,
+                            items = ws.agent.items, running = ws.agent.running, step = ws.agent.step, maxSteps = ws.agent.maxSteps,
                             contextTokens = ws.agent.contextTokens, contextWindow = def.contextWindow, providerId = def.id,
                             model = cfg.model, models = (listOf(cfg.model) + def.suggestedModels).filter { it.isNotBlank() }.distinct(),
                             ready = settings.activeReady(),
@@ -464,7 +465,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     }
     // v0.13: the project's memory bank — what Saqr remembers about this user and project.
     if (showMemory) {
-        com.ctodrs.saqrcode.ui.chat.MemorySheet(ws.agent, onDismiss = { showMemory = false })
+        com.ctodrs.saqrcode.ui.chat.MemorySheet(ws.agent, globalEnabled = settings.globalMemory, onDismiss = { showMemory = false })
     }
     // v0.12: the command palette — files, slash commands, settings destinations and sessions.
     if (showPalette) {

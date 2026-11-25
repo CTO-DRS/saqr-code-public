@@ -98,9 +98,17 @@ object Tools {
                 .put("key", p("string", "Short stable name for the memory, e.g. 'state management' or 'لغة الواجهة'"))
                 .put("value", p("string", "The memory itself, one or two sentences"))
                 .put("kind", JSONObject().put("type", "string").put("enum", JSONArray(listOf("preference", "decision", "fact")))
-                    .put("description", "preference = how the user likes things, decision = what was agreed, fact = how the project is. Default fact")), listOf("key", "value"))),
+                    .put("description", "preference = how the user likes things, decision = what was agreed, fact = how the project is. Default fact"))
+                .put("type", JSONObject().put("type", "string").put("enum", JSONArray(listOf("note", "decision", "architecture", "dependency", "convention", "lesson", "preference")))
+                    .put("description", "Optional finer category: architecture (structure/design), dependency (libraries/versions), convention (naming/style rules), lesson (an error and how it was fixed)"))
+                .put("files", JSONObject().put("type", "array").put("items", JSONObject().put("type", "string"))
+                    .put("description", "Optional project-relative files this memory is about (flagged stale if they disappear)"))
+                .put("scope", JSONObject().put("type", "string").put("enum", JSONArray(listOf("project", "global")))
+                    .put("description", "project (default). global = a personal preference of the user for ALL projects; only when the user asked for it — refused unless they enabled global memory")), listOf("key", "value"))),
         ToolSpec(MEMORY_FORGET, "Delete memories by key, or by words that appear in a key or value. Use when the user corrects or retracts something remembered.",
-            schema(JSONObject().put("key", p("string", "Exact key, or words contained in the key/value to forget")), listOf("key"))),
+            schema(JSONObject().put("key", p("string", "Exact key, or words contained in the key/value to forget"))
+                .put("scope", JSONObject().put("type", "string").put("enum", JSONArray(listOf("project", "global")))
+                    .put("description", "project (default) or global (the user's cross-project preferences)")), listOf("key"))),
     ) + GitTools.specs
 
     val IGNORED_DIRS = setOf(".git", "node_modules", "build", ".gradle", "__pycache__", ".venv", "dist", ".saqr")

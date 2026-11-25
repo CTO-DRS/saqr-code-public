@@ -39,7 +39,8 @@ data class RunWait(
     val questionId: String? = null,
     val options: List<Pair<String, String>> = emptyList(),
 ) {
-    enum class Kind { ASK, PUSH, COMMIT, FILES }
+    /** v0.15: COMMAND = a HIGH-risk terminal command waits for the user's yes. */
+    enum class Kind { ASK, PUSH, COMMIT, FILES, COMMAND }
 
     companion object {
         const val MAX_INLINE = 3
@@ -58,8 +59,16 @@ data class RunWait(
 }
 
 /** How a turn ended. */
-data class RunOutcome(val kind: Kind, val summary: String = "") {
-    enum class Kind { DONE, ERROR, STOPPED, STEP_LIMIT }
+data class RunOutcome(
+    val kind: Kind,
+    val summary: String = "",
+    /** v0.15 completion gate: the final verification status (null = the gate did not run). */
+    val verification: CompletionGate.Status? = null,
+    /** v0.16 Chief mode: tokens and priced spend per team role (empty outside Chief mode). */
+    val roles: List<TeamCost.RoleCost> = emptyList(),
+) {
+    /** v0.15: BUDGET = stopped cleanly at the run's time or cost limit. */
+    enum class Kind { DONE, ERROR, STOPPED, STEP_LIMIT, BUDGET }
 }
 
 /** Callbacks from [AgentSession] into the background runtime. All default to no-ops (tests, previews). */
@@ -239,6 +248,7 @@ object NotifText {
             RunWait.Kind.PUSH -> if (ar) "الموافقة على git push" else "Approve git push"
             RunWait.Kind.COMMIT -> if (ar) "الموافقة على git commit" else "Approve git commit"
             RunWait.Kind.FILES -> if (ar) "مراجعة تغييرات الملفات" else "Review file changes"
+            RunWait.Kind.COMMAND -> if (ar) "الموافقة على أمر عالي الخطورة" else "Approve a high-risk command"
         }
         return "$project · $what"
     }
@@ -250,13 +260,26 @@ object NotifText {
             RunOutcome.Kind.ERROR -> if (ar) "تعثّرت المهمة" else "Task failed"
             RunOutcome.Kind.STEP_LIMIT -> if (ar) "توقفت عند حد الخطوات" else "Stopped at the step limit"
             RunOutcome.Kind.STOPPED -> if (ar) "أُوقفت المهمة" else "Task stopped"
+            RunOutcome.Kind.BUDGET -> if (ar) "توقفت عند حد الميزانية" else "Stopped at the run budget"
         }
     }
 
     fun finishedBody(project: String, o: RunOutcome, lang: String): String {
         val s = o.summary.replace(Regex("\\s+"), " ").trim()
-        val body = s.ifEmpty { if (isArabic(lang)) "اضغط للعرض" else "Tap to view" }
+        // v0.15: the completion gate's honest verdict leads the body when it ran
+        val verdict = o.verification?.let { verificationLine(it, lang) + " " }.orEmpty()
+        val body = (verdict + s).trim().ifEmpty { if (isArabic(lang)) "اضغط للعرض" else "Tap to view" }
         return "$project · " + (if (body.length > 160) body.take(159) + "…" else body)
+    }
+
+    /** v0.15: one short line for the completion gate's verdict. */
+    fun verificationLine(v: CompletionGate.Status, lang: String): String {
+        val ar = isArabic(lang)
+        return when (v) {
+            CompletionGate.Status.PASSED -> if (ar) "✓ تحقّق: الفحوص نجحت." else "✓ Verified: checks passed."
+            CompletionGate.Status.FAILED -> if (ar) "✗ لم يُتحقق: الفحوص ما زالت تفشل." else "✗ Not verified: checks still fail."
+            CompletionGate.Status.UNVERIFIED -> if (ar) "• لم يُتحقق: لا فحوص متاحة." else "• Not verified: no checks could run."
+        }
     }
 
     fun resumeTitle(lang: String) = if (isArabic(lang)) "استئناف المهمة؟" else "Resume task?"

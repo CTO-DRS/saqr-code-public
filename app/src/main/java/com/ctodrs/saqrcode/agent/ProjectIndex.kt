@@ -74,7 +74,17 @@ class ProjectIndex(private val root: File, private val maxAgeMs: Long = 20_000) 
             entries.addAll(collected)
             builtAt = System.currentTimeMillis()
         }
+        onRebuilt?.let { cb -> runCatching { cb() } }
     }
+
+    /**
+     * v0.17: called after every rebuild (the project's files changed or the index aged out), so
+     * the memory engine can re-check its file refs and flag stale ones.
+     */
+    @Volatile var onRebuilt: (() -> Unit)? = null
+
+    /** v0.17: the project's files changed (the agent applied edits) — the next query rebuilds. */
+    fun invalidate() { builtAt = 0L }
 
     private fun ensureFresh() {
         val stale = synchronized(this) { builtAt == 0L || System.currentTimeMillis() - builtAt > maxAgeMs }

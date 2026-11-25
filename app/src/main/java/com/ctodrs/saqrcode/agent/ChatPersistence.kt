@@ -81,6 +81,8 @@ class SessionData(
     val usage: Map<String, Usage> = emptyMap(),
     /** A turn was running when this was written (the process may have died mid-turn). */
     val active: Boolean = false,
+    /** v0.17 session layer: rolling summary of the old turns (absent in older session files). */
+    val summary: com.ctodrs.saqrcode.agent.memory.SessionSummary? = null,
 )
 
 object SessionCodec {
@@ -105,6 +107,7 @@ object SessionCodec {
             .put("usage", JSONObject().apply {
                 data.usage.forEach { (m, u) -> put(m, JSONObject().put("in", u.input).put("out", u.output).put("est", u.estimated)) }
             })
+            .apply { data.summary?.let { put("summary", it.toJson()) } }
     }
 
     fun decode(o: JSONObject, images: ImageRepo): SessionData {
@@ -115,7 +118,8 @@ object SessionCodec {
         val usage = o.optJSONObject("usage")?.let { u ->
             u.keys().asSequence().associateWith { k -> u.getJSONObject(k).let { Usage(it.optLong("in"), it.optLong("out"), it.optBoolean("est")) } }
         }.orEmpty()
-        return SessionData(SessionMeta.fromJson(o.getJSONObject("meta")), items, plan, touched, usage, o.optBoolean("active"))
+        val summary = com.ctodrs.saqrcode.agent.memory.SessionSummary.fromJson(o.optJSONObject("summary"))
+        return SessionData(SessionMeta.fromJson(o.getJSONObject("meta")), items, plan, touched, usage, o.optBoolean("active"), summary)
     }
 
     private fun callsJson(calls: List<ToolCall>) = JSONArray().apply {

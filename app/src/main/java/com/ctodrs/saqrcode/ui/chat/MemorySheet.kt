@@ -45,27 +45,40 @@ import com.ctodrs.saqrcode.ui.theme.Radius
 import com.ctodrs.saqrcode.ui.theme.Saqr
 import com.ctodrs.saqrcode.ui.theme.Sp
 
+/** v0.17: the three memory layers the sheet shows. */
+enum class MemoryTab { PROJECT, GLOBAL, SESSION }
+
 /**
  * v0.13 بنك الذاكرة · The per-project memory bank sheet: the user sees, adds, edits and
  * deletes what Saqr remembers; the agent maintains it through memory_save/memory_forget.
+ * v0.17: tabs per layer (project · global · session summary), search, a type filter, stale
+ * file-ref tags, and «make global» for a preference when the global layer is on.
  */
 @Composable
-fun MemorySheet(agent: AgentSession, onDismiss: () -> Unit) {
-    val bank = agent.memoryBank
+fun MemorySheet(agent: AgentSession, globalEnabled: Boolean, onDismiss: () -> Unit) {
+    var tab by remember { mutableStateOf(MemoryTab.PROJECT) }
+    val bank = if (tab == MemoryTab.GLOBAL) agent.globalBank else agent.memoryBank
     val entries = remember { mutableStateListOf<MemoryBank.Entry>() }
-    fun reload() { entries.clear(); entries.addAll(bank.all) }
-    remember(Unit) { reload(); true }
+    fun reload() { entries.clear(); if (tab != MemoryTab.SESSION) entries.addAll(bank.all) }
+    remember(Unit) { runCatching { agent.refreshMemoryStale() }; true }
+    remember(tab) { reload(); true }
     SaqrSheet(onDismiss) {
         MemorySheetContent(
             entries = entries,
-            onAdd = { k, v, kind -> bank.save(k, v, kind); reload() },
+            onAdd = { k, v, kind -> bank.save(k, v, kind, source = "user"); reload() },
             onUpdate = { old, k, v, kind ->
-                bank.forget(old.key)
-                bank.save(k, v, kind)
+                bank.remove(old)
+                bank.save(k, v, kind, if (kind == old.kind) old.type else null, "user", old.files)
                 reload()
             },
-            onDelete = { bank.forget(it.key); reload() },
+            onDelete = { bank.remove(it); reload() },
             onClear = { bank.clear(); reload() },
+            tab = tab,
+            onTab = { tab = it },
+            globalEnabled = globalEnabled,
+            sessionSummary = agent.sessionSummary?.text,
+            onClearSummary = { agent.clearSessionSummary() },
+            onPromote = { e -> com.ctodrs.saqrcode.agent.memory.MemoryEngine.promote(e, agent.globalBank, globalEnabled) },
         )
     }
 }
@@ -77,8 +90,17 @@ fun MemorySheetContent(
     onUpdate: (MemoryBank.Entry, String, String, MemoryBank.Kind) -> Unit,
     onDelete: (MemoryBank.Entry) -> Unit,
     onClear: () -> Unit,
+    tab: MemoryTab = MemoryTab.PROJECT,
+    onTab: ((MemoryTab) -> Unit)? = null,
+    globalEnabled: Boolean = false,
+    sessionSummary: String? = null,
+    onClearSummary: () -> Unit = {},
+    onPromote: ((MemoryBank.Entry) -> String)? = null,
 ) {
     val c = Saqr.colors
+    var query by remember { mutableStateOf("") }
+    var typeFilter by remember(tab) { mutableStateOf<MemoryBank.Type?>(null) }
+    var promoted by remember { mutableStateOf<String?>(null) }
     var adding by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<MemoryBank.Entry?>(null) }
     var confirmingClear by remember { mutableStateOf(false) }
@@ -103,7 +125,49 @@ fun MemorySheetContent(
         ) { SIcon(Lucide.Plus, size = 18.dp, tint = c.onAccent) }
     }
     Text(stringResource(R.string.memory_hint), style = Saqr.type.caption, color = c.text2)
+    if (onTab != null) {
+        Spacer(Modifier.height(Sp.sm))
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            MemoryTab.entries.forEach { t ->
+                Chip(stringResource(when (t) {
+                    MemoryTab.PROJECT -> R.string.memory_layer_project
+                    MemoryTab.GLOBAL -> R.string.memory_layer_global
+                    MemoryTab.SESSION -> R.string.memory_layer_session
+                }), t == tab) { onTab(t) }
+            }
+        }
+    }
     Spacer(Modifier.height(Sp.md))
+    if (tab == MemoryTab.SESSION) {
+        Text(stringResource(R.string.memory_session_hint), style = Saqr.type.caption, color = c.text3)
+        Spacer(Modifier.height(Sp.sm))
+        if (sessionSummary.isNullOrBlank()) {
+            Text(stringResource(R.string.memory_session_empty), style = Saqr.type.bodySmall, color = c.text2)
+        } else {
+            Text(sessionSummary, style = Saqr.type.bodySmall, color = c.text1, maxLines = 18, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(Sp.sm))
+            TextButton(onClick = onClearSummary) { Text(stringResource(R.string.memory_session_clear), color = c.danger) }
+        }
+        return
+    }
+    if (tab == MemoryTab.GLOBAL && !globalEnabled) {
+        Text(stringResource(R.string.memory_global_off), style = Saqr.type.caption, color = c.warning)
+        Spacer(Modifier.height(Sp.sm))
+    }
+    if (entries.size > 4) {
+        SaqrField(query, { query = it }, label = stringResource(R.string.memory_search), placeholder = stringResource(R.string.memory_search_ph))
+        Spacer(Modifier.height(Sp.sm))
+    }
+    val types = entries.map { it.type }.distinct()
+    if (types.size > 1) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Chip(stringResource(R.string.memory_type_all), typeFilter == null) { typeFilter = null }
+            types.take(5).forEach { t -> Chip(typeLabel(t), typeFilter == t) { typeFilter = if (typeFilter == t) null else t } }
+        }
+        Spacer(Modifier.height(Sp.sm))
+    }
+    promoted?.let { Text(it, style = Saqr.type.caption, color = c.text2); Spacer(Modifier.height(Sp.sm)) }
+    val shown = remember(entries.toList(), query, typeFilter) { filterEntries(entries, query, typeFilter) }
 
     if (entries.isEmpty()) {
         Box(Modifier.fillMaxWidth().heightIn(min = 180.dp), contentAlignment = Alignment.Center) {
@@ -116,7 +180,7 @@ fun MemorySheetContent(
         }
     } else {
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 430.dp), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
-            items(entries, key = { "${it.createdAt}-${it.key}" }) { e ->
+            items(shown, key = { "${it.createdAt}-${it.key}" }) { e ->
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.md)).background(c.surface2)
                         .border(1.dp, c.border, RoundedCornerShape(Radius.md)).clickable { editing = e }
@@ -125,11 +189,19 @@ fun MemorySheetContent(
                 ) {
                     Column(Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Tag(kindLabel(e.kind), color = kindColor(e.kind), dot = true)
+                            Tag(if (e.type == MemoryBank.Type.NOTE) kindLabel(e.kind) else typeLabel(e.type), color = kindColor(e.kind), dot = true)
+                            if (e.stale) Tag(stringResource(R.string.memory_stale), color = c.warning)
                             Text(e.key, style = Saqr.type.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = c.text1, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
                         Spacer(Modifier.height(4.dp))
                         Text(e.flatValue, style = Saqr.type.bodySmall, color = c.text2, maxLines = 4, overflow = TextOverflow.Ellipsis)
+                        if (e.files.isNotEmpty()) {
+                            Text(e.files.joinToString(" · "), style = Saqr.type.micro, color = c.text3, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                        if (tab == MemoryTab.PROJECT && globalEnabled && onPromote != null && e.kind == MemoryBank.Kind.PREFERENCE && e.files.isEmpty()) {
+                            Text(stringResource(R.string.memory_make_global), style = Saqr.type.micro, color = c.accentText,
+                                modifier = Modifier.clickable { promoted = onPromote(e) }.padding(vertical = 4.dp))
+                        }
                         Spacer(Modifier.height(4.dp))
                         Text(
                             DateUtils.getRelativeTimeSpanString(e.updatedAt, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString(),
@@ -216,6 +288,41 @@ private fun MemoryEditDialog(
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
     )
 }
+
+@Composable
+private fun Chip(text: String, selected: Boolean, onClick: () -> Unit) {
+    val c = Saqr.colors
+    Box(
+        Modifier.clip(RoundedCornerShape(Radius.sm))
+            .background(if (selected) c.accentSoft else c.surface2)
+            .border(1.dp, if (selected) c.accent else c.border, RoundedCornerShape(Radius.sm))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    ) { Text(text, style = Saqr.type.micro, color = if (selected) c.accentText else c.text2) }
+}
+
+/** v0.17: search (relevance-ranked, then plain contains) and type filter for the sheet. */
+internal fun filterEntries(entries: List<MemoryBank.Entry>, query: String, type: MemoryBank.Type?): List<MemoryBank.Entry> {
+    val base = if (type == null) entries else entries.filter { it.type == type }
+    if (query.isBlank()) return base
+    val ranked = com.ctodrs.saqrcode.agent.memory.MemoryRecall.Index(base).rank(query).map { it.first }
+    val q = MemoryBank.normalize(query)
+    val contains = base.filter { q.isNotEmpty() && (MemoryBank.normalize(it.key).contains(q) || MemoryBank.normalize(it.value).contains(q)) }
+    return (ranked + contains).distinct()
+}
+
+@Composable
+fun typeLabel(type: MemoryBank.Type): String = stringResource(
+    when (type) {
+        MemoryBank.Type.NOTE -> R.string.memory_type_note
+        MemoryBank.Type.PREFERENCE -> R.string.memory_kind_preference
+        MemoryBank.Type.DECISION -> R.string.memory_kind_decision
+        MemoryBank.Type.ARCHITECTURE -> R.string.memory_type_architecture
+        MemoryBank.Type.DEPENDENCY -> R.string.memory_type_dependency
+        MemoryBank.Type.CONVENTION -> R.string.memory_type_convention
+        MemoryBank.Type.LESSON -> R.string.memory_type_lesson
+    },
+)
 
 @Composable
 fun kindLabel(kind: MemoryBank.Kind): String = stringResource(

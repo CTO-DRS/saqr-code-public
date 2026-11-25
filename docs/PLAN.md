@@ -66,6 +66,70 @@ Order follows priority: P0 first, then P1, then P2; each item ships as its own c
 
 ---
 
+## المرحلة 2 · Phase 2: 0.15.0 «النواة المستقلة · Autonomous Core»
+
+امتداد لنواة الوكيل الموجودة — لا إعادة بناء: AgentSession وTools وSafetyPolicy وLoopDetector وTeam وFalconRouter وMemoryBank وCheckpoints وLlmClient كما هي، والجديد طبقات صغيرة نقية مختبرة في `V015FeaturesTest` وكل ميزة خلف مفتاح في الإعدادات.
+
+Extends the existing agent core — nothing rebuilt; every new piece is a small pure object tested in `V015FeaturesTest`, and every feature sits behind its own Settings switch.
+
+| # | البند · Item | الملف · File | المفتاح · Setting (default) | الحالة |
+|---|---|---|---|---|
+| 1 | سجل الأدوات · Tool registry (risk, readOnly, timeout, retries; unknown names refused) | `agent/ToolRegistry.kt` | — (always on, no behaviour change) | ✅ |
+| 2 | قراءات متوازية · Parallel read-only calls (≤3, per-tool timeout, ordered results) | `ToolRegistry.kt` (`ParallelPlan`), `AgentSession.executeTools` | `parallelTools` (on) | ✅ |
+| 3 | سياسة أوامر متدرجة · Tiered command policy + approval card | `agent/CommandPolicy.kt` | `confirmRiskyCommands` (on) | ✅ |
+| 4 | حارس الحلقات v2 · LoopDetector v2 | `agent/LoopDetector.kt` | `smartLoopGuard` (on) | ✅ |
+| 5 | بوابة الإنهاء · Completion gate (team mode) | `agent/Autonomy.kt` (`CompletionGate`) | `verifyBeforeDone` (on, team only) | ✅ |
+| 6 | إعادة المحاولة والبديل · Retry + fallback model | `Autonomy.kt` (`LlmRetry`) | `retryLlm` (on), `fallbackModel` (none) | ✅ |
+| 7 | حالة المهمة والميزانيات · TaskState + budgets | `agent/TaskState.kt`, `Autonomy.kt` (`Budgets`) | `taskJournal` (on), `maxSteps` 40, `maxMinutes` 0, `maxCostUsd` 0 | ✅ |
+| 8 | سجل التدقيق · Audit log | `TaskState.kt` (`AuditLog`) | `auditLog` (on) | ✅ |
+| 9 | المحتوى غير الموثوق · Untrusted-content envelope | `Autonomy.kt` (`Untrusted`) | `untrustedMarking` (on) | ✅ |
+
+**التحقق · Verification:** CI على GitHub Actions (`.github/workflows/ci.yml`: unit tests + lint + debug APK) — مع ملاحظة أن تشغيلات المستودع الخاص محجوبة حالياً بحدّ فوترة الحساب؛ نتائج هذا الإصدار من تشغيل Gradle فعلي في بيئة البناء.
+
+**المتبقي · Remaining (Phase 3):** Chief/dispatcher by capability & cost, debugger/security/tester roles; cross-project long-term memory with relevance retrieval and an errors→fixes store; delete_file approval under the risky-command switch; gallery pack versioning/permissions; LICENSE file and repo hygiene (tracked APKs in dist/).
+
+## المرحلة 3 · Phase 3: 0.16.0 «فريق الوكلاء · Agent Team & Orchestration»
+
+امتداد لفريق «مخطّط ← مبرمج ← مراجع» دون إعادة بنائه: وضع القائد اختياري ومُطفأ افتراضياً، والقطع الجديدة نقية مختبرة في `V016FeaturesTest`. التفاصيل: [docs/AGENTS.md](AGENTS.md).
+
+Extends the classic Planner → Coder → Reviewer team without rebuilding it: Chief mode is optional and off by default; the new pieces are pure and tested in `V016FeaturesTest`. Details: [docs/AGENTS.md](AGENTS.md).
+
+| # | البند · Item | الملف · File | المفتاح · Setting (default) | الحالة |
+|---|---|---|---|---|
+| 1 | سجل الأدوار · Roles registry (12 roles, tools, tier, steps) | `agent/AgentRoles.kt` | `teamDisabledRoles` (none) | ✅ |
+| 2 | القائد · Chief: intent + minimal roles | `agent/Chief.kt` | `chiefMode` (off) | ✅ |
+| 3 | مخطط المهام · Task graph (+ planner role/dependsOn, TaskState) | `agent/TaskGraph.kt`, `Planner.kt`, `TaskState.kt` | — | ✅ |
+| 4 | التنفيذ · Execution (dependency order, ≤2 read-only in parallel, scoped context) | `Chief.kt` (`ChiefRunner`), `TeamCollab.kt` (`RoleContext`), `AgentSession` | `teamMaxConcurrent` (1) | ✅ |
+| 5 | التعاون · Reviews, conflicts, reassignment | `TeamCollab.kt`, `ChiefRunner` | — | ✅ |
+| 6 | التكلفة · Cost per role + estimate | `TeamCollab.kt` (`TeamCost`), `RunOutcome.roles` | `teamCostEstimate` (on) | ✅ |
+| 7 | مع المرحلة 2 · Gate, budgets, audit role, loop guard per role | `AgentSession` | (Phase 2 switches) | ✅ |
+| 8 | الإعدادات · Settings «فريق الوكلاء · Agent team» | `ui/TeamSettings.kt` | — | ✅ |
+
+**المتبقي · Remaining:** on-device QA of Chief mode with real providers (the runner is tested with a scripted fake LLM; no instrumented UI test ran); CI confirmation once GitHub Actions minutes are available; Phase 4 — cross-project memory with relevance retrieval and an errors→fixes store, model-performance-aware dispatch, gallery pack versioning/permissions.
+
+## المرحلة 4 · Phase 4: 0.17.0 «محرك الذاكرة والموجّه · Memory Engine & Model Router»
+
+امتداد لبنك الذاكرة (v0.13) وموجّه الصقر (v0.13.2) دون إعادة بنائهما: كل ما يغيّر ما يراه النموذج أو يوجّه إلى نموذج آخر خلف مفتاح مُطفأ افتراضياً، والقطع الجديدة نقية مختبرة في `V017FeaturesTest`. التفاصيل: [docs/MEMORY.md](MEMORY.md) · [docs/ROUTER.md](ROUTER.md).
+
+Extends the memory bank (v0.13) and Falcon Router (v0.13.2) without rebuilding them: anything that changes what the model sees or routes to another model is behind a switch that is off by default; the new pieces are pure and tested in `V017FeaturesTest`.
+
+| # | البند · Item | الملف · File | المفتاح · Setting (default) | الحالة |
+|---|---|---|---|---|
+| 1 | طبقة الجلسة · Rolling session summary (stored with the session) | `agent/memory/MemoryEngine.kt` (`SessionMemory`), `ChatPersistence.kt` | `sessionSummary` (off) | ✅ |
+| 2 | طبقة المشروع · Typed entries, files, source, migration v1→v2, cap 200 | `agent/MemoryBank.kt` | — | ✅ |
+| 3 | الدروس · Error→solution lessons on gate FAIL→PASS, dedupe, Debugger surfacing | `MemoryEngine.kt` (`Lessons`), `AgentSession` | `memoryLessons` (on) | ✅ |
+| 4 | الطبقة العامة · Long-term cross-project preferences, isolation | `MemoryBank` (GLOBAL layer), `MemoryEngine` | `globalMemory` (off) | ✅ |
+| 5 | الاسترجاع · BM25 top-K with Arabic normalization | `agent/memory/MemoryRecall.kt` | `memoryRelevance` (off), `memoryTopK` (8) | ✅ |
+| 6 | الملفات القديمة · Stale file refs via ProjectIndex invalidation | `ProjectIndex.kt`, `MemoryBank.refreshStale` | — | ✅ |
+| 7 | ورقة الذاكرة · Layers, search, type filter, delete, clear, make global | `ui/chat/MemorySheet.kt` | — | ✅ |
+| 8 | حارس الأسرار · Secret guard on every layer | `MemoryEngine.kt` (`MemorySafety`) | — | ✅ |
+| 9 | الموجّه الذكي · Capability table, tiers, independent reviewer, vision, context, availability | `agent/ModelRouter.kt`, `SettingsStore.routableProviders` | `smartRouter` (off) | ✅ |
+| 10 | سلسلة البدائل · Failover chain (+ acceptance 12) | `ModelRouter.kt` (`Failover`), `AgentSession.completeStep` | `smartRouter` (off) | ✅ |
+| 11 | الإنفاق · Daily/monthly caps, real-price estimate range, decision log | `ModelRouter.kt` (`SpendCap`, `CostEstimate`), `AgentSession` | `dailySpendCap`, `monthlySpendCap` (0 = off) | ✅ |
+| 12 | الإعدادات · Settings «محرك الذاكرة والموجّه» | `ui/MemoryRouterSettings.kt` | — | ✅ |
+
+**المتبقي · Remaining:** optional provider embeddings (not built — BM25 only); on-device QA of the router, failover, session summary and lesson capture with real providers (unit-tested with synthetic data and a fake client only); adding the new settings to the sync whitelist; CI confirmation once GitHub Actions minutes are available.
+
 ## معايير الجودة لكل إصدار · Quality bar for every release
 - كل ميزة جديدة باختبارات وحدة (ملف `V0xFeaturesTest.kt` مكانه القائمة).
 - Every feature ships with unit tests (keep the `V0xFeaturesTest.kt` pattern).

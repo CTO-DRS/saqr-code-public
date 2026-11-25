@@ -70,7 +70,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.agent.Budget
+import com.ctodrs.saqrcode.agent.AgentRole
+import com.ctodrs.saqrcode.agent.AgentRoles
 import com.ctodrs.saqrcode.agent.ChatItem
+import com.ctodrs.saqrcode.agent.TeamCost
 import com.ctodrs.saqrcode.agent.SlashCommand
 import com.ctodrs.saqrcode.agent.SlashCommands
 import com.ctodrs.saqrcode.agent.Diff
@@ -562,9 +565,13 @@ private fun ApprovalCard(item: ChatItem.Approval, onDecide: (ChatItem.Approval, 
             Spacer(Modifier.width(Sp.md))
             Column(Modifier.weight(1f)) {
                 if (item.action != null) {
-                    val commit = item.actionKind == ChatItem.Approval.ActionKind.COMMIT
-                    Text(stringResource(if (commit) R.string.commit_review_title else R.string.push_review_title), style = Saqr.type.title3, color = c.text1)
-                    Text(stringResource(if (commit) R.string.commit_review_sub else R.string.push_review_sub), style = Saqr.type.caption, color = c.text2)
+                    val (title, sub) = when (item.actionKind) {
+                        ChatItem.Approval.ActionKind.COMMIT -> R.string.commit_review_title to R.string.commit_review_sub
+                        ChatItem.Approval.ActionKind.COMMAND -> R.string.command_review_title to R.string.command_review_sub // v0.15
+                        ChatItem.Approval.ActionKind.PUSH -> R.string.push_review_title to R.string.push_review_sub
+                    }
+                    Text(stringResource(title), style = Saqr.type.title3, color = c.text1)
+                    Text(stringResource(sub), style = Saqr.type.caption, color = c.text2)
                 } else {
                     Text(stringResource(R.string.plan_review_title), style = Saqr.type.title3, color = c.text1)
                     Text(stringResource(R.string.plan_title, item.changes.size.toString()), style = Saqr.type.caption, color = c.text2)
@@ -590,7 +597,11 @@ private fun ActionDecisionRow(item: ChatItem.Approval) {
     val c = Saqr.colors
     val ok = item.decision == true
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        val icon = if (item.actionKind == ChatItem.Approval.ActionKind.COMMIT) Lucide.GitCommitHorizontal else Lucide.ArrowUpFromLine
+        val icon = when (item.actionKind) {
+            ChatItem.Approval.ActionKind.COMMIT -> Lucide.GitCommitHorizontal
+            ChatItem.Approval.ActionKind.COMMAND -> Lucide.SquareTerminal
+            ChatItem.Approval.ActionKind.PUSH -> Lucide.ArrowUpFromLine
+        }
         SIcon(if (ok) icon else Lucide.X, size = 16.dp, tint = if (ok) c.success else c.danger)
         Spacer(Modifier.width(Sp.sm))
         Text(item.action!!.lineSequence().first(), style = Saqr.type.monoSmall, color = c.text2, maxLines = 1,
@@ -626,6 +637,34 @@ private fun NoticeCard(item: ChatItem.Notice) {
         }
         return
     }
+    // v0.16 Chief mode: routine team events are a quiet pill; conflicts, failures and reassignments a warning card
+    if (item.kind == ChatItem.Notice.Kind.TEAM && item.count in TEAM_PILLS) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            Row(Modifier.clip(RoundedCornerShape(Radius.lg)).background(c.surface2).border(1.dp, c.border, RoundedCornerShape(Radius.lg))
+                .padding(horizontal = Sp.md, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                SIcon(if (item.count == ChatItem.Notice.TEAM_STARTED) Lucide.User else Lucide.Users, size = 12.dp, tint = c.text2)
+                Spacer(Modifier.width(6.dp))
+                Text(teamNoticeText(item), style = Saqr.type.caption.copy(textDirection = TextDirection.Content), color = c.text2)
+            }
+        }
+        return
+    }
+    // v0.17: router decisions and captured lessons are quiet pills (the audit log keeps the full line)
+    if (item.kind == ChatItem.Notice.Kind.ROUTER || item.kind == ChatItem.Notice.Kind.LESSON) {
+        val text = if (item.kind == ChatItem.Notice.Kind.ROUTER) {
+            val p = item.text.split('|')
+            stringResource(R.string.notice_router, p.getOrElse(0) { "" }, p.getOrElse(1) { "" }, p.getOrElse(2) { "" })
+        } else stringResource(if (item.count == 1) R.string.notice_lesson_updated else R.string.notice_lesson_new, item.text)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            Row(Modifier.clip(RoundedCornerShape(Radius.lg)).background(c.surface2).border(1.dp, c.border, RoundedCornerShape(Radius.lg))
+                .padding(horizontal = Sp.md, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                SIcon(if (item.kind == ChatItem.Notice.Kind.ROUTER) Lucide.Route else Lucide.BookMarked, size = 12.dp, tint = c.text2)
+                Spacer(Modifier.width(6.dp))
+                Text(text, style = Saqr.type.caption.copy(textDirection = TextDirection.Content), color = c.text2)
+            }
+        }
+        return
+    }
     val error = item.kind == ChatItem.Notice.Kind.ERROR
     val fg = if (error) c.danger else c.warning
     val bg = if (error) c.danger.copy(alpha = if (c.isDark) 0.08f else 0.06f) else c.warningBg
@@ -647,9 +686,70 @@ private fun NoticeCard(item: ChatItem.Notice) {
             ChatItem.Notice.Kind.LOOP -> stringResource(R.string.notice_loop)
             ChatItem.Notice.Kind.PLANNED -> stringResource(R.string.notice_planned, item.count.coerceAtLeast(0).toString())
             ChatItem.Notice.Kind.DESERT -> stringResource(R.string.notice_desert)
+            // v0.15 autonomous core
+            ChatItem.Notice.Kind.VERIFY -> stringResource(when (item.count) {
+                ChatItem.Notice.VERIFY_RETRY -> R.string.notice_verify_retry
+                0 -> R.string.notice_verify_passed
+                1 -> R.string.notice_verify_failed
+                else -> R.string.notice_verify_unverified
+            })
+            ChatItem.Notice.Kind.BUDGET -> stringResource(when (item.text) {
+                "time" -> R.string.notice_budget_time
+                "daily_cap" -> R.string.notice_spend_cap_daily
+                "monthly_cap" -> R.string.notice_spend_cap_monthly
+                else -> R.string.notice_budget_cost
+            })
+            ChatItem.Notice.Kind.FALLBACK -> stringResource(R.string.notice_fallback, item.text)
+            ChatItem.Notice.Kind.TEAM -> teamNoticeText(item)
             else -> item.text
         }
         Text(body, style = Saqr.type.bodySmall.copy(color = c.text1, textDirection = TextDirection.Content))
+    }
+}
+
+private val TEAM_PILLS = setOf(ChatItem.Notice.TEAM_SELECTED, ChatItem.Notice.TEAM_ESTIMATE, ChatItem.Notice.TEAM_COST, ChatItem.Notice.TEAM_STARTED)
+
+/** v0.16: a team role's localized name. */
+@Composable
+internal fun roleName(role: AgentRole): String = stringResource(when (role) {
+    AgentRole.CHIEF -> R.string.role_chief
+    AgentRole.PLANNER -> R.string.role_planner
+    AgentRole.RESEARCH -> R.string.role_research
+    AgentRole.ARCHITECT -> R.string.role_architect
+    AgentRole.DEVELOPER -> R.string.role_developer
+    AgentRole.DEBUGGER -> R.string.role_debugger
+    AgentRole.SECURITY -> R.string.role_security
+    AgentRole.TESTER -> R.string.role_tester
+    AgentRole.REVIEWER -> R.string.role_reviewer
+    AgentRole.OPTIMIZER -> R.string.role_optimizer
+    AgentRole.DOCUMENTATION -> R.string.role_documentation
+    AgentRole.DEPLOYMENT -> R.string.role_deployment
+})
+
+@Composable
+private fun roleNameOf(id: String): String = AgentRoles.byId(id)?.let { roleName(it) } ?: id
+
+/** v0.16: the localized text of a Chief-mode notice (its data is in [ChatItem.Notice.text], see the TEAM_* subtypes). */
+@Composable
+private fun teamNoticeText(item: ChatItem.Notice): String {
+    val p = item.text.split('|')
+    fun at(i: Int) = p.getOrNull(i).orEmpty()
+    return when (item.count) {
+        ChatItem.Notice.TEAM_SELECTED -> if (item.text.isBlank()) stringResource(R.string.team_notice_no_team)
+            else stringResource(R.string.team_notice_selected, item.text.split(',').map { roleNameOf(it) }.joinToString(stringResource(R.string.team_sep)))
+        ChatItem.Notice.TEAM_ESTIMATE -> if (item.text.isBlank()) stringResource(R.string.team_notice_estimate_unpriced)
+            else stringResource(R.string.team_notice_estimate, item.text)
+        ChatItem.Notice.TEAM_COST -> {
+            val names = AgentRoles.all.associateWith { roleName(it) }
+            stringResource(R.string.team_notice_cost, TeamCost.line(TeamCost.decode(item.text)) { names[it] ?: it.nameEn })
+        }
+        ChatItem.Notice.TEAM_STARTED -> stringResource(R.string.team_notice_started, roleNameOf(at(0)), at(1))
+        ChatItem.Notice.TEAM_REASSIGNED -> stringResource(R.string.team_notice_reassigned, at(1), roleNameOf(at(0)))
+        ChatItem.Notice.TEAM_CONFLICT -> stringResource(R.string.team_notice_conflict, item.text)
+        ChatItem.Notice.TEAM_FAILED -> stringResource(R.string.team_notice_failed, roleNameOf(at(0)), at(1), at(2))
+        ChatItem.Notice.TEAM_GRAPH_FALLBACK -> stringResource(R.string.team_notice_graph_fallback)
+        ChatItem.Notice.TEAM_REWORK -> stringResource(R.string.team_notice_rework, roleNameOf(at(0)), at(1))
+        else -> item.text
     }
 }
 

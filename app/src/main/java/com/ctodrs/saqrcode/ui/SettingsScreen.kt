@@ -149,6 +149,12 @@ class SettingsUi(
     /** v0.13.2 Falcon Router: route the light stages to the cheapest capable model. */
     val falconRouter: Boolean = true,
     val onFalconRouter: (Boolean) -> Unit = {},
+    /** v0.15 Autonomous Core switches, fallback model and run budgets. */
+    val autonomy: AutonomyUi = AutonomyUi(),
+    /** v0.17 memory engine & smart router. */
+    val memoryRouter: MemoryRouterUi = MemoryRouterUi(),
+    /** v0.16 Agent team (Chief mode) settings. */
+    val team: TeamUi = TeamUi(),
     /** v0.8 MCP servers (add returns an error message, or null on success). */
     val mcpServers: List<com.ctodrs.saqrcode.agent.Mcp.Server> = emptyList(),
     val onMcpAdd: (String, String, String) -> String? = { _, _, _ -> null },
@@ -285,6 +291,9 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
         onReviewAutoTests = { settings.reviewAutoTests = it },
         falconRouter = settings.falconRouter,
         onFalconRouter = { settings.falconRouter = it },
+        autonomy = AutonomyUi.from(settings),
+        memoryRouter = MemoryRouterUi.from(settings),
+        team = TeamUi.from(settings),
         mcpServers = settings.mcpServers,
         onMcpAdd = { name, url, auth ->
             val err = McpSettings.validate(name, url, settings.mcpServers)
@@ -532,6 +541,8 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                         trailing = { SaqrSwitch(ui.reviewAutoTests, ui.onReviewAutoTests) },
                     )
                 }
+                // ---- v0.16 Agent team (Chief mode) — a team-mode option, so it sits under the team gate
+                TeamSection(ui.team)
             }
             // v0.13.2 Falcon Router — works in solo mode too (compaction), so it sits outside the team gate
             Group {
@@ -541,6 +552,10 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 )
             }
             if (ui.activeModel.isNotBlank()) Group { VisionEditor(ui) }
+            // ---- v0.15 Autonomous Core
+            AutonomySection(ui.autonomy, ui.teamMode)
+            // ---- v0.17 Memory engine & smart router
+            MemoryRouterSection(ui.memoryRouter)
             // ---- v0.8/v0.9 MCP servers
             SectionLabel(stringResource(R.string.mcp_section), Modifier.padding(top = Sp.md))
             var browsingServer by remember { mutableStateOf<com.ctodrs.saqrcode.agent.Mcp.Server?>(null) }

@@ -824,4 +824,124 @@
     <string name="sync_applied">Synced: %1$d settings, %2$d themes, %3$d commands, %4$d packs</string>
     <string name="sync_tag_pushing">Pushing…</string>
     <string name="sync_tag_pulling">Pulling…</string>
+    <!-- v0.15 Autonomous Core -->
+    <string name="autonomy_section">Autonomous core</string>
+    <string name="parallel_tools">Parallel reads</string>
+    <string name="parallel_tools_desc">Run consecutive read-only tools (read, list, search, web) side by side — up to 3 at once, each with its own timeout. Results keep their order</string>
+    <string name="confirm_risky_commands">Confirm risky commands</string>
+    <string name="confirm_risky_commands_desc">Terminal commands such as rm -r, piping a download into a shell, writes outside /workspace or git push from the shell wait for your approval. The agent can never approve itself</string>
+    <string name="smart_loop_guard">Smart loop guard</string>
+    <string name="smart_loop_guard_desc">Besides exact repeats, catch going in circles, the same failing call over and over, and long streaks of failed steps — nudge once, then stop</string>
+    <string name="verify_before_done">Verify before done</string>
+    <string name="verify_before_done_desc">Team mode: when a task changed files, run lint and the project\'s tests before it may finish. Failures go back to the coder (up to 2 rounds) and the result is reported honestly</string>
+    <string name="retry_llm">Retry model errors</string>
+    <string name="retry_llm_desc">Retry a busy or failed model call (429, 5xx, timeout, network) once after a short pause</string>
+    <string name="fallback_model">Fallback model</string>
+    <string name="fallback_model_desc">If the model still fails, run that step on another provider you already set up. Only providers with a saved key are offered</string>
+    <string name="fallback_none">None</string>
+    <string name="task_journal">Task journal</string>
+    <string name="task_journal_desc">Keep each task\'s goal, plan, step, spend and status in .saqr/tasks so a resumed task continues where it stopped</string>
+    <string name="audit_log">Audit log</string>
+    <string name="audit_log_desc">Record every tool call (risk, decision, result, duration) in .saqr/audit.jsonl — secrets redacted, rotated at 1 MB</string>
+    <string name="untrusted_marking">Mark web content as untrusted</string>
+    <string name="untrusted_marking_desc">Web pages, search results and MCP output reach the model wrapped as data, never as instructions</string>
+    <string name="budget_steps">Steps per task</string>
+    <string name="budget_minutes">Minutes per task (0 = off)</string>
+    <string name="budget_cost">Cost per task in USD (0 = off)</string>
+    <string name="budgets_title">Task budgets</string>
+    <string name="budgets_desc">The agent stops cleanly when a task reaches one of these limits. Waiting for your answers doesn\'t count as time</string>
+    <string name="command_review_title">Approve a risky command</string>
+    <string name="command_review_sub">The agent wants to run a high-risk command in the terminal.</string>
+    <string name="notice_verify_passed">Verified: lint and tests passed after the changes.</string>
+    <string name="notice_verify_failed">Not verified: checks still fail after 2 fix rounds. Review the output before relying on these changes.</string>
+    <string name="notice_verify_unverified">Not verified: no checks could run (install Linux or add tests).</string>
+    <string name="notice_verify_retry">Checks failed — the agent is fixing them before finishing.</string>
+    <string name="notice_budget_time">Stopped: the task reached its time limit. Send a message to continue.</string>
+    <string name="notice_budget_cost">Stopped: the task reached its cost limit. Send a message to continue.</string>
+    <string name="notice_fallback">The model kept failing — this step ran on your fallback: %1$s</string>
+
+    <!-- v0.16 Agent team (Chief mode) -->
+    <string name="team_section">Agent team</string>
+    <string name="chief_mode">Chief mode</string>
+    <string name="chief_mode_desc">The Chief reads each request and staffs it with the fewest roles that can do it: a question gets no team, a small edit Developer + Reviewer, a bug Debugger + Tester + Reviewer. Off = the classic Planner → Coder → Reviewer team</string>
+    <string name="team_parallel_roles">Parallel read-only roles</string>
+    <string name="team_parallel_roles_desc">Let two independent read-only roles (research, reviews) run side by side. Off = one role at a time, gentler on low-memory phones</string>
+    <string name="team_cost_estimate">Cost estimate before start</string>
+    <string name="team_cost_estimate_desc">Show a rough estimate (plan size × each role\'s model price) before the team starts. Models without a price are reported, not guessed</string>
+    <string name="team_roles_desc">Roles the Chief may use. The Chief and the Developer are always on; a switched-off Debugger is replaced by the Developer.</string>
+    <string name="team_sep">", "</string>
+    <string name="role_chief">Chief</string>
+    <string name="role_planner">Planner</string>
+    <string name="role_research">Research</string>
+    <string name="role_architect">Architect</string>
+    <string name="role_developer">Developer</string>
+    <string name="role_debugger">Debugger</string>
+    <string name="role_security">Security</string>
+    <string name="role_tester">Tester</string>
+    <string name="role_reviewer">Reviewer</string>
+    <string name="role_optimizer">Optimizer</string>
+    <string name="role_documentation">Documentation</string>
+    <string name="role_deployment">Deployment</string>
+    <string name="role_chief_desc">Classifies the request and runs the team</string>
+    <string name="role_planner_desc">Splits large work into ordered steps with roles</string>
+    <string name="role_research_desc">Read-only: docs, versions and errors from the web</string>
+    <string name="role_architect_desc">Read-only: designs the solution before coding</string>
+    <string name="role_developer_desc">Writes the code</string>
+    <string name="role_debugger_desc">Finds root causes; takes over tasks that failed twice</string>
+    <string name="role_security_desc">Reviews changes for secrets, injection, auth and network risks</string>
+    <string name="role_tester_desc">Runs and adds tests; no production code changes</string>
+    <string name="role_reviewer_desc">Reviews changes for correctness</string>
+    <string name="role_optimizer_desc">Improves performance when asked</string>
+    <string name="role_documentation_desc">Updates docs when asked</string>
+    <string name="role_deployment_desc">Builds, commits and publishes when asked (push always asks you)</string>
+    <string name="team_notice_no_team">The Chief: a question — answered directly, no team.</string>
+    <string name="team_notice_selected">The Chief picked: %1$s</string>
+    <string name="team_notice_estimate">Estimated cost before start: about %1$s (rough: plan size × role price)</string>
+    <string name="team_notice_estimate_unpriced">Cost estimate unavailable: a role\'s model has no price. Add one in Usage &amp; budget.</string>
+    <string name="team_notice_cost">Cost per role: %1$s</string>
+    <string name="team_notice_started">%1$s · %2$s</string>
+    <string name="team_notice_reassigned">“%1$s” failed twice — reassigned to the %2$s.</string>
+    <string name="team_notice_conflict">Team conflict: %1$s</string>
+    <string name="team_notice_failed">%1$s could not finish “%2$s”: %3$s</string>
+    <string name="team_notice_graph_fallback">The planner\'s plan was unusable (a cycle or no work step) — the Chief\'s default plan runs instead.</string>
+    <string name="team_notice_rework">%1$s reworks “%2$s” after the review.</string>
+    <!-- v0.17 Memory engine & model router -->
+    <string name="notice_router">%1$s → %2$s (%3$s)</string>
+    <string name="notice_lesson_new">Lesson saved: %1$s</string>
+    <string name="notice_lesson_updated">Lesson reinforced: %1$s</string>
+    <string name="notice_spend_cap_daily">Stopped: today\'s spend cap is reached. Raise it in Settings → Memory engine &amp; router, or continue tomorrow.</string>
+    <string name="notice_spend_cap_monthly">Stopped: this month\'s spend cap is reached. Raise it in Settings → Memory engine &amp; router.</string>
+    <string name="memory_engine_section">Memory engine &amp; router</string>
+    <string name="memory_relevance">Relevant memory only</string>
+    <string name="memory_relevance_desc">Inject only the memories that match the request (on-device BM25, Arabic-aware) instead of the whole bank. Your preferences always ride along.</string>
+    <string name="session_summary">Rolling session summary</string>
+    <string name="session_summary_desc">In long chats, fold old turns into a summary saved with the session and send it instead of the full history.</string>
+    <string name="memory_lessons">Lessons from fixes</string>
+    <string name="memory_lessons_desc">When a run turns failing checks green, remember the error and its fix; show matching lessons to the Debugger next time.</string>
+    <string name="global_memory">Global memory</string>
+    <string name="global_memory_desc">Keep your personal preferences across all projects (on this phone only). Only what you ask to save globally; project memory never goes there.</string>
+    <string name="smart_router">Smart router</string>
+    <string name="smart_router_desc">Pick the model per step by capability, cost and context: cheap for planning, strong for coding, an independent reviewer, a vision model for images, and failover to another configured provider. Only providers you added a key for. Off = Falcon Router as before.</string>
+    <string name="spend_caps_title">Recall size &amp; spend caps</string>
+    <string name="spend_caps_desc">Spend caps stop a run cleanly when today\'s or this month\'s priced spend reaches them (0 = off).</string>
+    <string name="memory_top_k">Relevant memories per request (K)</string>
+    <string name="daily_spend_cap">Daily cap (USD)</string>
+    <string name="monthly_spend_cap">Monthly cap (USD)</string>
+    <string name="memory_layer_project">Project</string>
+    <string name="memory_layer_global">Global</string>
+    <string name="memory_layer_session">Session</string>
+    <string name="memory_session_hint">A summary of this chat\'s older turns, sent to the model instead of them (Rolling session summary).</string>
+    <string name="memory_session_empty">No summary yet — it appears when a chat grows long and the setting is on.</string>
+    <string name="memory_session_clear">Clear summary</string>
+    <string name="memory_global_off">Global memory is off. Nothing new is saved here; turn it on in Settings → Memory engine &amp; router.</string>
+    <string name="memory_search">Search</string>
+    <string name="memory_search_ph">word, file or error</string>
+    <string name="memory_type_all">All</string>
+    <string name="memory_type_note">Note</string>
+    <string name="memory_type_architecture">Architecture</string>
+    <string name="memory_type_dependency">Dependency</string>
+    <string name="memory_type_convention">Convention</string>
+    <string name="memory_type_lesson">Lesson</string>
+    <string name="memory_stale">stale</string>
+    <string name="memory_make_global">Make global</string>
 </resources>

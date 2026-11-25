@@ -118,6 +118,158 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getBoolean("falcon_router", true)
         set(v) { prefs.edit().putBoolean("falcon_router", v).apply(); bump() }
 
+    // ------------------------------------------------ v0.15 Autonomous Core (النواة المستقلة)
+
+    /** v0.15: run consecutive read-only SAFE tool calls side by side (max 3, per-tool timeout). */
+    var parallelTools: Boolean
+        get() = prefs.getBoolean("parallel_tools", true)
+        set(v) { prefs.edit().putBoolean("parallel_tools", v).apply(); bump() }
+
+    /** v0.15: HIGH-risk terminal commands (rm -r, curl|sh, writes outside /workspace…) wait for the user's yes. */
+    var confirmRiskyCommands: Boolean
+        get() = prefs.getBoolean("confirm_risky_commands", true)
+        set(v) { prefs.edit().putBoolean("confirm_risky_commands", v).apply(); bump() }
+
+    /** v0.15: loop guard v2 — cycles, repeated identical failures and no-progress streaks (the triple repeat always runs). */
+    var smartLoopGuard: Boolean
+        get() = prefs.getBoolean("smart_loop_guard", true)
+        set(v) { prefs.edit().putBoolean("smart_loop_guard", v).apply(); bump() }
+
+    /** v0.15: completion gate — in team mode, run lint/tests before a turn that changed files may finish. */
+    var verifyBeforeDone: Boolean
+        get() = prefs.getBoolean("verify_before_done", true)
+        set(v) { prefs.edit().putBoolean("verify_before_done", v).apply(); bump() }
+
+    /** v0.15: retry a transient model failure (429/5xx/timeout/network) once with backoff. */
+    var retryLlm: Boolean
+        get() = prefs.getBoolean("retry_llm", true)
+        set(v) { prefs.edit().putBoolean("retry_llm", v).apply(); bump() }
+
+    /** v0.15: the user's fallback model on an already-configured provider; null = none. */
+    var fallbackModel: com.ctodrs.saqrcode.agent.FallbackTarget?
+        get() = com.ctodrs.saqrcode.agent.LlmRetry.decode(prefs.getString("fallback_model", null))
+        set(v) { prefs.edit().putString("fallback_model", com.ctodrs.saqrcode.agent.LlmRetry.encode(v)).apply(); bump() }
+
+    /** v0.15: is [providerId] usable without asking — a saved key, or a keyless (local) provider. */
+    fun providerConfigured(providerId: String): Boolean {
+        val def = com.ctodrs.saqrcode.agent.Providers.all.firstOrNull { it.id == providerId } ?: return false
+        return (def.kind == ProviderKind.OPENAI_COMPAT && def.keyOptional) || apiKey(providerId) != null
+    }
+
+    /** v0.15: keep a task file per run in .saqr/tasks (goal, plan, step, spend, status) so resume restores it. */
+    var taskJournal: Boolean
+        get() = prefs.getBoolean("task_journal", true)
+        set(v) { prefs.edit().putBoolean("task_journal", v).apply(); bump() }
+
+    /** v0.15: append every tool call to .saqr/audit.jsonl (redacted, rotated at 1 MB). */
+    var auditLog: Boolean
+        get() = prefs.getBoolean("audit_log", true)
+        set(v) { prefs.edit().putBoolean("audit_log", v).apply(); bump() }
+
+    /** v0.15: wrap web and MCP results in an UNTRUSTED CONTENT envelope (prompt-injection hygiene). */
+    var untrustedMarking: Boolean
+        get() = prefs.getBoolean("untrusted_marking", true)
+        set(v) { prefs.edit().putBoolean("untrusted_marking", v).apply(); bump() }
+
+    /** v0.15: model steps per run (default 40 = the old fixed MAX_STEPS). */
+    var maxSteps: Int
+        get() = com.ctodrs.saqrcode.agent.Budgets.clampSteps(prefs.getInt("max_steps", com.ctodrs.saqrcode.agent.Budgets.DEFAULT_STEPS))
+        set(v) { prefs.edit().putInt("max_steps", com.ctodrs.saqrcode.agent.Budgets.clampSteps(v)).apply(); bump() }
+
+    /** v0.15: active minutes per run; 0 = no time limit. */
+    var maxMinutes: Int
+        get() = prefs.getInt("max_minutes", 0).coerceIn(0, 600)
+        set(v) { prefs.edit().putInt("max_minutes", v.coerceIn(0, 600)).apply(); bump() }
+
+    /** v0.15: priced spend per run in USD (Usage price table); 0 = no cost limit. */
+    var maxCostUsd: Double
+        get() = prefs.getString("max_cost_usd", null)?.toDoubleOrNull()?.takeIf { it > 0.0 } ?: 0.0
+        set(v) { prefs.edit().putString("max_cost_usd", v.takeIf { it > 0.0 }?.toString()).apply(); bump() }
+
+    fun budgets() = com.ctodrs.saqrcode.agent.Budgets.Limits(maxSteps, maxMinutes, maxCostUsd)
+
+    // ------------------------------------------------ v0.16 Agent team (فريق الوكلاء)
+
+    /** v0.16: Chief mode — in team mode the Chief classifies each request and staffs it with the minimum set of roles. Off = the classic Planner → Coder → Reviewer team. */
+    var chiefMode: Boolean
+        get() = prefs.getBoolean("chief_mode", false)
+        set(v) { prefs.edit().putBoolean("chief_mode", v).apply(); bump() }
+
+    /** v0.16: how many independent read-only roles (Research, reviews) may run side by side: 1 (sequential) or 2. */
+    var teamMaxConcurrent: Int
+        get() = prefs.getInt("team_max_concurrent", 1).coerceIn(1, 2)
+        set(v) { prefs.edit().putInt("team_max_concurrent", v.coerceIn(1, 2)).apply(); bump() }
+
+    /** v0.16: show a rough cost estimate (plan size × role price) before a Chief-mode run starts. */
+    var teamCostEstimate: Boolean
+        get() = prefs.getBoolean("team_cost_estimate", true)
+        set(v) { prefs.edit().putBoolean("team_cost_estimate", v).apply(); bump() }
+
+    /** v0.16: role ids the user switched off (Chief and Developer cannot be switched off). */
+    var teamDisabledRoles: Set<String>
+        get() = prefs.getStringSet("team_disabled_roles", emptySet())?.toSet() ?: emptySet()
+        set(v) { prefs.edit().putStringSet("team_disabled_roles", v.toSet()).apply(); bump() }
+
+    fun teamEnabledRoles(): Set<com.ctodrs.saqrcode.agent.AgentRole> = com.ctodrs.saqrcode.agent.AgentRoles.enabled(teamDisabledRoles)
+
+    // ------------------------------------------------ v0.17 Memory engine & model router (محرك الذاكرة والموجّه)
+
+    /** v0.17: inject only the top-K memories relevant to the request (BM25, on-device). Off = the whole bank, as before. */
+    var memoryRelevance: Boolean
+        get() = prefs.getBoolean("memory_relevance", false)
+        set(v) { prefs.edit().putBoolean("memory_relevance", v).apply(); bump() }
+
+    /** v0.17: how many relevant memories to inject (pinned preferences ride along). */
+    var memoryTopK: Int
+        get() = prefs.getInt("memory_top_k", com.ctodrs.saqrcode.agent.memory.MemoryRecall.DEFAULT_K)
+            .coerceIn(com.ctodrs.saqrcode.agent.memory.MemoryRecall.MIN_K, com.ctodrs.saqrcode.agent.memory.MemoryRecall.MAX_K)
+        set(v) { prefs.edit().putInt("memory_top_k", v.coerceIn(com.ctodrs.saqrcode.agent.memory.MemoryRecall.MIN_K, com.ctodrs.saqrcode.agent.memory.MemoryRecall.MAX_K)).apply(); bump() }
+
+    /** v0.17: roll a long session's old turns into a summary stored with the session (sent instead of the old turns). */
+    var sessionSummary: Boolean
+        get() = prefs.getBoolean("session_summary", false)
+        set(v) { prefs.edit().putBoolean("session_summary", v).apply(); bump() }
+
+    /** v0.17: capture error → solution lessons when a run turns failing checks green, and show matching ones to the Debugger. */
+    var memoryLessons: Boolean
+        get() = prefs.getBoolean("memory_lessons", true)
+        set(v) { prefs.edit().putBoolean("memory_lessons", v).apply(); bump() }
+
+    /** v0.17: the long-term, cross-project preference store (app-private). Off by default; nothing is saved there while off. */
+    var globalMemory: Boolean
+        get() = prefs.getBoolean("global_memory", false)
+        set(v) { prefs.edit().putBoolean("global_memory", v).apply(); bump() }
+
+    /** v0.17: the smart router (capabilities, tiers, independent reviewer, failover chain). Off = Falcon Router exactly as before. */
+    var smartRouter: Boolean
+        get() = prefs.getBoolean("smart_router", false)
+        set(v) { prefs.edit().putBoolean("smart_router", v).apply(); bump() }
+
+    /** v0.17: hard daily spend cap in USD (priced spend); 0 = off. */
+    var dailySpendCap: Double
+        get() = prefs.getString("daily_spend_cap", null)?.toDoubleOrNull()?.takeIf { it > 0.0 } ?: 0.0
+        set(v) { prefs.edit().putString("daily_spend_cap", v.takeIf { it > 0.0 }?.toString()).apply(); bump() }
+
+    /** v0.17: hard monthly spend cap in USD (priced spend); 0 = off. Separate from the monthly budget's warn/confirm. */
+    var monthlySpendCap: Double
+        get() = prefs.getString("monthly_spend_cap", null)?.toDoubleOrNull()?.takeIf { it > 0.0 } ?: 0.0
+        set(v) { prefs.edit().putString("monthly_spend_cap", v.takeIf { it > 0.0 }?.toString()).apply(); bump() }
+
+    /**
+     * v0.17: providers the router may use — a saved key, or a keyless custom endpoint with a
+     * real base URL and a model. The active provider is always included (it is the user's choice).
+     */
+    fun routableProviders(): List<com.ctodrs.saqrcode.agent.AvailableProvider> =
+        com.ctodrs.saqrcode.agent.Providers.all.mapNotNull { def ->
+            val cfg = config(def.id)
+            val active = def.id == activeProvider
+            if (!active && !providerConfigured(def.id)) return@mapNotNull null
+            if (cfg.model.isBlank()) return@mapNotNull null
+            if (def.baseUrlEditable && !Regex("^https?://[^/\\s]+").containsMatchIn(cfg.baseUrl)) return@mapNotNull null
+            val models = (listOf(cfg.model) + if (def.id == "custom") emptyList() else def.suggestedModels).filter { it.isNotBlank() }.distinct()
+            com.ctodrs.saqrcode.agent.AvailableProvider(def.id, models, def.contextWindow)
+        }
+
     // ------------------------------------------------ v0.13.3 Saqr Coach
 
     /** v0.13.3: epoch ms of the first command the agent received (0 = none yet). */

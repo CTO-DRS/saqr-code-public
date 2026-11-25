@@ -824,4 +824,124 @@
     <string name="sync_applied">تمّت المزامنة: %1$d إعداد، %2$d ثيم، %3$d أمر، %4$d حزمة</string>
     <string name="sync_tag_pushing">يرفع الآن…</string>
     <string name="sync_tag_pulling">يجلب الآن…</string>
+    <!-- v0.15 Autonomous Core -->
+    <string name="autonomy_section">النواة المستقلة</string>
+    <string name="parallel_tools">قراءات متوازية</string>
+    <string name="parallel_tools_desc">تشغيل أدوات القراءة المتتالية (قراءة، سرد، بحث، ويب) معاً — حتى ٣ في آن واحد، لكلٍّ مهلته. النتائج تبقى بترتيبها</string>
+    <string name="confirm_risky_commands">تأكيد الأوامر الخطرة</string>
+    <string name="confirm_risky_commands_desc">أوامر الطرفية مثل rm -r أو تمرير تنزيل إلى shell أو الكتابة خارج /workspace أو git push من الطرفية تنتظر موافقتك. لا يستطيع الوكيل الموافقة على نفسه</string>
+    <string name="smart_loop_guard">حارس الحلقات الذكي</string>
+    <string name="smart_loop_guard_desc">إضافة إلى التكرار الحرفي: يكتشف الدوران في حلقة، وتكرار نفس الاستدعاء الفاشل، وسلاسل الخطوات الفاشلة — ينبّه مرة ثم يوقف</string>
+    <string name="verify_before_done">التحقق قبل الإنهاء</string>
+    <string name="verify_before_done_desc">وضع الفريق: إذا غيّرت المهمة ملفات، يُشغَّل الفحص واختبارات المشروع قبل أن تنتهي. الإخفاق يعود للمبرمج (حتى جولتين) والنتيجة تُعلَن بصدق</string>
+    <string name="retry_llm">إعادة محاولة أخطاء النموذج</string>
+    <string name="retry_llm_desc">إعادة استدعاء النموذج المشغول أو المتعثّر (429، 5xx، انتهاء المهلة، الشبكة) مرة واحدة بعد مهلة قصيرة</string>
+    <string name="fallback_model">النموذج البديل</string>
+    <string name="fallback_model_desc">إن استمر تعثّر النموذج، تُنفَّذ تلك الخطوة على مزوّد آخر أعددته مسبقاً. لا تظهر إلا المزوّدات ذات المفاتيح المحفوظة</string>
+    <string name="fallback_none">بلا</string>
+    <string name="task_journal">سجل المهام</string>
+    <string name="task_journal_desc">حفظ هدف كل مهمة وخطتها وخطوتها وتكلفتها وحالتها في ‎.saqr/tasks ليكمل الاستئناف من حيث توقّف</string>
+    <string name="audit_log">سجل التدقيق</string>
+    <string name="audit_log_desc">تسجيل كل استدعاء أداة (الخطورة، القرار، النتيجة، المدة) في ‎.saqr/audit.jsonl — مع حجب الأسرار وتدوير الملف عند ١ ميغابايت</string>
+    <string name="untrusted_marking">وسم محتوى الويب كغير موثوق</string>
+    <string name="untrusted_marking_desc">صفحات الويب ونتائج البحث ومخرجات MCP تصل للنموذج مغلّفة كبيانات، لا كتعليمات</string>
+    <string name="budget_steps">الخطوات لكل مهمة</string>
+    <string name="budget_minutes">الدقائق لكل مهمة (0 = بلا حد)</string>
+    <string name="budget_cost">التكلفة لكل مهمة بالدولار (0 = بلا حد)</string>
+    <string name="budgets_title">ميزانيات المهمة</string>
+    <string name="budgets_desc">يتوقف الوكيل بهدوء حين تبلغ المهمة أحد هذه الحدود. وقت انتظار ردّك لا يُحتسب</string>
+    <string name="command_review_title">الموافقة على أمر خطِر</string>
+    <string name="command_review_sub">يريد الوكيل تشغيل أمر عالي الخطورة في الطرفية.</string>
+    <string name="notice_verify_passed">تم التحقق: نجح الفحص والاختبارات بعد التغييرات.</string>
+    <string name="notice_verify_failed">لم يُتحقق: ما زالت الفحوص تفشل بعد جولتَي إصلاح. راجع المخرجات قبل الاعتماد على هذه التغييرات.</string>
+    <string name="notice_verify_unverified">لم يُتحقق: تعذّر تشغيل أي فحص (ثبّت Linux أو أضف اختبارات).</string>
+    <string name="notice_verify_retry">فشلت الفحوص — يصلحها الوكيل قبل الإنهاء.</string>
+    <string name="notice_budget_time">توقّف: بلغت المهمة حدّها الزمني. أرسل رسالة للمتابعة.</string>
+    <string name="notice_budget_cost">توقّف: بلغت المهمة حدّ التكلفة. أرسل رسالة للمتابعة.</string>
+    <string name="notice_fallback">استمر تعثّر النموذج — نُفّذت هذه الخطوة على البديل: %1$s</string>
+
+    <!-- v0.16 Agent team (Chief mode) -->
+    <string name="team_section">فريق الوكلاء</string>
+    <string name="chief_mode">وضع القائد</string>
+    <string name="chief_mode_desc">يقرأ القائد كل طلب ويكلّف به أقل عدد من الأدوار يكفي لإنجازه: السؤال بلا فريق، والتعديل الصغير للمطوّر + المراجع، والخلل للمصحّح + المختبر + المراجع. الإيقاف = الفريق الكلاسيكي (مخطّط ← مبرمج ← مراجع)</string>
+    <string name="team_parallel_roles">أدوار القراءة بالتوازي</string>
+    <string name="team_parallel_roles_desc">يسمح بتشغيل دورين مستقلين للقراءة فقط (البحث، المراجعات) معًا. الإيقاف = دور واحد في كل مرة، أخفّ على الهواتف قليلة الذاكرة</string>
+    <string name="team_cost_estimate">تقدير التكلفة قبل البدء</string>
+    <string name="team_cost_estimate_desc">يعرض تقديرًا تقريبيًا (حجم الخطة × سعر نموذج كل دور) قبل أن يبدأ الفريق. النماذج بلا سعر يُذكر ذلك ولا يُخمَّن</string>
+    <string name="team_roles_desc">الأدوار المتاحة للقائد. القائد والمطوّر يعملان دائمًا؛ وإذا أُوقف المصحّح حلّ محله المطوّر.</string>
+    <string name="team_sep">"، "</string>
+    <string name="role_chief">القائد</string>
+    <string name="role_planner">المخطِّط</string>
+    <string name="role_research">الباحث</string>
+    <string name="role_architect">المعماري</string>
+    <string name="role_developer">المطوِّر</string>
+    <string name="role_debugger">المصحِّح</string>
+    <string name="role_security">الأمن</string>
+    <string name="role_tester">المختبِر</string>
+    <string name="role_reviewer">المراجِع</string>
+    <string name="role_optimizer">المحسِّن</string>
+    <string name="role_documentation">التوثيق</string>
+    <string name="role_deployment">النشر</string>
+    <string name="role_chief_desc">يصنّف الطلب ويدير الفريق</string>
+    <string name="role_planner_desc">يقسّم العمل الكبير إلى خطوات مرتبة بأدوارها</string>
+    <string name="role_research_desc">قراءة فقط: التوثيق والإصدارات وشرح الأخطاء من الويب</string>
+    <string name="role_architect_desc">قراءة فقط: يصمّم الحل قبل كتابة الكود</string>
+    <string name="role_developer_desc">يكتب الكود</string>
+    <string name="role_debugger_desc">يبحث عن السبب الجذري؛ ويتسلّم المهام التي فشلت مرتين</string>
+    <string name="role_security_desc">يراجع التغييرات بحثًا عن الأسرار والحقن ومخاطر الدخول والشبكة</string>
+    <string name="role_tester_desc">يشغّل الاختبارات ويضيفها؛ لا يغيّر كود الإنتاج</string>
+    <string name="role_reviewer_desc">يراجع صحة التغييرات</string>
+    <string name="role_optimizer_desc">يحسّن الأداء عند الطلب</string>
+    <string name="role_documentation_desc">يحدّث التوثيق عند الطلب</string>
+    <string name="role_deployment_desc">يبني ويثبّت وينشر عند الطلب (الدفع يطلب موافقتك دائمًا)</string>
+    <string name="team_notice_no_team">القائد: سؤال — الإجابة مباشرة بلا فريق.</string>
+    <string name="team_notice_selected">اختار القائد: %1$s</string>
+    <string name="team_notice_estimate">التكلفة المقدّرة قبل البدء: نحو %1$s (تقريبية: حجم الخطة × سعر الدور)</string>
+    <string name="team_notice_estimate_unpriced">تعذّر تقدير التكلفة: نموذج أحد الأدوار بلا سعر. أضفه من الاستهلاك والميزانية.</string>
+    <string name="team_notice_cost">التكلفة لكل دور: %1$s</string>
+    <string name="team_notice_started">%1$s · %2$s</string>
+    <string name="team_notice_reassigned">فشلت «%1$s» مرتين — أُسندت إلى %2$s.</string>
+    <string name="team_notice_conflict">تعارض في الفريق: %1$s</string>
+    <string name="team_notice_failed">لم يتمكن %1$s من إنهاء «%2$s»: %3$s</string>
+    <string name="team_notice_graph_fallback">خطة المخطّط غير صالحة (حلقة أو بلا خطوة عمل) — تُنفَّذ خطة القائد الافتراضية بدلًا منها.</string>
+    <string name="team_notice_rework">يعيد %1$s العمل على «%2$s» بعد المراجعة.</string>
+    <!-- v0.17 Memory engine & model router -->
+    <string name="notice_router">الموجّه: %1$s ← %2$s (%3$s)</string>
+    <string name="notice_lesson_new">حُفظ درس: %1$s</string>
+    <string name="notice_lesson_updated">تعزّز درس سابق: %1$s</string>
+    <string name="notice_spend_cap_daily">توقّف: بلغ إنفاق اليوم الحدّ الأقصى. ارفعه من الإعدادات ← محرك الذاكرة والموجّه، أو أكمل غدًا.</string>
+    <string name="notice_spend_cap_monthly">توقّف: بلغ إنفاق هذا الشهر الحدّ الأقصى. ارفعه من الإعدادات ← محرك الذاكرة والموجّه.</string>
+    <string name="memory_engine_section">محرك الذاكرة والموجّه</string>
+    <string name="memory_relevance">الذاكرة ذات الصلة فقط</string>
+    <string name="memory_relevance_desc">يُرسل فقط الذكريات المطابقة للطلب (BM25 على الجهاز ويفهم العربية) بدل البنك كاملًا. تفضيلاتك تُرسل دائمًا.</string>
+    <string name="session_summary">ملخّص الجلسة المتجدّد</string>
+    <string name="session_summary_desc">في المحادثات الطويلة تُطوى الأدوار القديمة في ملخّص يُحفظ مع الجلسة ويُرسل بدل السجل الكامل.</string>
+    <string name="memory_lessons">دروس من الإصلاحات</string>
+    <string name="memory_lessons_desc">حين يحوّل التشغيل فحوصًا فاشلة إلى ناجحة يتذكّر الخطأ وحلّه، ويعرض الدروس المطابقة على المصحِّح لاحقًا.</string>
+    <string name="global_memory">الذاكرة العامة</string>
+    <string name="global_memory_desc">احتفظ بتفضيلاتك الشخصية عبر كل المشاريع (على هذا الهاتف فقط). فقط ما تطلب حفظه عامًّا؛ ذاكرة المشروع لا تنتقل إليها.</string>
+    <string name="smart_router">الموجّه الذكي</string>
+    <string name="smart_router_desc">يختار النموذج لكل خطوة حسب القدرة والتكلفة والسياق: رخيص للتخطيط، قوي للبرمجة، مراجِع مستقل، نموذج رؤية للصور، وانتقال تلقائي إلى مزوّد آخر مُعدّ. فقط المزوّدون الذين أضفت مفاتيحهم. الإيقاف = موجّه الصقر كما كان.</string>
+    <string name="spend_caps_title">حجم الاستدعاء وسقوف الإنفاق</string>
+    <string name="spend_caps_desc">يوقف سقف الإنفاق التشغيلَ بهدوء حين يبلغ إنفاق اليوم أو الشهر المسعَّر قيمته (0 = إيقاف).</string>
+    <string name="memory_top_k">عدد الذكريات ذات الصلة لكل طلب (K)</string>
+    <string name="daily_spend_cap">السقف اليومي (دولار)</string>
+    <string name="monthly_spend_cap">السقف الشهري (دولار)</string>
+    <string name="memory_layer_project">المشروع</string>
+    <string name="memory_layer_global">عامة</string>
+    <string name="memory_layer_session">الجلسة</string>
+    <string name="memory_session_hint">ملخّص الأدوار الأقدم في هذه المحادثة، يُرسل للنموذج بدلها (ملخّص الجلسة المتجدّد).</string>
+    <string name="memory_session_empty">لا ملخّص بعد — يظهر حين تطول المحادثة والإعداد مفعّل.</string>
+    <string name="memory_session_clear">امسح الملخّص</string>
+    <string name="memory_global_off">الذاكرة العامة متوقفة. لن يُحفظ هنا شيء جديد؛ فعّلها من الإعدادات ← محرك الذاكرة والموجّه.</string>
+    <string name="memory_search">بحث</string>
+    <string name="memory_search_ph">كلمة أو ملف أو خطأ</string>
+    <string name="memory_type_all">الكل</string>
+    <string name="memory_type_note">ملاحظة</string>
+    <string name="memory_type_architecture">معمارية</string>
+    <string name="memory_type_dependency">اعتمادية</string>
+    <string name="memory_type_convention">عُرف</string>
+    <string name="memory_type_lesson">درس</string>
+    <string name="memory_stale">قديمة</string>
+    <string name="memory_make_global">اجعلها عامة</string>
 </resources>

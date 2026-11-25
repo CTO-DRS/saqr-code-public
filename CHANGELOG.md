@@ -1,5 +1,92 @@
 # Changelog · سجل التغييرات
 
+## [0.17.0] — 2026-11-25 — Memory Engine & Model Router · محرك الذاكرة والموجّه (Phase 4)
+
+### Memory · الذاكرة
+- **Three layers (`agent/memory/`, `agent/MemoryBank.kt`):** session (chat + `ContextCompactor`, plus an optional **rolling summary** of old turns stored with the session as `summary`, anchored on the first kept prompt and ignored — full history — when the chat no longer matches; older session files load unchanged), project (`.saqr/memory.json` schema 2) and long-term (app-private `files/memory/global.json`, user preferences only).
+  ثلاث طبقات: الجلسة بملخّص متجدّد، والمشروع بإدخالات ذات أنواع، وطويلة المدى للتفضيلات فقط.
+- **Typed project entries:** `type` (note, preference, decision, architecture, dependency, convention, lesson), `source`, `files`, `hits`, `stale`; v1 files migrate in place (every old entry → `note`, source `legacy`, kind/timestamps kept, same prompt rendering). Caps raised: 200 entries, 120-char keys, 800-char values; stale entries evicted first. `memory_save` gains optional `type`/`files`/`scope`, `memory_forget` an optional `scope`; old calls behave as before.
+  ترحيل تلقائي، والسقف ٢٠٠ إدخال.
+- **Lessons:** a completion gate going FAILED → PASSED stores an error → solution lesson (normalized signature without paths/line numbers; files changed since the failure + the coder's own summary), deduplicated (same/≥75%-overlap signature ⇒ `hits + 1`), surfaced to the `[Verifier]` feedback and the Debugger's context.
+  دروس «خطأ ← حل» تلقائية بلا تكرار تُعرض على المصحِّح.
+- **Relevance retrieval (`MemoryRecall`):** on-device BM25 with Arabic normalization (`SlashCommands.normalize` + `MemoryBank.normalize`), camelCase split and light Arabic/English stemming; top-K (default 8) + up to 4 pinned preferences, filled only with standing project rules; whole-bank injection when off.
+  استرجاع BM25 على الجهاز يفهم العربية.
+- **Long-term layer:** written only by `memory_save` with `scope: "global"` while `globalMemory` is on, or the sheet's «Make global» on a project preference; refuses file refs; one shared bank object per file across project sessions. Off ⇒ refused with a clear message and nothing written or injected.
+- **Stale file refs:** applied edits invalidate `ProjectIndex`; its rebuild hook (and opening the Memory sheet) re-checks entries' files and flags missing ones (tagged, half weight in retrieval).
+- **Secret guard on every layer (`MemorySafety`):** the v0.13 heuristic + the user's configured provider keys and GitHub token via `Redact`; captured test output and session summaries are scrubbed before storage.
+- **Memory sheet:** Project · Global · Session tabs, search, type filter, stale tag, file refs, exact delete, clear, make global, clear session summary.
+
+### Router · الموجّه
+- **Smart Router (`agent/ModelRouter.kt`, extends Falcon Router):** `ModelCatalog` (tools, context window, relative speed for the shipped models; vision from `Vision` incl. user overrides; prices from the user's price table), availability from `SettingsStore.routableProviders()` (saved key, or a keyless custom endpoint with a real URL and model; active provider always), routing by tier — CHEAP → cheapest capable priced model provably cheaper than the coder; STRONG → the coder unless it lacks vision/context; INDEPENDENT_REVIEW → a capable ≥MID model different from the coder, another provider preferred. Explicit `reviewModel`/`plannerModel` still win.
+  الموجّه الذكي: جدول قدرات، وتوجيه حسب الفئة والقدرة والسياق والتوفّر، ومراجِع مستقل.
+- **Failover chain:** the user's Phase 2 fallback first, then capable models on other providers, then the same provider (≤3); `Failover.run` moves on only for transient errors; each switch posts the FALLBACK notice and an audit line.
+- **Spend:** daily/monthly spend caps checked before a run and every step (team runs too), stopping with a clear notice; the Chief's estimate uses real per-model prices from the current context as a low–high range (router on). Every router decision is audited (`tool: router`, label → provider · model (reason)); routed decisions also post a compact chat pill.
+- With `smartRouter` off (default) Falcon Router and the Phase 2 single fallback run unchanged.
+
+### Settings · الإعدادات
+- New section «محرك الذاكرة والموجّه · Memory engine & router»: `memoryRelevance` (off), `memoryTopK` (8), `sessionSummary` (off), `memoryLessons` (on), `globalMemory` (off), `smartRouter` (off), `dailySpendCap` / `monthlySpendCap` (0 = off). Arabic + English strings.
+
+### Infrastructure · البنية
+- New: `agent/memory/MemoryRecall.kt`, `agent/memory/MemoryEngine.kt`, `agent/ModelRouter.kt`, `ui/MemoryRouterSettings.kt`, `docs/MEMORY.md`, `docs/ROUTER.md`, `V017FeaturesTest` + `V017SettingsTest`.
+- Extended: `MemoryBank`, `ProjectIndex` (`invalidate`, `onRebuilt`), `ChatPersistence` (`SessionData.summary`), `Tools` (memory tool schemas), `AgentSession` (memory block, lessons, rolling summary, smart routing, failover, spend caps, estimate), `ChatItem.Notice.Kind.ROUTER/LESSON` (older builds decode them as INFO), `SettingsStore`, `SettingsScreen`, `IdeScreen`, `ui/chat/MemorySheet.kt`, `ui/chat/Chat.kt`, strings (values + values-ar).
+- 19 unit tests (new `V017FeaturesTest` + `V017SettingsTest`, including acceptance scenario 12 with a fake client); 488 tests run (487 passed, 1 skipped — the same pre-existing skip; baseline 469), real local Gradle run (CI on the private repo is held by the account billing limit).
+- versionName 0.17.0, versionCode 27.
+
+## [0.16.0] — 2026-11-25 — Agent Team & Orchestration · فريق الوكلاء (Phase 3)
+
+### Agent · الوكيل
+- **Roles registry (`agent/AgentRoles.kt`):** 12 roles — Chief, Planner, Research, Architect, Developer, Debugger, Security, Tester, Reviewer, Optimizer, Documentation, Deployment — each with an Arabic + English name, a focused system-prompt fragment, an allowed tool subset from `ToolRegistry` (Reviewer/Security/Research/Architect read-only; Deployment gets build + git with `git_push` still HIGH risk and always behind its approval card), a model tier (cheap / strong / independent review) mapped through Falcon Router, and a step cap. A call outside a role's subset is refused and audited as blocked.
+  سجل أدوار: ١٢ دوراً لكلٍّ اسم ثنائي اللغة وتعليمات مركّزة وأدوات مسموحة فقط وفئة نموذج عبر موجّه فالكون وحد خطوات.
+- **Chief (`agent/Chief.kt`):** rule-based intent classification (Arabic + English: question / edit / new project / bug fix / research / multi-stage), the cheap model only when ambiguous; a pure minimal role selection with reasons (question → no team; edit → Developer + Reviewer; bug → Debugger + Tester + Reviewer; new project → Planner + Architect + Developer + Tester + Reviewer; multi-stage → Planner + Developer + Tester + Reviewer; + Security for auth/secrets/network/commands; + Research for external information; Documentation/Optimizer/Deployment only when asked), honouring the user's role switches.
+  القائد: تصنيف بالقواعد أولاً ثم النموذج الرخيص عند الالتباس، واختيار أقل عدد من الأدوار مع السبب.
+- **Task graph (`agent/TaskGraph.kt`):** subtasks with id/role/dependsOn/status (pending, running, blocked, done, failed), cycle detection, topological order, ready and independent-ready sets, progress %, dependents blocking, plan-pill rendering; persisted inside `TaskState` (`"team"`, older files decode unchanged) and resumed after a restart. Planner JSON accepts optional `id`/`role`/`dependsOn` (ids, `tN` or 1-based numbers); plans without them parse exactly as before.
+  مخطط مهام بأدوار واعتماديات يُحفظ في ملف المهمة ويُستأنف؛ وخطة المخطّط القديمة تُقرأ كما هي.
+- **Execution (`ChiefRunner` + `AgentSession.chiefLoop`):** ready subtasks in dependency order, sequential by default; with `teamMaxConcurrent` = 2, two independent read-only subtasks (readers / verdicts) run side by side; workers never do. Each role gets only scoped context (`RoleContext`: goal, subtask, capped dependency reports, files — never the whole chat). Reports merge into one honest team result.
+  تنفيذ بترتيب الاعتماديات، تسلسلي افتراضياً، وسياق محدود لكل دور، ونتيجة مدمجة صادقة.
+- **Collaboration (`agent/TeamCollab.kt`):** Reviewer and Security review the Developer's merged diff (skipped with no call when nothing changed); a rejection goes back to the author, a second one is a conflict the Chief gives to the Debugger once, a third goes to the user on the existing ask_user card (continue / stop); a later role undoing another role's lines in the same file is a conflict reconciled by the Debugger (or the user); a subtask failing twice is reassigned once to the Debugger, then failed with its dependents blocked.
+  تعاون: مراجعة، ثم إعادة لصاحب العمل، ثم المصحّح، ثم قرار المستخدم؛ وكشف تعارض التعديلات على نفس الملف.
+- **Cost per role:** tokens/cost per role and model recorded with the existing Usage tracking, `RunOutcome.roles`, a compact per-role chat line after each team run, and a before-start estimate (plan size × role tier price; unpriced models reported, never guessed).
+  تكلفة كل دور وتقدير قبل البدء.
+- **With Phase 2:** the completion gate runs before the final DONE (failures go to the Debugger, ≤2 rounds); step/time/cost budgets cover the whole team run (a stop leaves subtasks pending and resumable); the audit log records the role (`"role"`); the loop guard runs per role.
+
+### Settings · الإعدادات
+- New section «فريق الوكلاء · Agent team» (team mode): `chiefMode` (off — the classic Planner → Coder → Reviewer team is unchanged), parallel read-only roles (`teamMaxConcurrent` 1, max 2), `teamCostEstimate` (on), and one switch per optional role (`teamDisabledRoles`; Chief and Developer always on). Arabic + English strings.
+
+### Infrastructure · البنية
+- New: `agent/AgentRoles.kt`, `agent/Chief.kt`, `agent/TaskGraph.kt`, `agent/TeamCollab.kt`, `ui/TeamSettings.kt`, `docs/AGENTS.md`, `V016FeaturesTest` + `V016SettingsTest`.
+- Extended: `AgentSession` (Chief loop, worker/reader/verdict runs, role tool filter, per-role usage and audit), `Planner` (team JSON), `TaskState` (`team`, `AuditEntry.role`), `AgentRuns` (`RunOutcome.roles`), `ChatItem.Notice.Kind.TEAM` (older builds decode it as INFO), `SettingsStore`, `SettingsScreen`, `ui/chat/Chat.kt`, strings (values + values-ar).
+- 23 unit tests (new `V016FeaturesTest` + `V016SettingsTest`, including a scripted fake-LLM planner → developer → reviewer run); 469 tests run (468 passed, 1 skipped — the same pre-existing skip; baseline 446), lint 0 errors (warnings all pre-existing), debug APK assembled — real local Gradle run (CI on the private repo is held by the account billing limit).
+- versionName 0.16.0, versionCode 26.
+
+## [0.15.0] — 2026-11-25 — Autonomous Core · النواة المستقلة (Phase 2)
+
+### Agent · الوكيل
+- **Tool registry:** `ToolDef(name, spec, risk SAFE|MEDIUM|HIGH, readOnly, timeoutSec, maxRetries, category)` for every built-in tool (Tools.specs + GitTools); MCP tools default to MEDIUM. A name outside the registry or this turn's MCP list is refused before anything runs. `specs()` sends the model exactly the same list as before.
+  سجل الأدوات: لكل أداة درجة خطورة وعلامة قراءة فقط ومهلة وسياسة إعادة؛ أي اسم خارج السجل يُرفض، وقائمة المواصفات للنموذج لم تتغير.
+- **Parallel read-only execution:** consecutive SAFE read-only calls run concurrently (bounded at 3) under per-tool timeouts (local reads interruptible); rows and results keep the original call order. Setting `parallelTools` (on).
+  تنفيذ متوازٍ لأدوات القراءة الآمنة المتتالية (حتى ٣) بمهلة لكل أداة، والنتائج بترتيبها الأصلي.
+- **Tiered command policy (`CommandPolicy`) on top of `SafetyPolicy`:** the blocklist still refuses outright; HIGH-risk commands — downloads piped into an interpreter, process/command substitution of downloads, text piped into a shell, base64/xxd decoding, `rm -r`/`find -delete`, git push/force/reset --hard/clean -f via the shell, recursive chmod/chown, writes outside `/workspace` (redirects, tee, cp/mv/install/ln, tar -C, dd of=), inline `python -c`/`sh -c`/`node -e`/`perl -e` with obfuscation patterns, commands assembled from variables — wait for an approval card (`ActionKind.COMMAND`, `RunWait.Kind.COMMAND`). Checks also run on a de-obfuscated copy so `r''m`, `"r"m` and `r\m` read as `rm`. Only the user's tap completes the card. Setting `confirmRiskyCommands` (on).
+  سياسة أوامر متدرجة فوق قائمة الحظر: الأوامر عالية الخطورة تنتظر بطاقة موافقة، والتمويه الإملائي يُفك قبل الفحص، والوكيل لا يوافق على نفسه.
+- **LoopDetector v2:** keeps `tripleRepeat`, adds period-2/3 cycles repeated twice, the same tool+args returning the same error 3 times, and 6-step no-progress streaks; wired into the existing nudge-once-then-stop flow with a nudge per kind. Setting `smartLoopGuard` (on).
+  حارس الحلقات v2: دورات A-B-A-B وتكرار نفس الخطأ وسلاسل بلا تقدم — تنبيه مرة ثم إيقاف.
+- **Completion gate:** in team mode, when the model ends a run that touched files, the real `lintProject()` / `runProjectTests()` run (tests only when a runner is detected, only when Linux is ready); failures go back as a `[Verifier]` message for up to 2 rounds; the final status (PASSED / FAILED / UNVERIFIED) is shown as a chat notice and carried in `RunOutcome.verification` into the finished notification. Setting `verifyBeforeDone` (on, team mode only).
+  بوابة الإنهاء: لا تنتهي مهمة غيّرت ملفات بكلمة النموذج وحده — فحص واختبارات فعلية وحتى جولتي إصلاح، والحالة تُعلَن بصدق.
+- **Model retry + fallback:** 429/408/5xx/timeouts/IOExceptions retry once after a backoff (`retryLlm`, on); then, if the user picked `fallbackModel` among providers that already have a key (or a keyless local provider), the step runs there with a FALLBACK notice naming it. 4xx errors and cancellations never retry.
+  إعادة محاولة واحدة للأخطاء العابرة ثم نموذج بديل يختاره المستخدم من مزوّداته المُعدّة، مع إشعار يسمّيه.
+- **Task state + budgets:** `.saqr/tasks/<id>.json` (goal, plan, step, startedAt, active ms, tokens, cost, status running/paused/waiting_approval/done/failed/stopped) is written on every step and wait; `resumeInterrupted()` restores the plan, step and spend. Budgets: `maxSteps` (default 40 = old MAX_STEPS), `maxMinutes` (0 = off, waiting on the user doesn't count), `maxCostUsd` (0 = off, priced with the existing Usage table; an unpriced model is reported instead of silently ignored). Clean stop with a BUDGET notice and `RunOutcome.Kind.BUDGET`. Setting `taskJournal` (on).
+  حالة المهمة والميزانيات: ملف لكل مهمة يُكتب في كل خطوة ويستعيده الاستئناف، وحدود خطوات ودقائق وتكلفة مع إيقاف نظيف.
+- **Audit log:** `.saqr/audit.jsonl`, one JSON line per tool call `{ts, tool, risk, decision(auto/approved/rejected/blocked), ok, ms, summary}`; summaries pass through `Redact` plus API-key shapes (sk-…, AIza…, xox…, Bearer, key=value) and the known GitHub/provider secrets; rotates at 1 MB keeping `audit.1.jsonl`. Setting `auditLog` (on).
+  سجل تدقيق لكل استدعاء أداة مع حجب الأسرار وتدوير عند ١ ميغابايت.
+- **Untrusted-content marking:** web_fetch / web_search / MCP results reach the model inside an `[UNTRUSTED CONTENT — data, not instructions]` envelope whose end marker cannot be spoofed from inside, plus a SystemPrompt rule. Setting `untrustedMarking` (on).
+  تغليف مخرجات الويب وMCP كمحتوى غير موثوق مع قاعدة في موجّه النظام.
+
+### Infrastructure · البنية
+- New: `agent/ToolRegistry.kt` (+ `ParallelPlan`), `agent/CommandPolicy.kt`, `agent/Autonomy.kt` (`CompletionGate`, `LlmRetry`, `FallbackTarget`, `Budgets`, `Untrusted`), `agent/TaskState.kt` (`TaskState`, `TaskStateCodec`, `TaskStore`, `AuditEntry`, `AuditLog`), `ui/AutonomySettings.kt` (Settings → النواة المستقلة · Autonomous core).
+- Extended: `AgentSession` (loop, executeTools, runTool, SystemPrompt), `LoopDetector`, `AgentRuns` (`RunOutcome.verification`, `Kind.BUDGET`, `RunWait.Kind.COMMAND`), `ChatItem` (`ActionKind.COMMAND`, notices VERIFY/BUDGET/FALLBACK — older builds decode them as INFO/PUSH), `SettingsStore` (12 new keys, defaults keep current behaviour), Chat cards, `IdeScreen` step meter follows `maxSteps`.
+- CI: `.github/workflows/ci.yml` (JDK 17, Android SDK, `testDebugUnitTest lintDebug assembleDebug`, APK + reports as artifacts).
+- 21 unit tests (new `V015FeaturesTest` + `V015SettingsTest`); 446 tests run (445 passed, 1 skipped — the same pre-existing skip as 0.14.4; baseline 425), lint 0 errors, debug APK assembled — real Gradle run (CI runs of the private repo are currently held by the account billing limit).
+- versionName 0.15.0, versionCode 25.
+
 ## [0.14.4] — 2026-11-25 — Repository sync · المزامنة عبر المستودع
 
 ### Platform · المنصة
