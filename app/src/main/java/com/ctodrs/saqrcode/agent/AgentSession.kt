@@ -876,11 +876,15 @@ class AgentSession(
                 )
                 continue
             }
-            val cl = McpClient(Mcp.Server(s.name, s.url, settings.mcpAuth(s.name)))
+            // v0.14.1 OAuth: refresh a token that is about to expire (best effort) before connecting.
+            if (settings.mcpOAuthConfig(s.name) != null) McpOAuthRuntime.maybeRefresh(settings, s.name)
+            val cl = McpClient(Mcp.Server(s.name, s.url, settings.mcpAuthHeader(s.name)))
             val tools = withContext(Dispatchers.IO) { runCatching { cl.listTools() }.getOrNull() }
             if (tools == null || tools.isEmpty()) {
                 items += ChatItem.Notice(
-                    "MCP “${s.name}”: ${cl.endpointError ?: "no tools found"} — its tools are skipped this turn.",
+                    // v0.14.1: an unauthorized server names the way out instead of a bare HTTP error.
+                    if (cl.unauthorized) "MCP “${s.name}”: ${cl.endpointError} — sign in again from Settings → MCP servers."
+                    else "MCP “${s.name}”: ${cl.endpointError ?: "no tools found"} — its tools are skipped this turn.",
                     isError = false, kind = ChatItem.Notice.Kind.MCP,
                 )
                 continue

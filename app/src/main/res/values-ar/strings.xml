@@ -726,4 +726,25 @@
     <string name="coach_done_title">أول بناء ناجح</string>
     <string name="coach_done_body">اكتمل الطريق — من هنا اكتب ما تريد وسيعمل صقر على بنائه.</string>
     <string name="coach_done_when">اكتمل %1$s</string>
+    <!-- v0.14.1 تسجيل الدخول إلى MCP عبر OAuth (PKCE) -->
+    <string name="mcp_oauth_title">تسجيل الدخول عبر OAuth (PKCE)</string>
+    <string name="mcp_oauth_hint">للخوادم التي تطلب OAuth. يكتشف صقر نقاط النهاية تلقائيًا — ألصق معرّف العميل الذي أصدره لك الخادم ثم اضغط «ربط»، فيفتح المتصفح ويعيدك إلى هنا.</string>
+    <string name="mcp_oauth_client_id">معرّف العميل</string>
+    <string name="mcp_oauth_scopes">النطاقات (اختياري، مفصولة بمسافات)</string>
+    <string name="mcp_oauth_endpoint_auth">نقطة نهاية التخويل (تجاوز اختياري)</string>
+    <string name="mcp_oauth_endpoint_token">نقطة نهاية الرموز (تجاوز اختياري)</string>
+    <string name="mcp_oauth_connect">ربط</string>
+    <string name="mcp_oauth_reconnect">تسجيل الدخول من جديد</string>
+    <string name="mcp_oauth_disconnect">فصل الاتصال</string>
+    <string name="mcp_oauth_discovering">جارٍ اكتشاف نقاط نهاية الخادم…</string>
+    <string name="mcp_oauth_discover_fail">تعذّر اكتشاف نقاط نهاية OAuth — ألصقها يدويًا وحاول مرة أخرى</string>
+    <string name="mcp_oauth_opening">جارٍ فتح المتصفح لتسجيل الدخول…</string>
+    <string name="mcp_oauth_need_client">أدخل معرّف العميل أولًا</string>
+    <string name="mcp_oauth_status_valid">متصل — الرمز سليم</string>
+    <string name="mcp_oauth_status_expired">انتهت صلاحية الرمز — سجّل الدخول من جديد</string>
+    <string name="mcp_oauth_success">تم الدخول — الخادم متصل الآن</string>
+    <string name="mcp_oauth_denied">رُفض تسجيل الدخول — بقي الخادم غير متصل</string>
+    <string name="mcp_oauth_state_mismatch">استجابة الدخول لا تطابق هذا الجهاز — تم تجاهلها لأمانك</string>
+    <string name="mcp_oauth_failed_invalid">استجابة دخول غير مقروءة</string>
+    <string name="mcp_oauth_failed_short">فشل تسجيل الدخول — تحقق من معرّف العميل ونقاط النهاية ثم أعد المحاولة</string>
 </resources>

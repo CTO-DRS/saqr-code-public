@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.14.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.14.1** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,14 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.14.1
+| الميزة | الحالة |
+|---|---|
+| MCP عبر OAuth (PKCE) — البند الثاني من «أجنحة مفتوحة»: الخوادم المحمية تسجّل الدخول من الإعدادات ← خوادم MCP ← متصفح الخادم | ✅ |
+| اكتشاف تلقائي لنقاط النهاية (بيانات المورد المحمي + RFC 8414) مع تجاوزات يدوية، وتدفق OAuth 2.1 كامل بـ PKCE بطريقة S256 حصرًا داخل متصفح النظام | ✅ |
+| الرمز قرب الانتهاء يُجدَّد تلقائيًا قبل اتصال الوكيل، والمنتهي يرتد إلى ترويسة التخويل اليدوية بدل الفشل الصامت | ✅ |
+| دورة المتصفح آمنة الحالة: state مانع للتزوير يُتحقق منه في نشاط مخصص، والرموز في SecureStore المشفر والمُثبِت لا يغادر الجهاز، والخطأ 401 يسمّي المخرج | ✅ |
 
 ### الجديد في 0.14.0
 | الميزة | الحالة |
@@ -195,6 +203,12 @@
 ---
 
 ## English
+
+### New in v0.14.1
+- **MCP over OAuth (PKCE)** — the second «أجنحة مفتوحة» item: protected MCP servers sign in from Settings → MCP servers → the server's browser, with automatic endpoint discovery (protected-resource metadata + RFC 8414) and manual overrides.
+- **Full OAuth 2.1 authorization-code flow with PKCE (S256)** inside the system browser; tokens live in the encrypted SecureStore and never touch plain prefs.
+- **Tokens stay fresh:** an expiring token refreshes right before the agent connects, an expired one falls back to the manual auth header, and a 401 names the way out (sign in again from Settings) instead of a bare HTTP error.
+- **State-safe browser round-trip:** the anti-forgery state is validated in a dedicated no-UI callback activity; mismatches are refused outright.
 
 ### New in v0.14.0
 - **Skill packs (.saqrpack)** — the first «أجنحة مفتوحة» item: one JSON bundle installs, in one tap, a project template, ready Arabic slash commands, AGENTS.md rules and preferred tools.

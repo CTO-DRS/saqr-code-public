@@ -232,6 +232,10 @@ class McpClient(private val server: Mcp.Server, http: OkHttpClient? = null) {
 
     var endpointError: String? = null; private set
 
+    /** v0.14.1: the server answered 401 — the user must (re)sign in from Settings → MCP. */
+    var unauthorized: Boolean = false
+        private set
+
     /** POSTs a JSON-RPC payload; returns the response object (JSON or SSE body). */
     private fun post(payload: JSONObject): JSONObject? {
         val rb = Request.Builder().url(server.url)
@@ -242,7 +246,13 @@ class McpClient(private val server: Mcp.Server, http: OkHttpClient? = null) {
         server.authHeader?.takeIf { it.isNotBlank() }?.let { rb.header("Authorization", it) }
         client.newCall(rb.build()).execute().use { resp ->
             if (!resp.isSuccessful) {
-                endpointError = "HTTP ${resp.code} from ${server.url}"
+                if (resp.code == 401) {
+                    // v0.14.1: an OAuth-protected server without (or with stale) credentials.
+                    unauthorized = true
+                    endpointError = "HTTP 401 — unauthorized (OAuth sign-in required)"
+                } else {
+                    endpointError = "HTTP ${resp.code} from ${server.url}"
+                }
                 return null
             }
             val ct = resp.header("Content-Type")

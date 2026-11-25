@@ -150,6 +150,63 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         secure.put("mcp_auth_" + com.ctodrs.saqrcode.agent.Mcp.slugify(serverName), value)
     }
 
+    // ------------------------------------------------ v0.14.1 MCP OAuth (PKCE)
+
+    /** v0.14.1: per-server OAuth config (client id, scopes, endpoints) keyed by slug — non-secret. */
+    var mcpOAuthJson: String
+        get() = prefs.getString("mcp_oauth_configs", "") ?: ""
+        set(v) { prefs.edit().putString("mcp_oauth_configs", v).apply(); bump() }
+
+    fun mcpOAuthConfig(serverName: String): com.ctodrs.saqrcode.agent.McpOAuth.Config? =
+        com.ctodrs.saqrcode.agent.McpOAuth.decodeConfigs(mcpOAuthJson)[com.ctodrs.saqrcode.agent.Mcp.slugify(serverName)]
+
+    fun setMcpOAuthConfig(serverName: String, cfg: com.ctodrs.saqrcode.agent.McpOAuth.Config?) {
+        val slug = com.ctodrs.saqrcode.agent.Mcp.slugify(serverName)
+        val cur = com.ctodrs.saqrcode.agent.McpOAuth.decodeConfigs(mcpOAuthJson)
+        mcpOAuthJson = com.ctodrs.saqrcode.agent.McpOAuth.encodeConfigs(if (cfg == null) cur - slug else cur + (slug to cfg))
+    }
+
+    /** v0.14.1: the OAuth token set of a server — lives encrypted in [SecureStore]. */
+    fun mcpTokens(serverName: String): com.ctodrs.saqrcode.agent.McpOAuth.Tokens? =
+        com.ctodrs.saqrcode.agent.McpOAuth.decodeTokens(secure.get("mcp_oauth_" + com.ctodrs.saqrcode.agent.Mcp.slugify(serverName)))
+
+    fun setMcpTokens(serverName: String, tokens: com.ctodrs.saqrcode.agent.McpOAuth.Tokens?) {
+        secure.put("mcp_oauth_" + com.ctodrs.saqrcode.agent.Mcp.slugify(serverName), tokens?.let { com.ctodrs.saqrcode.agent.McpOAuth.encodeTokens(it) })
+    }
+
+    /** v0.14.1: in-flight PKCE flows persisted by state so the callback activity finds them. */
+    var mcpOAuthPendingJson: String
+        get() = prefs.getString("mcp_oauth_pending", "") ?: ""
+        set(v) { prefs.edit().putString("mcp_oauth_pending", v).apply(); bump() }
+
+    fun setMcpOAuthPending(pending: com.ctodrs.saqrcode.agent.McpOAuth.Pending) {
+        mcpOAuthPendingJson = com.ctodrs.saqrcode.agent.McpOAuth.encodePending(
+            com.ctodrs.saqrcode.agent.McpOAuth.decodePending(mcpOAuthPendingJson) + (pending.state to pending))
+    }
+
+    fun mcpOAuthPending(state: String): com.ctodrs.saqrcode.agent.McpOAuth.Pending? =
+        com.ctodrs.saqrcode.agent.McpOAuth.decodePending(mcpOAuthPendingJson)[state]
+
+    fun clearMcpOAuthPending(state: String) {
+        mcpOAuthPendingJson = com.ctodrs.saqrcode.agent.McpOAuth.encodePending(
+            com.ctodrs.saqrcode.agent.McpOAuth.decodePending(mcpOAuthPendingJson) - state)
+    }
+
+    /**
+     * v0.14.1: the Authorization header for a server — live OAuth tokens first, the
+     * manual auth header second (also the fallback while tokens are expired).
+     */
+    fun mcpAuthHeader(serverName: String): String? {
+        if (mcpOAuthConfig(serverName) != null) {
+            mcpTokens(serverName)?.let { t ->
+                if (!com.ctodrs.saqrcode.agent.McpOAuth.needsRefresh(t, System.currentTimeMillis())) {
+                    return com.ctodrs.saqrcode.agent.McpOAuth.bearerOf(t)
+                }
+            }
+        }
+        return mcpAuth(serverName)
+    }
+
     /** v0.10: MCP tools hidden from the agent, keyed by server slug → raw tool names. */
     var mcpDisabledTools: Map<String, Set<String>>
         get() = com.ctodrs.saqrcode.agent.Mcp.decodeDisabled(prefs.getString("mcp_disabled", null))

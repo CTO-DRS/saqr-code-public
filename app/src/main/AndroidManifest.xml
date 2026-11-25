@@ -53,6 +53,20 @@
             </intent-filter>
         </activity>
 
+        <!-- v0.14.1: the MCP OAuth (PKCE) redirect lands here from the system browser. -->
+        <activity
+            android:name=".OAuthCallbackActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.SaqrCode">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="saqr" android:host="oauth" />
+            </intent-filter>
+        </activity>
+
         <!-- v0.6: keeps a user-started agent task alive in the background. -->
         <service
             android:name=".service.AgentService"

@@ -153,6 +153,12 @@ class SettingsUi(
     val onMcpRemove: (String) -> Unit = {},
     /** v0.9: the decrypted auth header of an MCP server (for the tools browser). */
     val mcpAuthFor: (String) -> String? = { null },
+    /** v0.14.1 MCP OAuth: per-server config + tokens + the PKCE flow callbacks. */
+    val mcpOAuthConfigFor: (String) -> com.ctodrs.saqrcode.agent.McpOAuth.Config? = { null },
+    val mcpTokensFor: (String) -> com.ctodrs.saqrcode.agent.McpOAuth.Tokens? = { null },
+    val onMcpOAuthSave: (String, com.ctodrs.saqrcode.agent.McpOAuth.Config) -> Unit = { _, _ -> },
+    val onMcpOAuthRemove: (String) -> Unit = {},
+    val onMcpOAuthPending: (com.ctodrs.saqrcode.agent.McpOAuth.Pending) -> Unit = {},
     /** v0.10: per-server MCP tool allow/deny — is (server, rawTool) hidden from the agent. */
     val mcpToolDisabled: (server: String, rawTool: String) -> Boolean = { _, _ -> false },
     val onMcpToolDisabled: (server: String, rawTool: String, disabled: Boolean) -> Unit = { _, _, _ -> },
@@ -295,8 +301,18 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
         onMcpRemove = { name ->
             settings.mcpServers = settings.mcpServers.filter { it.name != name }
             settings.setMcpAuth(name, null)
+            settings.setMcpOAuthConfig(name, null)
+            settings.setMcpTokens(name, null)
         },
-        mcpAuthFor = { name -> settings.mcpAuth(name) },
+        mcpAuthFor = { name -> settings.mcpAuthHeader(name) },
+        mcpOAuthConfigFor = { name -> settings.mcpOAuthConfig(name) },
+        mcpTokensFor = { name -> settings.mcpTokens(name) },
+        onMcpOAuthSave = { name, cfg -> settings.setMcpOAuthConfig(name, cfg) },
+        onMcpOAuthRemove = { name ->
+            settings.setMcpOAuthConfig(name, null)
+            settings.setMcpTokens(name, null)
+        },
+        onMcpOAuthPending = { settings.setMcpOAuthPending(it) },
         mcpToolDisabled = { s, t -> settings.mcpToolDisabled(s, t) },
         onMcpToolDisabled = { s, t, d -> settings.setMcpToolDisabled(s, t, d) },
         suggestedModels = com.ctodrs.saqrcode.agent.Providers.byId(settings.activeProvider).suggestedModels,
@@ -576,6 +592,11 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     auth = ui.mcpAuthFor(server.name),
                     disabledFor = { raw -> ui.mcpToolDisabled(server.name, raw) },
                     onToggleTool = { raw, d -> ui.onMcpToolDisabled(server.name, raw, d) },
+                    oauthCfg = ui.mcpOAuthConfigFor(server.name),
+                    oauthTokens = ui.mcpTokensFor(server.name),
+                    onSaveOAuth = { ui.onMcpOAuthSave(server.name, it) },
+                    onRemoveOAuth = { ui.onMcpOAuthRemove(server.name) },
+                    onStartOAuth = { ui.onMcpOAuthPending(it) },
                     onDismiss = { browsingServer = null },
                 )
             }
@@ -940,6 +961,11 @@ private fun McpToolsBrowser(
     auth: String?,
     disabledFor: (String) -> Boolean = { false },
     onToggleTool: (String, Boolean) -> Unit = { _, _ -> },
+    oauthCfg: com.ctodrs.saqrcode.agent.McpOAuth.Config? = null,
+    oauthTokens: com.ctodrs.saqrcode.agent.McpOAuth.Tokens? = null,
+    onSaveOAuth: (com.ctodrs.saqrcode.agent.McpOAuth.Config) -> Unit = {},
+    onRemoveOAuth: () -> Unit = {},
+    onStartOAuth: (com.ctodrs.saqrcode.agent.McpOAuth.Pending) -> Unit = {},
     onDismiss: () -> Unit,
 ) {
     val c = Saqr.colors
@@ -989,6 +1015,15 @@ private fun McpToolsBrowser(
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
                 Text(server.url, style = Saqr.type.monoSmall, color = c.text3, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                // v0.14.1: OAuth (PKCE) sign-in for protected servers, right above the tool list.
+                McpOAuthSection(
+                    server = server,
+                    cfg = oauthCfg,
+                    tokens = oauthTokens,
+                    onSave = onSaveOAuth,
+                    onRemove = onRemoveOAuth,
+                    onStart = onStartOAuth,
+                )
                 when {
                     loading -> Text("…", style = Saqr.type.caption, color = c.text3)
                     error != null -> Column {
@@ -1046,6 +1081,112 @@ private fun McpToolsBrowser(
             androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.close), color = c.accentText) }
         },
     )
+}
+
+/**
+ * v0.14.1 · قسم OAuth داخل مستعرض الخادم · OAuth (PKCE) section of the MCP tools browser:
+ * paste a client id (and optionally scopes / manual endpoints), tap sign in — Saqr discovers
+ * the endpoints from the server's metadata, persists the config, saves the pending PKCE flow
+ * and opens the system browser; the redirect lands on [com.ctodrs.saqrcode.OAuthCallbackActivity]
+ * which exchanges the code and stores the tokens. A connected server shows a status line with
+ * «sign in again» and «disconnect».
+ */
+@Composable
+private fun McpOAuthSection(
+    server: com.ctodrs.saqrcode.agent.Mcp.Server,
+    cfg: com.ctodrs.saqrcode.agent.McpOAuth.Config?,
+    tokens: com.ctodrs.saqrcode.agent.McpOAuth.Tokens?,
+    onSave: (com.ctodrs.saqrcode.agent.McpOAuth.Config) -> Unit,
+    onRemove: () -> Unit,
+    onStart: (com.ctodrs.saqrcode.agent.McpOAuth.Pending) -> Unit,
+) {
+    val c = Saqr.colors
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    var clientId by remember(server.name) { mutableStateOf(cfg?.clientId ?: "") }
+    var scopes by remember(server.name) { mutableStateOf(cfg?.scopes?.joinToString(" ") ?: "") }
+    var authUrl by remember(server.name) { mutableStateOf(cfg?.authUrl ?: "") }
+    var tokenUrl by remember(server.name) { mutableStateOf(cfg?.tokenUrl ?: "") }
+    var status by remember { mutableStateOf<String?>(null) }
+    var working by remember { mutableStateOf(false) }
+    val discoveringText = stringResource(R.string.mcp_oauth_discovering)
+    val discoverFailText = stringResource(R.string.mcp_oauth_discover_fail)
+    val openingText = stringResource(R.string.mcp_oauth_opening)
+    val needClientText = stringResource(R.string.mcp_oauth_need_client)
+    val oauth = com.ctodrs.saqrcode.agent.McpOAuth
+
+    fun signIn() {
+        val id = clientId.trim()
+        if (id.isEmpty()) { status = needClientText; return }
+        working = true; status = discoveringText
+        scope.launch {
+            // v0.14.1: endpoints come from the server's metadata; pasted overrides win.
+            val discovered = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching { com.ctodrs.saqrcode.agent.McpOAuthHttp.discoverEndpoints(server.url) }.getOrNull()
+            }
+            val au = authUrl.trim().ifEmpty { discovered?.authorizationEndpoint }
+            val tu = tokenUrl.trim().ifEmpty { discovered?.tokenEndpoint }
+            if (au == null || tu == null) {
+                working = false
+                status = discoverFailText
+                return@launch
+            }
+            val sc = (scopes.trim().ifEmpty { discovered?.scopes?.joinToString(" ") }).orEmpty()
+            val config = com.ctodrs.saqrcode.agent.McpOAuth.Config(id, sc.split(Regex("[\\s,]+")).filter { it.isNotBlank() }, au, tu, server.url)
+            val state = oauth.newState()
+            val verifier = oauth.codeVerifier()
+            onStart(com.ctodrs.saqrcode.agent.McpOAuth.Pending(server.name, state, verifier, id, oauth.REDIRECT_URI, tu, server.url))
+            onSave(config)
+            val url = oauth.authorizeUrl(au, id, oauth.REDIRECT_URI, oauth.codeChallenge(verifier), state, config.scopes, server.url)
+            status = openingText
+            runCatching {
+                ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+            working = false
+        }
+    }
+
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2).padding(Sp.md),
+        verticalArrangement = Arrangement.spacedBy(Sp.xs),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SIcon(Lucide.KeyRound, size = 15.dp, tint = c.accentText)
+            Spacer(Modifier.width(Sp.xs))
+            Text(stringResource(R.string.mcp_oauth_title), style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1)
+        }
+        Text(stringResource(R.string.mcp_oauth_hint), style = Saqr.type.caption, color = c.text3)
+        tokens?.let {
+            val expired = oauth.needsRefresh(it, System.currentTimeMillis())
+            Text(
+                stringResource(if (expired) R.string.mcp_oauth_status_expired else R.string.mcp_oauth_status_valid),
+                style = Saqr.type.caption,
+                color = if (expired) c.danger else c.success,
+            )
+        }
+        SaqrField(clientId, { clientId = it; status = null }, label = stringResource(R.string.mcp_oauth_client_id), mono = true)
+        SaqrField(scopes, { scopes = it; status = null }, label = stringResource(R.string.mcp_oauth_scopes), mono = true)
+        SaqrField(authUrl, { authUrl = it; status = null }, label = stringResource(R.string.mcp_oauth_endpoint_auth),
+            placeholder = "https://…/authorize", mono = true,
+            keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri))
+        SaqrField(tokenUrl, { tokenUrl = it; status = null }, label = stringResource(R.string.mcp_oauth_endpoint_token),
+            placeholder = "https://…/token", mono = true,
+            keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri))
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalAlignment = Alignment.CenterVertically) {
+            GhostButton(
+                stringResource(if (cfg == null) R.string.mcp_oauth_connect else R.string.mcp_oauth_reconnect),
+                { signIn() },
+                icon = Lucide.KeyRound,
+                enabled = !working,
+            )
+            if (cfg != null) {
+                GhostButton(stringResource(R.string.mcp_oauth_disconnect), onRemove, icon = Lucide.Trash2)
+            }
+        }
+        if (working) Text("…", style = Saqr.type.caption, color = c.text3)
+        status?.let { Text(it, style = Saqr.type.caption, color = c.text2) }
+    }
 }
 
 @Composable

@@ -726,4 +726,25 @@
     <string name="coach_done_title">First successful build</string>
     <string name="coach_done_body">The path is complete — from here, describe what you want and Saqr builds it.</string>
     <string name="coach_done_when">Completed %1$s</string>
+    <!-- v0.14.1 MCP OAuth (PKCE) -->
+    <string name="mcp_oauth_title">Sign in with OAuth (PKCE)</string>
+    <string name="mcp_oauth_hint">For servers that require OAuth. Saqr discovers the endpoints automatically — paste the client id the server issued you, then tap connect; the browser opens and lands back here.</string>
+    <string name="mcp_oauth_client_id">Client id</string>
+    <string name="mcp_oauth_scopes">Scopes (optional, space-separated)</string>
+    <string name="mcp_oauth_endpoint_auth">Authorization endpoint (optional override)</string>
+    <string name="mcp_oauth_endpoint_token">Token endpoint (optional override)</string>
+    <string name="mcp_oauth_connect">Sign in</string>
+    <string name="mcp_oauth_reconnect">Sign in again</string>
+    <string name="mcp_oauth_disconnect">Disconnect</string>
+    <string name="mcp_oauth_discovering">Discovering the server\'s endpoints…</string>
+    <string name="mcp_oauth_discover_fail">Could not discover the OAuth endpoints — paste them manually and try again</string>
+    <string name="mcp_oauth_opening">Opening the browser to sign in…</string>
+    <string name="mcp_oauth_need_client">Enter the client id first</string>
+    <string name="mcp_oauth_status_valid">Connected — the token is valid</string>
+    <string name="mcp_oauth_status_expired">The token has expired — sign in again</string>
+    <string name="mcp_oauth_success">Signed in — the server is connected</string>
+    <string name="mcp_oauth_denied">Sign-in was denied — the server stayed unconnected</string>
+    <string name="mcp_oauth_state_mismatch">The sign-in response does not match this device — for safety it was ignored</string>
+    <string name="mcp_oauth_failed_invalid">Unreadable sign-in response</string>
+    <string name="mcp_oauth_failed_short">Sign-in failed — check the client id and endpoints, then try again</string>
 </resources>
