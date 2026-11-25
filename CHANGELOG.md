@@ -1,5 +1,20 @@
 # Changelog · سجل التغييرات
 
+## [0.14.0] — 2026-11-25 — Skill packs · حزم المهارات
+
+### Platform · المنصة
+- **Skill packs (.saqrpack) — the first «أجنحة مفتوحة» item (P0):** one JSON bundle installs, in one tap, a project **template**, ready **Arabic slash commands**, **AGENTS.md rules** and **preferred tools**. Install from Settings → حزم المهارات by pasting the pack JSON (or one tap on the built-in **Flask sample**), and the pack appears as a template card on the home screen — creating from it materializes the full file set (template base overlaid by the pack's files) with the rules and preferred tools merged into `AGENTS.md`, which the agent already injects into every turn's system prompt.
+  حزم المهارات (.saqrpack) — البند الأول من «أجنحة مفتوحة» (P0): حزمة JSON واحدة تنصب بنقرة **قالب مشروع** و**أوامر عربية جاهزة** و**قواعد AGENTS.md** و**أدوات مفضلة**. التثبيت من الإعدادات ← حزم المهارات بلصق محتوى الحزمة (أو بنقرة على **عينة Flask** الجاهزة)، فتظهر الحزمة بطاقة قالب في الشاشة الرئيسية — وإنشاؤها يكتب الملفات كاملة (قالب أساس تفرض عليه ملفات الحزمة) مع حقن القواعد والأدوات المفضلة في `AGENTS.md` الذي يقرأه الوكيل من موجّه النظام في كل دورة تلقائيًا.
+- **A safe, Arabic-aware merge:** commands upsert by the Arabic-normalized name (الهمزات والتشكيل لا تخلق تكرارًا) and can never shadow a builtin (`/fix`, `/اصلح` …); pack paths are sandboxed (no absolute, no `..` jumps), sizes capped (40 files, 2000-char rules, 12 commands), and `AGENTS.md` merges instead of overwriting. Uninstalling a pack removes its template but keeps the commands the user already has.
+  دمج آمن ومرن عربيًا: الأوامر تُحديث بالاسم الموحّد عربيًا (الهمزات والتشكيل لا تخلق تكرارًا) ولا تستطيع أبدًا تغطية أمر مدمج (`/fix`, `/اصلح` …)؛ مسارات ملفات الحزمة محصورة (لا مطلق ولا قفز `..`) والأحجام مقيّدة (40 ملفًا، قواعد 2000 حرف، 12 أمرًا)، و`AGENTS.md` يُدمَج لا يُستبدل. إزالة الحزمة تحذف قالبها فقط وتُبقي الأوامر المثبتة.
+- **Flask acceptance in the field:** installing the Flask sample and creating its project completes well under the 5-second bar — three ready-to-run Arabic commands (`/flask-run`, `/flask-test`, `/flask-route`), a working `app.py` + `requirements.txt`, and rules/tools in AGENTS.md — all verified by unit tests.
+  معيار Flask ميدانيًا: تثبيت العينة وإنشاء مشروعها يكتمل بأقل كثيرًا من حد الـ5 ثوانٍ — ثلاثة أوامر عربية جاهزة للتشغيل (`/flask-run`, `/flask-test`, `/flask-route`)، و`app.py` + `requirements.txt` يعملان، وقواعد وأدوات في AGENTS.md — وكلها مغطاة باختبارات وحدة.
+
+### Infrastructure · البنية
+- New `data/SaqrPack.kt`: pure logic — `SaqrPack`/`PackCommand` + a strict `fromJson` (version-checked, never throws), `validate()` with stable error keys, `packFiles()` (template resolution + file overlay + AGENTS.md merge), `mergeCommands()` (Arabic-normalized upsert, builtins untouchable), `install()`/`remove()`, and the built-in `flaskSample()`.
+- Wiring: `ProjectRepository.create(name, files)` overload for explicit file maps; `SettingsStore.packsJson` (`saqr_packs`); Settings → حزم المهارات (hint, installed-pack rows with remove, Flask sample button, paste-JSON install); HomeScreen pack template cards + `CreatePackDialog` writing `packFiles()`.
+- 15 unit tests (new `V014FeaturesTest`): codec round-trips, strict parsing, validation keys (paths/sizes/duplicates/builtins), AGENTS.md merging with and without a base template, the Arabic-aware command merge, install/remove semantics, persistence, the files-map repository path, and the ≤5s Flask acceptance. Version 0.14.0 (code 20).
+
 ## [0.13.5] — 2026-11-25 — Desert mode · وضع صحراوي
 
 ### Productivity · الإنتاجية

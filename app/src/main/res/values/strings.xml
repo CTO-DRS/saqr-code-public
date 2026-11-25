@@ -442,6 +442,18 @@
     <string name="desert_status_idle">Network available — cloud features are on.</string>
     <string name="desert_banner">Desert mode: the agent, web tools, remote MCP and push/pull are paused until the network returns. Files, terminal, local commits and the cached build environment still work.</string>
     <string name="notice_desert">Desert mode is active (no network): sending a command needs a connection. Everything local — files, terminal, memory, local commits, the cached build environment — still works, and your text stays here unsent.</string>
+    <!-- v0.14 skill packs -->
+    <string name="pack_section">Skill packs</string>
+    <string name="pack_hint">A .saqrpack installs a project template, ready Arabic commands, AGENTS.md rules and preferred tools in one tap. Installed packs appear as templates on the home screen.</string>
+    <string name="pack_import">Paste a .saqrpack (JSON)</string>
+    <string name="pack_install">Install pack</string>
+    <string name="pack_bad_json">Invalid pack — check the content and try again</string>
+    <string name="pack_installed">Pack installed</string>
+    <string name="pack_packs_label">Installed packs</string>
+    <string name="pack_commands_n">%d ready commands</string>
+    <string name="pack_flask_button">Install the Flask sample</string>
+    <string name="pack_flask_toast">Flask pack installed — its template is on the home screen</string>
+    <string name="pack_template_of">Template: %s</string>
     <!-- v0.7 build tab -->
     <string name="tab_build">Build</string>
     <string name="build_title">On-device APK build</string>

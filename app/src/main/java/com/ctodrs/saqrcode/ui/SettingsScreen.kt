@@ -188,6 +188,12 @@ class SettingsUi(
     /** v0.13.3 Saqr Coach: completed-steps label and the reopen callback. */
     val coachProgressLabel: String = "",
     val onCoach: () -> Unit = {},
+    /** v0.14 skill packs: installed .saqrpack bundles + install/remove callbacks. */
+    val packs: List<com.ctodrs.saqrcode.data.SaqrPack> = emptyList(),
+    /** Raw pack JSON → an error key, or null when installed. */
+    val onInstallPack: (String) -> String? = { null },
+    val onInstallFlask: () -> Unit = {},
+    val onRemovePack: (String) -> Unit = {},
 )
 
 @Composable
@@ -358,6 +364,35 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
         onEditorFontSize = { settings.editorFontSize = it },
         editorWrap = settings.editorWrap,
         onEditorWrap = { settings.editorWrap = it },
+        packs = com.ctodrs.saqrcode.data.SaqrPackCodec.decodePacks(settings.packsJson),
+        onInstallPack = { raw ->
+            val p = com.ctodrs.saqrcode.data.SaqrPackCodec.fromJson(raw)
+            val err = if (p == null) "json" else com.ctodrs.saqrcode.data.SaqrPackCodec.validate(p)
+            if (err == null) {
+                val (cmds, packs) = com.ctodrs.saqrcode.data.SaqrPackCodec.install(
+                    settings.customCommands,
+                    com.ctodrs.saqrcode.data.SaqrPackCodec.decodePacks(settings.packsJson),
+                    p!!, System.currentTimeMillis(),
+                )
+                settings.customCommands = cmds
+                settings.packsJson = com.ctodrs.saqrcode.data.SaqrPackCodec.encodePacks(packs)
+            }
+            err
+        },
+        onInstallFlask = {
+            val (cmds, packs) = com.ctodrs.saqrcode.data.SaqrPackCodec.install(
+                settings.customCommands,
+                com.ctodrs.saqrcode.data.SaqrPackCodec.decodePacks(settings.packsJson),
+                com.ctodrs.saqrcode.data.SaqrPackCodec.flaskSample(), System.currentTimeMillis(),
+            )
+            settings.customCommands = cmds
+            settings.packsJson = com.ctodrs.saqrcode.data.SaqrPackCodec.encodePacks(packs)
+        },
+        onRemovePack = { id ->
+            settings.packsJson = com.ctodrs.saqrcode.data.SaqrPackCodec.encodePacks(
+                com.ctodrs.saqrcode.data.SaqrPackCodec.remove(
+                    com.ctodrs.saqrcode.data.SaqrPackCodec.decodePacks(settings.packsJson), id))
+        },
     )
     if (showBattery) BatteryDialog(onDismiss = { showBattery = false })
     com.ctodrs.saqrcode.billing.PaywallDialog(
@@ -624,6 +659,10 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             // ---- slash commands
             SectionLabel(stringResource(R.string.slash_section), Modifier.padding(top = Sp.md))
             Group { SlashCommandsEditor(ui) }
+
+            // ---- v0.14 skill packs: one-tap .saqrpack install
+            SectionLabel(stringResource(R.string.pack_section), Modifier.padding(top = Sp.md))
+            Group { SaqrPacksCard(ui) }
 
             // ---- usage & budget
             SectionLabel(stringResource(R.string.usage_section), Modifier.padding(top = Sp.md))
@@ -1341,6 +1380,55 @@ private fun ThemeStudioCard(ui: SettingsUi) {
         GhostButton(stringResource(R.string.studio_import_apply), {
             val p = com.ctodrs.saqrcode.ui.theme.ThemePack.fromJson(importJson)
             if (p != null) { apply(p); toast(ctx, R.string.studio_applied); err = null } else err = R.string.studio_bad_json
+        }, icon = Lucide.Upload)
+        err?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger) }
+    }
+}
+
+/** v0.14 skill packs: one-tap install of a .saqrpack (template + commands + rules + tools). */
+@Composable
+private fun SaqrPacksCard(ui: SettingsUi) {
+    val c = Saqr.colors
+    val ctx = LocalContext.current
+    var importJson by remember { mutableStateOf("") }
+    var err by remember { mutableStateOf<Int?>(null) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+        Text(stringResource(R.string.pack_hint), style = Saqr.type.caption, color = c.text2)
+        ui.packs.forEach { p ->
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2)
+                    .border(1.dp, c.border, RoundedCornerShape(Radius.sm))
+                    .padding(horizontal = Sp.md, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(p.name, style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1, maxLines = 1)
+                    Text(
+                        p.description.ifBlank { p.nameAr },
+                        style = Saqr.type.micro, color = c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        stringResource(R.string.pack_commands_n, p.commands.size) +
+                            if (p.templateRef.isNotBlank()) "  ·  " + stringResource(R.string.pack_template_of, p.templateRef) else "",
+                        style = Saqr.type.micro, color = c.text3, maxLines = 1,
+                    )
+                }
+                Box(Modifier.size(30.dp).clip(CircleShape).clickable { ui.onRemovePack(p.id); err = null }, contentAlignment = Alignment.Center) {
+                    SIcon(Lucide.Trash2, size = 14.dp, tint = c.danger, contentDescription = stringResource(R.string.delete))
+                }
+            }
+        }
+        GhostButton(stringResource(R.string.pack_flask_button), {
+            ui.onInstallFlask(); err = null
+            toast(ctx, R.string.pack_flask_toast)
+        }, icon = Lucide.Package)
+        SaqrField(importJson, { importJson = it; err = null }, label = stringResource(R.string.pack_import), placeholder = "{\"saqrpack\":1,…}", mono = true)
+        GhostButton(stringResource(R.string.pack_install), {
+            if (ui.onInstallPack(importJson) == null) {
+                importJson = ""; err = null
+                toast(ctx, R.string.pack_installed)
+            } else err = R.string.pack_bad_json
         }, icon = Lucide.Upload)
         err?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger) }
     }

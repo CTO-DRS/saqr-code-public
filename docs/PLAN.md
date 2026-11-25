@@ -6,59 +6,63 @@ The single source of direction is [ROADMAP.md](../ROADMAP.md); this file holds t
 
 ---
 
-## الإصدار الجاري · Current release: 0.13 «عقل الصقر · Falcon Mind» (يناير 2027)
+## الإصدار الجاري · Current release: 0.14 «أجنحة مفتوحة · Open Wings» (فبراير 2027)
 
-### 1. بنك الذاكرة · Memory bank
-- ذاكرة دائمة لكل مشروع (`.saqr/memory.json`): قرار، تفضيل، حقيقة — يسترجعها الوكيل تلقائيًا في كل دورة عبر موجه النظام، ويحفظها بنفسه بأدوات `memory_save` / `memory_forget`.
-- Persistent per-project memory (`.saqr/memory.json`): decisions, preferences, facts — auto-recalled into the system prompt every turn; the agent saves them itself with `memory_save` / `memory_forget`.
-- [x] مفاتيح عربية تُوحَّد (الهمزات، التاء المربوطة، التشكيل) فلا تُخزَّن الحقيقة نفسها مرتين — تحديث بالـ upsert وحدّ أقصى 60 مدخلة بإزاحة الأقدم.
-- [x] Arabic keys are normalized (alef forms, taa marbouta, diacritics) so the same fact is never stored twice — upsert semantics with a 60-entry cap evicting the oldest.
-- [x] استرجاع محدود الميزانية (~2000 حرف) مرتّب: التفضيلات ثم القرارات ثم الحقائق، والأحدث أولًا — لا يسرق سياق العمل.
-- [x] Budgeted recall (~2000 chars), ordered preferences → decisions → facts, newest first — it never crowds out working context.
-- [x] واجهة «بنك الذاكرة» من قائمة المحادثة: عرض، إضافة، تعديل، حذف، إفراغ — والمستخدم يملك الذاكرة كاملة.
-- [x] «Memory bank» sheet from the chat menu: view, add, edit, delete, clear — the user fully owns the memory.
-- [ ] لقطة ميدانية: نسبة المحادثات التي يسترجع فيها الوكيل قرارًا سابقًا دون إعادة سؤال المستخدم (قبل/بعد).
-- [ ] Field note: share of turns where the agent recalls a prior decision without re-asking (before/after).
+الترتيب حسب الأولوية: P0 أولًا ثم P1 ثم P2، وكل بند يُشحن إصدارًا فرعيًا كاملًا (0.14.0، 0.14.1 …) ببنود قبوله.
 
-### 2. فهرس المشروع · Project index
-- فهرس رموز خفيف (ملفات/دوال/أصناف) يتولد عند فتح المشروع ويغذي بحث الوكيل بدل قراءة ملفات كاملة.
-- A lightweight symbol index (files/functions/classes) built when the project opens, feeding the agent's search instead of full-file reads.
-- [x] أول نتيجة أقل من 200ms على مشروع 500 ملف. *(تم: 0.13.1 — ماسح رموز بلا regex وبخيوط عمل متوازية للبناء، بحث مفهرس مسبق التطبيع، بناء 89ms لـ501 ملفاً و3502 رمزاً — ملاحظة ميدانية على بيئة الاختبار المقيدة)*
-- [x] First result under 200 ms on a 500-file project. *(done: 0.13.1 — regex-free single-pass scanner, parallel worker-pool build, pre-normalized names for the ranked scan)*
+Order follows priority: P0 first, then P1, then P2; each item ships as its own complete minor release (0.14.0, 0.14.1 …).
 
-### 3. موجّه النماذج · Falcon Router
-- توجيه المهمة للنموذج الأرخص المناسب (خطة/كود/مراجعة/تلخيص) بهدف توفير ≥25% من التكلفة، مع رقم معلن.
-- Route each stage to the cheapest capable model (plan/code/review/summarise) targeting ≥25% cost savings, published as a number.
-- [x] التخطيط والمراجعة وضغط السياق تُوجَّه إلى أرخص نموذج يكفي حسب عائلة النموذج (خفيف/متوسط/كامل — المراجع يشترط متوسطاً حفاظاً على الجودة)، والاختيار اليدوي لكل مرحلة يتقدم على الموجّه، والمبرمج لا يُوجَّه أبداً. *(تم: 0.13.2)*
-- [x] Planning, review and compaction route to the cheapest capable model by family tier (light/mid/full — the reviewer requires mid to keep review quality); an explicit per-stage pick wins over the router, and the coder is never routed. *(done: 0.13.2)*
-- [x] توفير مقاس على حمل حقيقي مع بقاء جودة المراجعة — الرقم يُقاس باستمرار في التطبيق نفسه: كل نداء موجَّه يُسعَّر عند نموذجه وعند سعر نموذج المبرمج (خط الأس) ويُخزَّن يومياً في `usage/falcon.json`، ويظهر «وفّره الموجّه» في الاستهلاك والميزانية. لا توجيه إلا حين يثبت جدول الأسعار توفيراً. *(تم: 0.13.2 — القياس مستمر على حمل المستخدم الحقيقي)*
-- [x] Measured savings on a real workload with review quality intact — measured continuously in the app itself: every routed call is priced at its model and at the coder's price (baseline), persisted daily in `usage/falcon.json`, and shown as «Saved by the router» in Usage & budget. Routing only happens when the price table proves it. *(done: 0.13.2 — the measurement runs on the user's real workload)*
+### 1. حزم المهارات · Skill packs (P0)
+- حزمة `.saqrpack` تنصب قالبًا وأوامر مخصصة وقواعد AGENTS.md وأدوات مفضلة بنقرة.
+- A `.saqrpack` bundle installs a template, custom commands, AGENTS.md rules and preferred tools in one tap.
+- [ ] تثبيت حزمة «Flask» يضف قالبًا وأوامرًا جاهزة في ≤ 5 ثوانٍ.
+- [ ] Installing a «Flask» pack adds a template and ready commands in ≤ 5 seconds.
+- [ ] القالب يظهر في الشاشة الرئيسية ويُنشئ مشروعًا كامل الملفات، والقواعد تُحقن في AGENTS.md ويقرأها الوكيل تلقائيًا.
+- [ ] The template shows on the home screen and creates a full project; rules land in AGENTS.md and the agent picks them up automatically.
+- [ ] الأوامر تُدمج دون كسر المدمجة أو تكرار الاسم (توحيد عربي)، والاستيراد بالصق أو بعينة جاهزة، والإزالة تحذف القالب لا الأوامر المثبتة.
+- [ ] Commands merge without breaking builtins or duplicating names (Arabic-aware); import by paste or a ready sample; removal deletes the template only, not the installed commands.
 
-### 4. مدرّب صقر · Saqr Coach
-- إرشاد أول استخدام ومسار تعلم مختصر داخل التطبيق (أمثلة أوامر بالعربية).
-- In-app first-run guidance and a short learning path (Arabic command examples).
-- [x] مستخدم جديد يصل لأول بناء ناجح دون مساعدة خارجية. *(تم: 0.13.3 — مدرّب صقر: خمس خطوات مرتبة (مفتاح ← مشروع ← أول أمر ← تجربة البناء ← أول بناء ناجح) كلٌّ يكتمل بمُشيره الحقيقي فقط، وبطاقة تقدم حية ولوحة كاملة وأمثلة أوامر عربية بزر نسخ تتبع قالب أحدث مشروع، مع إخفاء وإعادة فتح من الإعدادات)*
-- [x] A new user reaches a first successful build without external help. *(done: 0.13.3 — Saqr Coach: five ordered steps each completing only on its real signal, a live n/5 card and full sheet, Arabic starter prompts with copy following the newest project's family, hide + reopen from Settings)*
+### 2. MCP عبر OAuth · MCP over OAuth (P1)
+- دخول PKCE لخوادم MCP المحمية من الإعدادات.
+- PKCE sign-in for protected MCP servers from Settings.
+- [ ] ربط خادم يتطلب OAuth واكتشاف أدواته كاملة.
+- [ ] Connect a server that requires OAuth and discover its full toolset.
 
-### 5. صوت بلا يدين · Hands-free voice
-- إملاء مستمر مع إيقاظ «يا صقر» وتشغيل/إيقاف من الإشعار.
-- Continuous dictation with a «Ya Saqr» wake phrase and notification toggle.
-- [x] إملاء مستمر يعيد الإنصات تلقائيًا بعد كل جملة، ووضعان: كتابة في الصندوق أو أوامر بلا يدين، مع تراجع تدريجي عند الأخطاء العابرة وتوقف مهذّب عند القاتلة. *(تم: 0.13.4 — `agent/WakePhrase.kt` و`agent/Dictation.kt` منطق نقي، و`ui/chat/ContinuousVoice.kt` التوصيل، و15 اختبارًا في `V0134FeaturesTest`)*
-- [x] Continuous dictation re-listens after every utterance; two modes (typing vs hands-free commands) with back-off on transient errors and a graceful stop on fatal ones. *(done: 0.13.4 — pure logic in `agent/WakePhrase.kt` + `agent/Dictation.kt`, wiring in `ui/chat/ContinuousVoice.kt`, 15 tests in `V0134FeaturesTest`)*
-- [x] إيقاظ «يا صقر» بمرونة عربية (التشكيل، الهمزات، الدمج «ياصقر») ولاتينية «Ya Saqr»، والأمر الذي يليه يُرسل نفسه، وما قبل الإيقاظ لا يُكتب ولا يُرسل أبدًا. *(تم: 0.13.4)*
-- [x] Flexible «Ya Saqr» wake (diacritics, alef forms, fused «ياصقر», latin spellings); the command after it sends itself, and pre-wake speech is never typed or sent. *(done: 0.13.4)*
-- [x] تشغيل/إيقاف من إشعار صامت دائم بزر إيقاف يقلب الوضع المحفوظ فورًا — والبدء من الإشعار مقصودًا غير مدعوم فلا يسمع صقر من الخلفية. *(تم: 0.13.4 — `service/DictationReceiver.kt`)*
-- [x] A silent ongoing notification with a Stop action that flips the persisted mode instantly; starting capture from the notification is deliberately unsupported so Saqr never listens while backgrounded. *(done: 0.13.4 — `service/DictationReceiver.kt`)*
-- [ ] دقة إملاء عربية مقبولة على ضوضاء خفيفة — تُقاس على أجهزة Snapdragon وMediaTek حقيقية مع الأرقام الميدانية.
-- [ ] Acceptable Arabic dictation accuracy in light noise — to be measured on real Snapdragon and MediaTek devices alongside the field numbers.
+### 3. بناء سحابي اختياري (BYOC) · Bring-your-own-compute cloud build (P1)
+- للهواتف الضعيفة: تشغيل البناء على GitHub Actions في مستودع المستخدم نفسه، وإعادة APK للمعاينة والتثبيت داخل التطبيق.
+- For weak phones: run the build on GitHub Actions inside the user's own repository, and return the APK for in-app preview and install.
+- [ ] بناء قالب Compose سحابيًا في ≤ 15 دقيقة مع سجل مباشر.
+- [ ] Build a Compose template in the cloud in ≤ 15 minutes with a live log.
 
-### 6. وضع صحراوي · Desert mode
-- وضع انقطاع الشبكة: قوائم أوامر محلية، إلغاء الميزات السحابية تلقائيًا، ومتابعة البناء المحلي.
-- Offline-first mode: local command lists, cloud features gracefully off, on-device build keeps working.
-- [x] كل ميزة سحابية تتعامل مع الانقطاع برسالة واضحة بلا انهيار. *(تم: 0.13.5 — ثلاث حالات: إيقاف / «عند الانقطاع» عبر مراقب اتصال حيّ / «دائمًا»؛ الإرسال يُرفض بإشعار واحد غير متكدس، وأدوات الويب وMCP البعيدة ودفع/سحب Git تُجاب برفض مقروء وسط الدور، وخوادم MCP البعيدة تُتخطى بإشعار بدل المهلة، والتجهيز يتوقف عند الجزء الناقص فقط بعد فحص المخزون)*
-- [x] Every cloud feature degrades gracefully with a clear message, no crash. *(done: 0.13.5 — three modes: off / «when offline» via a live connectivity watcher / «always»; a fresh send lands as one deduped notice, web tools, remote MCP and push/pull answer the model mid-turn with a readable refusal, remote MCP servers are skipped with a notice instead of timing out, and build preparation stops only at the genuinely missing download after its cache check)*
-- [x] قوائم الأوامر المحلية والبناء المحلي يستمران: الملفات والطرفية والذاكرة والفهرس وgit المحلي والفحص والاختبارات وخوادم stdio المحلية وبيئة البناء المخزّنة تعمل بلا مساس. *(تم: 0.13.5)*
-- [x] Local command lists and the on-device build keep working: files, terminal, memory, the symbol index, local git, lint/tests, local stdio MCP servers and the cached build environment are untouched. *(done: 0.13.5)*
+### 4. معرض المجتمع · Community gallery (P1)
+- معرض قوالب ومشاريع عربية يُسحب من مستودع GitHub عام، والمساهمة عبر PR.
+- A gallery of Arabic templates and projects pulled from a public GitHub repository, with PR-based contribution.
+- [ ] تصفح وتثبيت قالب من المعرض بنقرة.
+- [ ] Browse and install a template from the gallery in one tap.
+
+### 5. مزامنة عبر المستودع · Repository-based sync (P2)
+- تصدير/استيراد الإعدادات والثيمات والأوامر المخصصة عبر ملف أو مستودع خاص مشفر — بلا خادم مركزي.
+- Export/import settings, themes and custom commands via a file or an encrypted private repository — no central server.
+- [ ] إعداد جهاز ثانٍ في ≤ دقيقتين.
+- [ ] Set up a second device in ≤ 2 minutes.
+
+### 6. صقر الحارس · Saqr Guard (P2)
+- مهام مجدولة محلية: اختبارات ليلية، تقرير صباحي بإشعار، مراقبة فروقات مستودع المستخدم.
+- Local scheduled tasks: nightly tests, a morning report notification, watching the user's repository for changes.
+- [ ] مهمة مجدولة تعمل في وقتها ويصل تقريرها.
+- [ ] A scheduled task runs on time and its report arrives.
+
+### 7. ويجت وبلاطة · Widget and Quick Tile (P2)
+- ويجت حالة المهمة الجارية على الشاشة الرئيسية + Quick Tile لتشغيل/إيقاف الوكيل.
+- A home-screen widget for the running task + a Quick Tile to start/stop the agent.
+- [ ] تحديث لحظي وإيقاف بنقرة.
+- [ ] Live updates and one-tap stop.
+
+### 8. استوديو بصري v1 · Visual studio v1 (P2)
+- توسيع انتقاء العناصر إلى تحرير مباشر (لون، مسافة، نص) من المعاينة يُترجم بدقة إلى الكود.
+- Extend element picking into direct editing (color, spacing, text) from the preview, translated faithfully to code.
+- [ ] تعديل لون/مسافة من المعاينة يعدّل السطر الصحيح.
+- [ ] A color/spacing edit from the preview lands on the right line.
 
 ---
 
@@ -70,6 +74,6 @@ The single source of direction is [ROADMAP.md](../ROADMAP.md); this file holds t
 - تحديث README وCHANGELOG وROADMAP في نفس الـ commit الأخير.
 - README / CHANGELOG / ROADMAP updated with the release commit.
 
-## بعد 0.13 · After 0.13
-- تُفتح هذه الوثيقة مجددًا لتعكس 0.14 «أجنحة مفتوحة»: MCP OAuth، حزم `.saqrpack`، بناء سحابي BYOC، مزامنة مشفرة، صقر الحارس، ويجت/Tile، معرض مجتمع، استوديو بصري.
-- This file is reopened for 0.14 «Open Wings»: MCP OAuth, .saqrpack bundles, BYOC cloud build, encrypted sync, Saqr Guard, widget/Tile, community gallery, visual studio.
+## بعد 0.14 · After 0.14
+- تُفتح هذه الوثيقة مجددًا لـ 1.0 «الانقضض»: إثبات ميداني نهائي، إطلاق Google Play، أداء واستقرار، تدقيق أمني، توثيق وإطلاق، ترحيب جديد.
+- This file reopens for 1.0 «The Strike»: final field proof, Google Play launch, performance & stability, security audit, docs & launch, a fresh onboarding.

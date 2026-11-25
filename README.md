@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.13.5** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.14.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,14 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.14.0
+| الميزة | الحالة |
+|---|---|
+| حزم المهارات (.saqrpack) — البند الأول من «أجنحة مفتوحة»: حزمة JSON واحدة تنصب بنقرة قالب مشروع وأوامر عربية جاهزة وقواعد AGENTS.md وأدوات مفضلة | ✅ |
+| التثبيت من الإعدادات بلصق محتوى الحزمة أو بنقرة على عينة Flask الجاهزة، فتظهر الحزمة بطاقة قالب في الشاشة الرئيسية وينشئ مشروعًا كامل الملفات | ✅ |
+| القواعد والأدوات المفضلة تُحقن في AGENTS.md فيقرأها الوكيل تلقائيًا في كل دورة، والأوامر تُدمج بالتوحيد العربي دون تغطية المدمجة | ✅ |
+| حماية كاملة: مسارات الحزمة محصورة بلا مطلق ولا قفز .. والأحجام مقيّدة، وإزالة الحزمة تحذف قالبها فقط وتُبقي الأوامر | ✅ |
 
 ### الجديد في 0.13.5
 | الميزة | الحالة |
@@ -187,6 +195,12 @@
 ---
 
 ## English
+
+### New in v0.14.0
+- **Skill packs (.saqrpack)** — the first «أجنحة مفتوحة» item: one JSON bundle installs, in one tap, a project template, ready Arabic slash commands, AGENTS.md rules and preferred tools.
+- **Install from Settings** by pasting the pack JSON or one tap on the built-in Flask sample; the pack then appears as a template card on the home screen and creates a full project (template base + the pack's files).
+- **Rules and preferred tools land in AGENTS.md**, so the agent reads them in every turn automatically; commands merge by the Arabic-normalized name and can never shadow a builtin.
+- **Hardened by design:** pack paths are sandboxed (no absolute paths, no `..` jumps), sizes are capped, and uninstalling a pack removes its template but keeps the installed commands.
 
 ### New in v0.13.5
 - **Desert mode (وضع صحراوي):** the final «عقل الصقر» item — an offline-first mode with three settings: off, **«عند الانقطاع»** (activates automatically while the device has no validated internet) and **«دائمًا»** (forced rationing of data / battery / heat even online).

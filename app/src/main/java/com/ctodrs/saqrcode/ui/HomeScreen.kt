@@ -51,6 +51,8 @@ import com.ctodrs.saqrcode.agent.CoachSnapshot
 import com.ctodrs.saqrcode.agent.SaqrCoach
 import com.ctodrs.saqrcode.billing.PaywallDialog
 import com.ctodrs.saqrcode.data.Project
+import com.ctodrs.saqrcode.data.SaqrPack
+import com.ctodrs.saqrcode.data.SaqrPackCodec
 import com.ctodrs.saqrcode.data.Template
 import com.ctodrs.saqrcode.ui.components.FalconMark
 import com.ctodrs.saqrcode.ui.components.latinDigits
@@ -110,6 +112,9 @@ fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -
         app.projects.list().map { p -> p.toCard().copy(branch = branchOf(p.dir), lastBuild = builds.last(p.name)) }
     }
     var create by remember { mutableStateOf<Template?>(null) }
+    // v0.14 skill packs: installed .saqrpack bundles appear as home-screen templates
+    var createPack by remember { mutableStateOf<SaqrPack?>(null) }
+    val packs = remember(version, refresh) { SaqrPackCodec.decodePacks(app.settings.packsJson) }
     var toDelete by remember { mutableStateOf<String?>(null) }
     var gate by remember { mutableStateOf(false) }
     val c = Saqr.colors
@@ -150,9 +155,12 @@ fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -
     HomeContent(
         projects = projects, needsProvider = version.let { !app.settings.activeReady() },
         projectCapReached = capReached,
+        packs = packs,
         coachSnap = coachSnap, coachProgress = coachProgress, coachDismissed = app.settings.coachDismissed,
         onOpen = onOpen, onSettings = onSettings, onPaywall = onPaywall,
-        onCreate = { if (capReached) gate = true else create = it ?: Template.WEB }, onDelete = { toDelete = it },
+        onCreate = { if (capReached) gate = true else create = it ?: Template.WEB },
+        onCreatePack = { if (capReached) gate = true else createPack = it },
+        onDelete = { toDelete = it },
         onCoach = { coachOpen = true },
     )
 
@@ -169,6 +177,17 @@ fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -
             initial = tpl,
             onDismiss = { create = null },
             onCreate = { name, t -> app.projects.create(name, t).onSuccess { create = null; refresh++; onOpen(it.name) } },
+        )
+    }
+    // v0.14 skill packs: creating from an installed pack materializes its template files + rules
+    createPack?.let { pk ->
+        CreatePackDialog(
+            pack = pk,
+            onDismiss = { createPack = null },
+            onCreate = { name, p ->
+                app.projects.create(name, SaqrPackCodec.packFiles(p, name))
+                    .onSuccess { createPack = null; refresh++; onOpen(it.name) }
+            },
         )
     }
     toDelete?.let { name ->
@@ -190,11 +209,13 @@ fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -
 fun HomeContent(
     projects: List<ProjectCard>, needsProvider: Boolean,
     projectCapReached: Boolean = false,
+    packs: List<SaqrPack> = emptyList(),
     coachSnap: CoachSnapshot? = null,
     coachProgress: Map<String, Long> = emptyMap(),
     coachDismissed: Boolean = false,
-    onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -> Unit = {}, onCreate: (Template?) -> Unit, onDelete: (String) -> Unit,
-    onCoach: () -> Unit = {},
+    onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -> Unit = {}, onCreate: (Template?) -> Unit,
+    onCreatePack: (SaqrPack) -> Unit = {},
+    onDelete: (String) -> Unit, onCoach: () -> Unit = {},
     now: Long = System.currentTimeMillis(),
 ) {
     val c = Saqr.colors
@@ -231,6 +252,19 @@ fun HomeContent(
                 templateGallery.chunked(2).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(Sp.md)) {
                         row.forEach { t -> TemplateCard(t, Modifier.weight(1f)) { onCreate(t.template) } }
+                    }
+                }
+            }
+        }
+        // v0.14 skill packs: installed .saqrpack bundles create full projects in one tap
+        if (packs.isNotEmpty()) {
+            item { SectionLabel(stringResource(R.string.pack_packs_label), Modifier.padding(top = Sp.md)) }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+                    packs.chunked(2).forEach { row ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(Sp.md)) {
+                            row.forEach { p -> PackCard(p, Modifier.weight(1f)) { onCreatePack(p) } }
+                        }
                     }
                 }
             }
@@ -406,6 +440,56 @@ fun CreateProjectDialog(initial: Template, onDismiss: () -> Unit, onCreate: (Str
         },
         confirmButton = {
             PrimaryButton(stringResource(R.string.create), enabled = name.isNotBlank(), onClick = { onCreate(name, tpl).onFailure { error = it.message } })
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
+    )
+}
+
+/** v0.14 skill pack: a home-screen template card for an installed .saqrpack bundle. */
+@Composable
+private fun PackCard(p: SaqrPack, modifier: Modifier, onClick: () -> Unit) {
+    val c = Saqr.colors
+    SaqrCard(modifier.heightIn(min = 132.dp), onClick = onClick, padding = PaddingValues(Sp.lg)) {
+        Column {
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(c.accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                SIcon(Lucide.Package, size = 22.dp, tint = c.accentText)
+            }
+            Spacer(Modifier.height(Sp.md))
+            Text(p.name, style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1, maxLines = 1)
+            Text(p.description.ifBlank { p.nameAr }, style = Saqr.type.caption, color = c.text2, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+/** v0.14: create a project from an installed skill pack — the pack files (template + rules) are written as-is. */
+@Composable
+fun CreatePackDialog(pack: SaqrPack, onDismiss: () -> Unit, onCreate: (String, SaqrPack) -> Result<*>) {
+    val c = Saqr.colors
+    var name by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss, containerColor = c.surface1,
+        title = { Text(stringResource(R.string.new_project), style = Saqr.type.title2) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+                SaqrField(name, { name = it; error = null }, label = stringResource(R.string.project_name), placeholder = "my-app",
+                    isError = error != null, supporting = error)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(30.dp).clip(RoundedCornerShape(Radius.sm)).background(c.accentSoft), contentAlignment = Alignment.Center) {
+                        SIcon(Lucide.Package, size = 16.dp, tint = c.accentText)
+                    }
+                    Spacer(Modifier.width(Sp.sm))
+                    Column {
+                        Text(pack.description.ifBlank { pack.name }, style = Saqr.type.caption, color = c.text2, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        if (pack.templateRef.isNotBlank()) {
+                            Text(stringResource(R.string.pack_template_of, pack.templateRef), style = Saqr.type.micro, color = c.text3)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            PrimaryButton(stringResource(R.string.create), enabled = name.isNotBlank(), onClick = { onCreate(name, pack).onFailure { error = it.message } })
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
     )

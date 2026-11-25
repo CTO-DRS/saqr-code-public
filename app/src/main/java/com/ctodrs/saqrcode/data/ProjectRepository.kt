@@ -18,13 +18,16 @@ class ProjectRepository(context: Context) {
     fun sanitize(name: String): String =
         name.trim().replace(Regex("""[\\/:*?"<>|\s]+"""), "-").trim('-', '.').take(60)
 
-    fun create(rawName: String, template: Template): Result<Project> = runCatching {
+    fun create(rawName: String, template: Template): Result<Project> = create(rawName, template.files(sanitize(rawName)))
+
+    /** v0.14 skill packs: create from an explicit files map — same sanitize/existence rules. */
+    fun create(rawName: String, files: Map<String, String>): Result<Project> = runCatching {
         val name = sanitize(rawName)
         require(name.isNotEmpty()) { "Invalid name" }
         val dir = File(root, name)
         require(!dir.exists()) { "Project already exists" }
         dir.mkdirs()
-        template.files(name).forEach { (path, content) ->
+        files.forEach { (path, content) ->
             File(dir, path).apply { parentFile?.mkdirs(); writeText(content) }
         }
         Project(name, dir, dir.lastModified())

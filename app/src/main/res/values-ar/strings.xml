@@ -442,6 +442,18 @@
     <string name="desert_status_idle">الشبكة متاحة — الميزات السحابية تعمل.</string>
     <string name="desert_banner">وضع صحراوي: الوكيل وأدوات الويب وخوادم MCP البعيدة والدفع والسحب متوقفة حتى تعود الشبكة. الملفات والطرفية والإيداعات المحلية وبيئة البناء المخزّنة تعمل.</string>
     <string name="notice_desert">وضع صحراوي نشط (لا شبكة): إرسال أمر يحتاج اتصالاً. كل ما هو محلي — الملفات والطرفية والذاكرة والإيداعات المحلية وبيئة البناء المخزّنة — يعمل، ونصك يبقى هنا دون إرسال.</string>
+    <!-- v0.14 حزم المهارات -->
+    <string name="pack_section">حزم المهارات</string>
+    <string name="pack_hint">حزمة .saqrpack تنصب قالب مشروع وأوامر عربية جاهزة وقواعد AGENTS.md وأدوات مفضلة بنقرة واحدة، وتظهر الحزم المثبتة قوالب في الشاشة الرئيسية.</string>
+    <string name="pack_import">الصق محتوى حزمة .saqrpack (JSON)</string>
+    <string name="pack_install">تثبيت الحزمة</string>
+    <string name="pack_bad_json">حزمة غير صالحة — تحقق من المحتوى وأعد المحاولة</string>
+    <string name="pack_installed">ثُبّتت الحزمة</string>
+    <string name="pack_packs_label">الحزم المثبتة</string>
+    <string name="pack_commands_n">%d أوامر جاهزة</string>
+    <string name="pack_flask_button">ثبّت حزمة Flask التجريبية</string>
+    <string name="pack_flask_toast">ثُبّتت حزمة Flask — ستجد قالبها في الشاشة الرئيسية</string>
+    <string name="pack_template_of">القالب: %s</string>
     <!-- v0.7 بناء -->
     <string name="tab_build">بناء</string>
     <string name="build_title">بناء APK على الجهاز</string>

@@ -226,6 +226,11 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("desert_mode", "") ?: ""
         set(v) { prefs.edit().putString("desert_mode", v).apply(); bump() }
 
+    /** v0.14 skill packs: the installed .saqrpack bundles (template + commands + rules + tools). */
+    var packsJson: String
+        get() = prefs.getString("saqr_packs", null) ?: ""
+        set(v) { prefs.edit().putString("saqr_packs", v).apply(); bump() }
+
     /** Terminal font size in sp. */
     var terminalFontSize: Int
         get() = prefs.getInt("term_font", 12)
