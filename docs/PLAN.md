@@ -37,8 +37,8 @@ The single source of direction is [ROADMAP.md](../ROADMAP.md); this file holds t
 ### 4. مدرّب صقر · Saqr Coach
 - إرشاد أول استخدام ومسار تعلم مختصر داخل التطبيق (أمثلة أوامر بالعربية).
 - In-app first-run guidance and a short learning path (Arabic command examples).
-- [ ] مستخدم جديد يصل لأول بناء ناجح دون مساعدة خارجية.
-- [ ] A new user reaches a first successful build without external help.
+- [x] مستخدم جديد يصل لأول بناء ناجح دون مساعدة خارجية. *(تم: 0.13.3 — مدرّب صقر: خمس خطوات مرتبة (مفتاح ← مشروع ← أول أمر ← تجربة البناء ← أول بناء ناجح) كلٌّ يكتمل بمُشيره الحقيقي فقط، وبطاقة تقدم حية ولوحة كاملة وأمثلة أوامر عربية بزر نسخ تتبع قالب أحدث مشروع، مع إخفاء وإعادة فتح من الإعدادات)*
+- [x] A new user reaches a first successful build without external help. *(done: 0.13.3 — Saqr Coach: five ordered steps each completing only on its real signal, a live n/5 card and full sheet, Arabic starter prompts with copy following the newest project's family, hide + reopen from Settings)*
 
 ### 5. صوت بلا يدين · Hands-free voice
 - إملاء مستمر مع إيقاظ «يا صقر» وتشغيل/إيقاف من الإشعار.

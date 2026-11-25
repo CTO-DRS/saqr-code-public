@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.13.2** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.13.3** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,14 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.13.3
+| الميزة | الحالة |
+|---|---|
+| مدرّب صقر: مسار تعلّم من خمس خطوات على الشاشة الرئيسية من أول تثبيت إلى أول بناء ناجح على الجهاز، مع بطاقة تقدّم حيّة (n/5) ولوحة كاملة بالخطوات المرتبة | ✅ |
+| لا اكتمال بلا فعل حقيقي: كل خطوة تكتمل فقط بمُشيرها الفعلي (مفتاح محفوظ، مشروع قائم، أول أمر للوكيل، محاولة بناء، بناء ناجح) — والطريق لا يقفز للأمام أبدًا | ✅ |
+| أمثلة أوامر عربية جاهزة بزر نسخ: عائلة لكل قالب (ويب/بايثون/Node/Compose/لوحة مفاتيح) وأمثلة عامة — أول أمر على بعد لصقة واحدة | ✅ |
+| المدرّب يتذكر حكايته: وقت اكتمال كل خطوة يُختم عند أول رصد ويظهر بتاريخ نسبي، والطريق المكتمل يحوّل البطاقة إلى احتفال «أول بناء ناجح» | ✅ |
 
 ### الجديد في 0.13.2
 | الميزة | الحالة |
@@ -152,7 +160,7 @@
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `SaqrCode-v0.13.2-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.13.3-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -163,6 +171,12 @@
 ---
 
 ## English
+
+### New in v0.13.3
+- **Saqr Coach (مدرّب صقر):** a five-step learning path on the home screen — connect a key, create a project, send the first command, try the on-device build, reach the first successful build — with a live n/5 progress card and a full coach sheet listing the ordered steps.
+- **Real signals only:** a step completes only when the underlying thing actually happened (stored key, existing project, first command received, build attempt, successful build); the path never skips ahead, and a failed attempt still completes «try the build» — the final gate is a successful one.
+- **Arabic starter commands:** a curated library of concrete Arabic prompts (one family per template + universal ones) with a copy button, following the newest project's template family, so the first command is one paste away.
+- **The coach remembers its story:** completion times are stamped on first observation and shown as relative dates; the finished path turns the card into a small celebration instead of vanishing. Hide it from the sheet, re-open it from Settings.
 
 ### New in v0.13.2
 - **Falcon Router (موجّه النماذج):** the light agent stages — planning, review, context compaction — route automatically to the **cheapest capable model** on your provider while the coder keeps yours. Capability is tiered by model family (haiku/mini/flash → light, opus/pro → full, rest → mid); the reviewer requires mid so diff review never lands on a weak model. An explicit per-stage pick always wins over the router.

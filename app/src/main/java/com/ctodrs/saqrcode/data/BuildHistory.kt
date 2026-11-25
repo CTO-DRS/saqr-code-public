@@ -50,4 +50,10 @@ class BuildHistory(context: Context) {
         val cur = all().toMutableMap()
         if (cur.remove(project) != null) prefs.edit().putString("history", BuildHistoryCodec.encode(cur)).apply()
     }
+
+    /** v0.13.3 Saqr Coach: any build attempt exists (ok or failed) — completes the «try the build» step. */
+    fun anyAttempt(): Boolean = all().isNotEmpty()
+
+    /** v0.13.3 Saqr Coach: at least one build succeeded anywhere — the path's final gate. */
+    fun anySuccess(): Boolean = all().values.any { it.ok }
 }

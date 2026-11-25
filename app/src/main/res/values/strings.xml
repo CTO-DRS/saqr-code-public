@@ -673,4 +673,27 @@
     <string name="memory_kind_fact">Fact</string>
     <string name="memory_clear">Empty the memory bank?</string>
     <string name="memory_clear_q">Every remembered decision and preference for this project will be gone. This cannot be undone.</string>
+    <!-- v0.13.3 Saqr Coach -->
+    <string name="coach_title">Saqr Coach</string>
+    <string name="coach_row_title">Your path to the first build</string>
+    <string name="coach_row_desc">A short guided path with Arabic command examples</string>
+    <string name="coach_card_title">Your path to the first successful build</string>
+    <string name="coach_sheet_hint">Five small steps, in order, from a fresh install to your first APK built on this device. Each completes by itself when the real thing happens.</string>
+    <string name="coach_step_key">Connect a provider key</string>
+    <string name="coach_step_key_how">Settings → Providers → paste your API key. Free options like Google AI Studio work.</string>
+    <string name="coach_step_project">Create your first project</string>
+    <string name="coach_step_project_how">Pick a ready template from the home screen — a landing page, a Python script, or a Compose app.</string>
+    <string name="coach_step_message">Send your first command</string>
+    <string name="coach_step_message_how">Open the project and write what you want in Arabic — copy an example below to start.</string>
+    <string name="coach_step_build">Try the on-device build</string>
+    <string name="coach_step_build_how">Project → Build tab → prepare the environment once, then build. Even a failed attempt teaches the path.</string>
+    <string name="coach_step_first_build">Reach the first successful build</string>
+    <string name="coach_step_first_build_how">When the APK is built and signed this completes itself — watch the Build tab output.</string>
+    <string name="coach_examples_label">Ready examples — copy one and paste it into the project chat</string>
+    <string name="coach_copy">Copy</string>
+    <string name="coach_copied">Copied</string>
+    <string name="coach_hide">Hide the path</string>
+    <string name="coach_done_title">First successful build</string>
+    <string name="coach_done_body">The path is complete — from here, describe what you want and Saqr builds it.</string>
+    <string name="coach_done_when">Completed %1$s</string>
 </resources>

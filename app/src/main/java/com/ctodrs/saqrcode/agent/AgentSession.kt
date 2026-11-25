@@ -321,6 +321,8 @@ class AgentSession(
     /** Send [text] to the agent; the chat bubble shows [display] (e.g. the slash command as typed). */
     fun send(text: String, display: String = text, images: List<ImagePart> = emptyList()) {
         if (running || (text.isBlank() && images.isEmpty())) return
+        // v0.13.3 Saqr Coach: the first real command completes the «message» step.
+        if (settings.coachFirstMessageAt == 0L) settings.coachFirstMessageAt = System.currentTimeMillis()
         // typing instead of answering a card restored after a restart dismisses it
         items.filterIsInstance<ChatItem.AskUser>().filter { it.restored && it.status == ChatItem.AskUser.Status.PENDING }.forEach {
             it.status = ChatItem.AskUser.Status.CANCELLED; pendingAsk.clear()

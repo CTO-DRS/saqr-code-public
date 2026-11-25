@@ -47,6 +47,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.SaqrApp
+import com.ctodrs.saqrcode.agent.CoachSnapshot
+import com.ctodrs.saqrcode.agent.SaqrCoach
 import com.ctodrs.saqrcode.billing.PaywallDialog
 import com.ctodrs.saqrcode.data.Project
 import com.ctodrs.saqrcode.data.Template
@@ -116,11 +118,48 @@ fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -
     val limits = app.settings.limits()
     val capReached = !limits.unlimitedProjects && projects.size >= limits.maxProjects
 
+    // v0.13.3 Saqr Coach: real signals only — a stored key, a project, the first command, a build.
+    val coachSnap = remember(version, refresh) {
+        val s = app.settings
+        CoachSnapshot(
+            hasKey = s.activeReady(),
+            hasProject = projects.isNotEmpty(),
+            hasFirstMessage = s.coachFirstMessageAt > 0L,
+            hasBuildAttempt = app.builds.anyAttempt(),
+            hasSuccessfulBuild = app.builds.anySuccess(),
+        )
+    }
+    val coachProgress = remember(coachSnap) { app.settings.coachProgress() }
+    var coachOpen by remember { mutableStateOf(false) }
+    // stamp newly-completed steps with the time they first happened (the coach remembers its story)
+    androidx.compose.runtime.LaunchedEffect(coachSnap) {
+        val cur = app.settings.coachProgress()
+        val merged = com.ctodrs.saqrcode.agent.CoachProgressCodec.merge(
+            cur, SaqrCoach.steps(coachSnap).filter { it.done }.map { it.id }, System.currentTimeMillis())
+        if (merged != cur) app.settings.coachProgressJson = com.ctodrs.saqrcode.agent.CoachProgressCodec.encode(merged)
+    }
+    // starter prompts follow the newest project's template family
+    val coachTemplate = remember(refresh) {
+        val latest = app.projects.list().firstOrNull()
+        if (latest == null) "WEB"
+        else SaqrCoach.guessTemplate(
+            latest.dir.walkTopDown().onEnter { it.name !in setOf(".git", "node_modules", ".saqr") }
+                .filter { it.isFile }.take(60).map { it.name }.toList())
+    }
+
     HomeContent(
         projects = projects, needsProvider = version.let { !app.settings.activeReady() },
         projectCapReached = capReached,
+        coachSnap = coachSnap, coachProgress = coachProgress, coachDismissed = app.settings.coachDismissed,
         onOpen = onOpen, onSettings = onSettings, onPaywall = onPaywall,
         onCreate = { if (capReached) gate = true else create = it ?: Template.WEB }, onDelete = { toDelete = it },
+        onCoach = { coachOpen = true },
+    )
+
+    if (coachOpen) CoachSheet(
+        snap = coachSnap, progress = coachProgress, template = coachTemplate,
+        onDismiss = { coachOpen = false },
+        onHide = { app.settings.coachDismissed = true; coachOpen = false },
     )
 
     PaywallDialog(show = gate, onDismiss = { gate = false }, onOpenPaywall = onPaywall)
@@ -151,7 +190,11 @@ fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -
 fun HomeContent(
     projects: List<ProjectCard>, needsProvider: Boolean,
     projectCapReached: Boolean = false,
+    coachSnap: CoachSnapshot? = null,
+    coachProgress: Map<String, Long> = emptyMap(),
+    coachDismissed: Boolean = false,
     onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -> Unit = {}, onCreate: (Template?) -> Unit, onDelete: (String) -> Unit,
+    onCoach: () -> Unit = {},
     now: Long = System.currentTimeMillis(),
 ) {
     val c = Saqr.colors
@@ -176,6 +219,8 @@ fun HomeContent(
         item { Hero(onNew = { onCreate(null) }) }
         if (needsProvider) item { SetupBanner(onSettings) }
         if (projectCapReached) item { UpgradeBanner(onPaywall) }
+        // v0.13.3: the learning path to the first successful build (hidden once dismissed)
+        if (coachSnap != null && SaqrCoach.visible(coachDismissed)) item { CoachCard(coachSnap, coachProgress, onCoach) }
         if (projects.isNotEmpty()) {
             item { SectionLabel(stringResource(R.string.recent), Modifier.padding(top = Sp.md)) { Text("${projects.size}", style = Saqr.type.monoMicro, color = c.text3) } }
             items(projects, key = { it.name }) { p -> ProjectRow(p, now, { onOpen(p.name) }, { onDelete(p.name) }) }

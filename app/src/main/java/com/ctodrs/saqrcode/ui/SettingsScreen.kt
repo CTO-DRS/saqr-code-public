@@ -55,6 +55,8 @@ import com.ctodrs.saqrcode.BuildConfig
 import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.SaqrApp
 import com.ctodrs.saqrcode.agent.FalconRouter
+import com.ctodrs.saqrcode.agent.CoachSnapshot
+import com.ctodrs.saqrcode.agent.SaqrCoach
 import com.ctodrs.saqrcode.agent.LlmClient
 import com.ctodrs.saqrcode.agent.ModelPrice
 import com.ctodrs.saqrcode.agent.PriceTable
@@ -177,6 +179,9 @@ class SettingsUi(
     val onEditorFontSize: (Int) -> Unit = {},
     val editorWrap: Boolean = false,
     val onEditorWrap: (Boolean) -> Unit = {},
+    /** v0.13.3 Saqr Coach: completed-steps label and the reopen callback. */
+    val coachProgressLabel: String = "",
+    val onCoach: () -> Unit = {},
 )
 
 @Composable
@@ -187,6 +192,18 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
     version
     var showBattery by remember { mutableStateOf(false) }
     var teamGate by remember { mutableStateOf(false) }
+    // v0.13.3 Saqr Coach: reopen the path from settings (also unhides the home card)
+    var coachOpen by remember { mutableStateOf(false) }
+    val coachSnap = remember(version) {
+        val app = SaqrApp.instance
+        CoachSnapshot(
+            hasKey = settings.activeReady(),
+            hasProject = app.projects.list().isNotEmpty(),
+            hasFirstMessage = settings.coachFirstMessageAt > 0L,
+            hasBuildAttempt = app.builds.anyAttempt(),
+            hasSuccessfulBuild = app.builds.anySuccess(),
+        )
+    }
     val ui = SettingsUi(
         themeMode = settings.themeMode,
         langTag = AppCompatDelegate.getApplicationLocales().toLanguageTags(),
@@ -307,6 +324,8 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
             cm.setPrimaryClip(android.content.ClipData.newPlainText("saqr-theme", pack.toJson()))
             android.widget.Toast.makeText(ctx, R.string.studio_export_copied, android.widget.Toast.LENGTH_SHORT).show()
         },
+        coachProgressLabel = "${SaqrCoach.progress(coachSnap)}/${SaqrCoach.STEPS.size}",
+        onCoach = { settings.coachDismissed = false; coachOpen = true },
         generateTheme = { mood ->
             runCatching {
                 require(settings.activeReady()) { "no_provider" }
@@ -330,6 +349,19 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
     if (showBattery) BatteryDialog(onDismiss = { showBattery = false })
     com.ctodrs.saqrcode.billing.PaywallDialog(
         show = teamGate, onDismiss = { teamGate = false }, onOpenPaywall = onPaywall,
+    )
+    if (coachOpen) CoachSheet(
+        snap = coachSnap,
+        progress = settings.coachProgress(),
+        template = remember(version) {
+            val latest = SaqrApp.instance.projects.list().firstOrNull()
+            if (latest == null) "WEB"
+            else SaqrCoach.guessTemplate(
+                latest.dir.walkTopDown().onEnter { it.name !in setOf(".git", "node_modules", ".saqr") }
+                    .filter { it.isFile }.take(60).map { it.name }.toList())
+        },
+        onDismiss = { coachOpen = false },
+        onHide = { settings.coachDismissed = true; coachOpen = false },
     )
     SettingsContent(ui, onBack)
 }
@@ -596,6 +628,26 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 }
             }
             Group { com.ctodrs.saqrcode.billing.MerchantToolsCard(settings = SaqrApp.instance.settings) }
+
+            // ---- v0.13.3 Saqr Coach
+            SectionLabel(stringResource(R.string.coach_title), Modifier.padding(top = Sp.md))
+            Group {
+                ListRow(
+                    title = stringResource(R.string.coach_row_title),
+                    subtitle = stringResource(R.string.coach_row_desc),
+                    icon = Lucide.ListChecks,
+                    onClick = ui.onCoach,
+                    trailing = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (ui.coachProgressLabel.isNotBlank()) {
+                                Tag(ui.coachProgressLabel, color = Saqr.colors.accentText, dot = false)
+                                Spacer(Modifier.width(Sp.xs))
+                            }
+                            SIcon(Lucide.ChevronRight, size = 18.dp, tint = c.text3)
+                        }
+                    },
+                )
+            }
 
             // ---- about
             SectionLabel(stringResource(R.string.about), Modifier.padding(top = Sp.md))

@@ -673,4 +673,27 @@
     <string name="memory_kind_fact">حقيقة</string>
     <string name="memory_clear">إفراغ بنك الذاكرة؟</string>
     <string name="memory_clear_q">ستحذف كل القرارات والتفضيلات المحفوظة لهذا المشروع. لا يمكن التراجع.</string>
+    <!-- v0.13.3 مدرّب صقر -->
+    <string name="coach_title">مدرّب صقر</string>
+    <string name="coach_row_title">طريقك لأول بناء</string>
+    <string name="coach_row_desc">مسار قصير موجّه بأمثلة أوامر بالعربية</string>
+    <string name="coach_card_title">طريقك لأول بناء ناجح</string>
+    <string name="coach_sheet_hint">خمس خطوات صغيرة بالترتيب، من تثبيت التطبيق إلى أول APK يُبنى على جهازك. كل خطوة تكتمل وحدها حين يقع الفعل الحقيقي.</string>
+    <string name="coach_step_key">اربط مفتاح مزوّد</string>
+    <string name="coach_step_key_how">الإعدادات ← المزوّدون ← الصق مفتاحك. خيارات مجانية مثل Google AI Studio تكفي.</string>
+    <string name="coach_step_project">أنشئ مشروعك الأول</string>
+    <string name="coach_step_project_how">اختر قالبًا جاهزًا من الشاشة الرئيسية: صفحة هبوط أو سكربت بايثون أو تطبيق Compose.</string>
+    <string name="coach_step_message">أرسل أول أمر للوكيل</string>
+    <string name="coach_step_message_how">افتح المشروع واكتب طلبك بالعربية — انسخ مثالًا جاهزًا بالأسفل للبداية.</string>
+    <string name="coach_step_build">جرّب البناء على الجهاز</string>
+    <string name="coach_step_build_how">المشروع ← تبويب البناء ← جهّز البيئة مرة واحدة ثم ابنِ. حتى المحاولة الفاشلة تعلّمك الطريق.</string>
+    <string name="coach_step_first_build">حقق أول بناء ناجح</string>
+    <string name="coach_step_first_build_how">حين يجهز الـ APK موقّعًا تكتمل هذه الخطوة وحدها — تابع مخرجات تبويب البناء.</string>
+    <string name="coach_examples_label">أمثلة جاهزة — انسخ واحدًا والصقه في محادثة المشروع</string>
+    <string name="coach_copy">نسخ</string>
+    <string name="coach_copied">نُسخ</string>
+    <string name="coach_hide">إخفاء الطريق</string>
+    <string name="coach_done_title">أول بناء ناجح</string>
+    <string name="coach_done_body">اكتمل الطريق — من هنا اكتب ما تريد وسيعمل صقر على بنائه.</string>
+    <string name="coach_done_when">اكتمل %1$s</string>
 </resources>

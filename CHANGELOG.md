@@ -1,5 +1,22 @@
 # Changelog · سجل التغييرات
 
+## [0.13.3] — 2026-11-25 — Saqr Coach · مدرّب صقر
+
+### Productivity · الإنتاجية
+- **Saqr Coach (مدرّب صقر):** the fourth «عقل الصقر» item. A five-step learning path on the home screen walks a brand-new user from a fresh install to their **first successful on-device build**: connect a provider key → create the first project → send the first command → try the on-device build → reach the first successful build. The card shows live progress (n/5), the current focus and its how-to; tapping opens the full coach sheet with the ordered checklist and celebration state.
+  مدرّب صقر: البند الرابع من «عقل الصقر». مسار تعلّم من خمس خطوات على الشاشة الرئيسية يأخذ مستخدمًا جديدًا تمامًا من أول تثبيت إلى **أول بناء ناجح على الجهاز**: ربط مفتاح مزوّد ← إنشاء أول مشروع ← إرسال أول أمر ← تجربة البناء على الجهاز ← تحقيق أول بناء ناجح. تُظهر البطاقة التقدم الحيّ (n/5) والخطوة الحالية وشرحها، والنقر يفتح لوحة المدرّب الكاملة بقائمة الخطوات المرتّبة وحالة الاحتفال.
+- **Real signals only (لا اكتمال بلا فعل حقيقي):** nothing can be faked — a step completes only when the underlying signal exists (a stored key via `activeReady()`, an existing project, the first command the agent received in `AgentSession.send`, a build attempt in the build history, a successful build). The path never skips ahead: even a device that already built successfully focuses the first pending step, so a mid-life user sees exactly where they are. A failed attempt still completes «try the build» — the *final* gate is a successful one.
+  لا اكتمال بلا فعل حقيقي: لا يمكن تزييف أي خطوة — تكتمل فقط حين يوجد الإشارة الحقيقي (مفتاح محفوظ عبر `activeReady()`، مشروع قائم، أول أمر استلمه الوكيل في `AgentSession.send`، محاولة بناء في سجل البناءات، بناء ناجح). الطريق لا يقفز للأمام: حتى جهاز سبق أن بنى بنجاح يركّز على أول خطوة غير مكتملة، فيرى المستخدم المتمرس مكانه بدقة. والمحاولة الفاشلة تُكمل خطوة «جرّب البناء» — بينما البوابة الأخيرة بناء ناجح.
+- **Arabic starter commands (أمثلة أوامر جاهزة):** a curated library of concrete Arabic prompts — one family per template (web / Python / Node / Compose / IME / lite web / empty) plus universal ones — shown in the coach sheet with a copy button, so the first command is one paste away. The family follows the newest project's marker files (`MainActivity.kt` → Compose, `main.py` → Python …).
+  أمثلة أوامر عربية جاهزة: مكتبة أوامر عربية ملموسة — عائلة لكل قالب (ويب / بايثون / Node / Compose / لوحة مفاتيح / ويب خفيف / فارغ) وأمثلة عامة — تُعرض في لوحة المدرّب بزر نسخ، فتصبح أول أمر على بعد لصقة واحدة. وتتبع العائلة ملفات أحدث مشروع المميّزة.
+- **The coach remembers its story:** each step's completion time is stamped into a JSON ledger the first time its signal is observed, and shown as relative dates inside the sheet; the completed path turns the card into a small celebration («أول بناء ناجح — اكتمل الطريق») instead of disappearing. The card can be hidden from the sheet and re-opened from Settings → مدرّب صقر (which also unhides it).
+  المدرّب يتذكر حكايته: يُختم وقت اكتمال كل خطوة في سجل JSON عند أول رصد لإشارته، ويظهر بتواريخ نسبية داخل اللوحة؛ والطريق المكتمل يحوّل البطاقة إلى احتفال صغير («أول بناء ناجح — اكتمل الطريق») بدل أن تختفي. ويمكن إخفاء البطاقة من اللوحة وإعادة فتحها من الإعدادات ← مدرّب صقر (ما يلغي الإخفاء أيضًا).
+
+### Infrastructure · البنية
+- New `agent/SaqrCoach.kt`: pure path logic (`CoachSnapshot` → ordered steps / current focus / progress), the `CoachProgressCodec` JSON ledger (round-trip safe, zero timestamps ignored, merge keeps first-recorded times), `SaqrCoach.guessTemplate` from marker files, and the `StarterPrompts` library. Two one-line hooks: `AgentSession.send` stamps `coachFirstMessageAt` once, and `BuildHistory` exposes `anyAttempt` / `anySuccess`. New `ui/CoachSheet.kt` (card + bottom sheet, bilingual strings, clipboard copy) wired into `HomeScreen` (card after the setup banners) and `SettingsScreen` (a coach row with the n/5 tag).
+- 316 unit tests (11 new in `V0133FeaturesTest`): ordered path never skips, failed-attempt vs successful-build gating, visibility follows dismissal only, codec round-trip/garbage/merge semantics, Arabic content of every prompt family, dedup/cap/fallback of `forTemplate`, and template guessing. Version 0.13.3 (code 17).
+
+
 ## [0.13.2] — 2026-11-25 — Falcon Router · موجّه النماذج
 
 ### Productivity · الإنتاجية

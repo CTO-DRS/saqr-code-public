@@ -118,6 +118,26 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getBoolean("falcon_router", true)
         set(v) { prefs.edit().putBoolean("falcon_router", v).apply(); bump() }
 
+    // ------------------------------------------------ v0.13.3 Saqr Coach
+
+    /** v0.13.3: epoch ms of the first command the agent received (0 = none yet). */
+    var coachFirstMessageAt: Long
+        get() = prefs.getLong("coach_first_msg", 0L)
+        set(v) { prefs.edit().putLong("coach_first_msg", v).apply(); bump() }
+
+    /** v0.13.3: the coach card was hidden by the user (re-openable from settings). */
+    var coachDismissed: Boolean
+        get() = prefs.getBoolean("coach_dismissed", false)
+        set(v) { prefs.edit().putBoolean("coach_dismissed", v).apply(); bump() }
+
+    /** v0.13.3: step → epoch ms first observed done (codec in [com.ctodrs.saqrcode.agent.CoachProgressCodec]). */
+    var coachProgressJson: String
+        get() = prefs.getString("coach_progress", "") ?: ""
+        set(v) { prefs.edit().putString("coach_progress", v).apply(); bump() }
+
+    fun coachProgress(): Map<String, Long> =
+        com.ctodrs.saqrcode.agent.CoachProgressCodec.decode(coachProgressJson)
+
     /** v0.8: MCP servers (name + URL); their auth headers live in [SecureStore]. */
     var mcpServers: List<com.ctodrs.saqrcode.agent.Mcp.Server>
         get() = com.ctodrs.saqrcode.agent.Mcp.decodeConfig(prefs.getString("mcp_servers", null))
