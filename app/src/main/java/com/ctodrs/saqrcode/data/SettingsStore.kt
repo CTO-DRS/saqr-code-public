@@ -288,6 +288,16 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("saqr_packs", null) ?: ""
         set(v) { prefs.edit().putString("saqr_packs", v).apply(); bump() }
 
+    /** v0.14.3 community gallery: the last good raw index JSON (offline fallback) + fetch stamp. */
+    var galleryCache: String
+        get() = prefs.getString("gallery_cache", null) ?: ""
+        set(v) { prefs.edit().putString("gallery_cache", v).apply(); bump() }
+
+    /** v0.14.3 community gallery: wall-clock ms of the last successful fetch (0 = never). */
+    var galleryFetchedAt: Long
+        get() = prefs.getLong("gallery_fetched_at", 0L)
+        set(v) { prefs.edit().putLong("gallery_fetched_at", v).apply(); bump() }
+
     /** Terminal font size in sp. */
     var terminalFontSize: Int
         get() = prefs.getInt("term_font", 12)

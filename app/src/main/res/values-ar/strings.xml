@@ -454,6 +454,26 @@
     <string name="pack_flask_button">ثبّت حزمة Flask التجريبية</string>
     <string name="pack_flask_toast">ثُبّتت حزمة Flask — ستجد قالبها في الشاشة الرئيسية</string>
     <string name="pack_template_of">القالب: %s</string>
+    <!-- v0.14.3 معرض المجتمع -->
+    <string name="gallery_section">معرض المجتمع</string>
+    <string name="gallery_desc">حزم عربية من مستودع المجتمع العام (CTO-DRS/saqr-gallery) — تثبيت بنقرة واحدة يجلب القالب مع أوامره، وساهم بحزتك عبر طلب دمج.</string>
+    <string name="gallery_refresh">تحديث</string>
+    <string name="gallery_loading">يجلب الآن…</string>
+    <string name="gallery_count">%d حزمة</string>
+    <string name="gallery_search">ابحث في المعرض…</string>
+    <string name="gallery_install">تثبيت</string>
+    <string name="gallery_reinstall">تثبيت من جديد</string>
+    <string name="gallery_installed">مثبّت</string>
+    <string name="gallery_installed_toast">ثُبّتت الحزمة من المعرض — قالبها على الشاشة الرئيسية</string>
+    <string name="gallery_install_failed">فشل تحقق حزمة المدخل — حدِّث المعرض وحاول من جديد</string>
+    <string name="gallery_by">بواسطة %s</string>
+    <string name="gallery_updated">حُدِّث %s</string>
+    <string name="gallery_cached">تُعرض آخر نسخة محفوظة</string>
+    <string name="gallery_empty">لا مدخلات تطابق بحثك.</string>
+    <string name="gallery_empty_all">المعرض فارغ بعد — اضغط «تحديث» وأنت متصل.</string>
+    <string name="gallery_no_index">لم يُعثر على فهرس المعرض — قد يكون المستودع غير منشور بعد.</string>
+    <string name="gallery_fetch_fail">تعذر الوصول إلى المعرض — تحقق من الاتصال ثم حدِّث.</string>
+    <string name="gallery_contribute">ساهم بحزتك (طلب دمج)</string>
     <!-- v0.7 بناء -->
     <string name="tab_build">بناء</string>
     <string name="build_title">بناء APK على الجهاز</string>

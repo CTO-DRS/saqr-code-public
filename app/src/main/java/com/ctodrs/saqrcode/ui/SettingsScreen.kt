@@ -34,6 +34,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -88,6 +89,7 @@ import com.ctodrs.saqrcode.ui.theme.Radius
 import com.ctodrs.saqrcode.ui.theme.Saqr
 import com.ctodrs.saqrcode.ui.theme.Sp
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** What the settings screen needs from storage; [SettingsScreen] wires it to the real stores. */
 class SettingsUi(
@@ -684,6 +686,10 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             // ---- v0.14 skill packs: one-tap .saqrpack install
             SectionLabel(stringResource(R.string.pack_section), Modifier.padding(top = Sp.md))
             Group { SaqrPacksCard(ui) }
+
+            // ---- v0.14.3 community gallery: browse + one-tap install from the public repo
+            SectionLabel(stringResource(R.string.gallery_section), Modifier.padding(top = Sp.md))
+            Group { GallerySection(ui) }
 
             // ---- usage & budget
             SectionLabel(stringResource(R.string.usage_section), Modifier.padding(top = Sp.md))
@@ -1573,6 +1579,168 @@ private fun SaqrPacksCard(ui: SettingsUi) {
         }, icon = Lucide.Upload)
         err?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger) }
     }
+}
+
+/** v0.14.3 community gallery: browse the public index, search Arabic-aware, install in one tap. */
+@Composable
+private fun GallerySection(ui: SettingsUi) {
+    val c = Saqr.colors
+    val ctx = LocalContext.current
+    val settings = SaqrApp.instance.settings
+    val scope = rememberCoroutineScope()
+
+    // The cache decodes keyed on the fetch stamp: fresh fetch → re-decode; a pack install
+    // (which bumps the settings version but not the stamp) never re-decodes underneath.
+    var index by remember(settings.galleryFetchedAt) {
+        mutableStateOf(com.ctodrs.saqrcode.data.GalleryKit.parseIndex(settings.galleryCache))
+    }
+    var query by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
+    var fromCache by remember { mutableStateOf(settings.galleryFetchedAt > 0L) }
+    var errRes by remember { mutableStateOf<Int?>(null) }
+
+    // First visit with nothing cached: fetch once automatically — browsing is one tap.
+    LaunchedEffect(Unit) {
+        if (settings.galleryFetchedAt == 0L && settings.galleryCache.isEmpty()) {
+            loading = true
+            val (body, at, code) = fetchIndex()
+            loading = false
+            val parsed = applyFetch(body, at, code)
+            if (parsed != null) {
+                index = parsed; fromCache = false
+                settings.galleryCache = body; settings.galleryFetchedAt = at
+            } else errRes = fetchErrorRes(code)
+        }
+    }
+
+    fun refresh() {
+        loading = true; errRes = null
+        scope.launch {
+            val (body, at, code) = fetchIndex()
+            loading = false
+            val parsed = applyFetch(body, at, code)
+            if (parsed != null) {
+                index = parsed; fromCache = false
+                settings.galleryCache = body; settings.galleryFetchedAt = at
+            } else errRes = fetchErrorRes(code)
+        }
+    }
+
+    val shown = remember(index, query) {
+        com.ctodrs.saqrcode.data.GalleryKit.search(index?.entries ?: emptyList(), query)
+    }
+    val installed = com.ctodrs.saqrcode.data.GalleryKit.installedIds(ui.packs)
+
+    Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+        Text(stringResource(R.string.gallery_desc), style = Saqr.type.caption, color = c.text2)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
+            GhostButton(
+                if (loading) stringResource(R.string.gallery_loading) else stringResource(R.string.gallery_refresh),
+                { refresh() }, icon = Lucide.RefreshCw, enabled = !loading,
+            )
+            Text(
+                stringResource(R.string.gallery_count, shown.size),
+                style = Saqr.type.micro, color = c.text3,
+            )
+        }
+        SaqrField(query, { query = it }, placeholder = stringResource(R.string.gallery_search))
+        shown.forEach { e ->
+            val isInstalled = e.id in installed
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2)
+                    .border(1.dp, if (isInstalled) c.accent.copy(alpha = 0.45f) else c.border, RoundedCornerShape(Radius.sm))
+                    .padding(horizontal = Sp.md, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            e.nameAr.ifBlank { e.name },
+                            style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1, maxLines = 1,
+                        )
+                        Text(
+                            if (e.nameAr.isNotBlank()) e.name else e.description,
+                            style = Saqr.type.micro, color = c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (isInstalled) Tag(stringResource(R.string.gallery_installed), color = c.success, dot = true)
+                }
+                if (e.description.isNotBlank() && e.nameAr.isNotBlank()) {
+                    Text(e.description, style = Saqr.type.micro, color = c.text3, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+                Text(
+                    buildString {
+                        if (e.author.isNotBlank()) append(stringResource(R.string.gallery_by, e.author))
+                        if (e.tags.isNotEmpty()) {
+                            if (isNotEmpty()) append("  ·  ")
+                            append(e.tags.joinToString(" · "))
+                        }
+                    },
+                    style = Saqr.type.micro, color = c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+                GhostButton(
+                    stringResource(if (isInstalled) R.string.gallery_reinstall else R.string.gallery_install),
+                    {
+                        val key = ui.onInstallPack(e.packJson)
+                        if (key == null) toast(ctx, R.string.gallery_installed_toast)
+                        else errRes = R.string.gallery_install_failed
+                    },
+                    icon = Lucide.Package,
+                )
+            }
+        }
+        if (index != null && shown.isEmpty()) {
+            Text(stringResource(R.string.gallery_empty), style = Saqr.type.caption, color = c.text3)
+        }
+        if (index == null && !loading && errRes == null) {
+            Text(stringResource(R.string.gallery_empty_all), style = Saqr.type.caption, color = c.text3)
+        }
+        if (settings.galleryFetchedAt > 0L) {
+            Text(
+                stringResource(
+                    R.string.gallery_updated,
+                    java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT)
+                        .format(java.util.Date(settings.galleryFetchedAt)),
+                ) + if (fromCache) "  ·  " + stringResource(R.string.gallery_cached) else "",
+                style = Saqr.type.micro, color = c.text3,
+            )
+        }
+        errRes?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger) }
+        GhostButton(stringResource(R.string.gallery_contribute), {
+            runCatching {
+                ctx.startActivity(
+                    android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(com.ctodrs.saqrcode.data.GalleryKit.REPO_URL))
+                )
+            }
+        }, icon = Lucide.ExternalLink)
+    }
+}
+
+/** One anonymous GET of the raw index: (body, wall-clock on success, http code on failure). */
+private suspend fun fetchIndex(): Triple<String, Long, Int> =
+    withContext(kotlinx.coroutines.Dispatchers.IO) {
+        runCatching {
+            val body = com.ctodrs.saqrcode.data.GalleryClient().fetch()
+            Triple(body, System.currentTimeMillis(), 200)
+        }.getOrElse { e ->
+            Triple("", 0L, if (e is com.ctodrs.saqrcode.git.GhException) e.code else -1)
+        }
+    }
+
+/** Applies a fetch: null when the body could not become a usable index (caller shows the error). */
+private fun applyFetch(
+    body: String,
+    at: Long,
+    code: Int,
+): com.ctodrs.saqrcode.data.GalleryIndex? {
+    if (code != 200) return null
+    return com.ctodrs.saqrcode.data.GalleryKit.parseIndex(body)
+}
+
+/** A readable error for the failed fetch: 404 names the missing index, everything else is the network. */
+private fun fetchErrorRes(code: Int): Int = when (code) {
+    404 -> R.string.gallery_no_index
+    else -> R.string.gallery_fetch_fail
 }
 
 @Composable

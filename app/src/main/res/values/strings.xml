@@ -454,6 +454,26 @@
     <string name="pack_flask_button">Install the Flask sample</string>
     <string name="pack_flask_toast">Flask pack installed — its template is on the home screen</string>
     <string name="pack_template_of">Template: %s</string>
+    <!-- v0.14.3 community gallery -->
+    <string name="gallery_section">Community gallery</string>
+    <string name="gallery_desc">Arabic packs from the community\'s public repository (CTO-DRS/saqr-gallery) — one tap installs a template with its commands. Contribute yours with a pull request.</string>
+    <string name="gallery_refresh">Refresh</string>
+    <string name="gallery_loading">Loading…</string>
+    <string name="gallery_count">%d pack(s)</string>
+    <string name="gallery_search">Search the gallery…</string>
+    <string name="gallery_install">Install</string>
+    <string name="gallery_reinstall">Install again</string>
+    <string name="gallery_installed">Installed</string>
+    <string name="gallery_installed_toast">Pack installed from the gallery — its template is on the home screen</string>
+    <string name="gallery_install_failed">The entry\'s pack failed validation — try updating the gallery</string>
+    <string name="gallery_by">by %s</string>
+    <string name="gallery_updated">Updated %s</string>
+    <string name="gallery_cached">showing the last saved copy</string>
+    <string name="gallery_empty">No entries match your search.</string>
+    <string name="gallery_empty_all">The gallery is empty — pull down with Refresh once you are online.</string>
+    <string name="gallery_no_index">The gallery index was not found — the repository may not be published yet.</string>
+    <string name="gallery_fetch_fail">Couldn\'t reach the gallery — check the connection and refresh.</string>
+    <string name="gallery_contribute">Contribute your pack (pull request)</string>
     <!-- v0.7 build tab -->
     <string name="tab_build">Build</string>
     <string name="build_title">On-device APK build</string>

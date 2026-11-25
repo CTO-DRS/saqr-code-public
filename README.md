@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.14.2** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.14.3** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,13 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.14.3
+| الميزة | الحالة |
+|---|---|
+| معرض المجتمع — البند الرابع من «أجنحة مفتوحة»: معرض حزم عربية من مستودع GitHub عام (CTO-DRS/saqr-gallery) والمساهمة عبر طلب دمج — بلا خادم منا | ✅ |
+| تصفح وبحث عربي (الهمزات والتشكيل لا تعيق المطابقة) وتثبيت مدخل بنقرة عبر خط أنابيب الحزم نفسه — القالب على الشاشة الرئيسية والأوامر بجوار المدمجة | ✅ |
+| حالات صادقة: جلب تلقائي أول مرة، وآخر نسخة محفوظة تعمل بلا شبكة مع ملاحظة صريحة، ووسم «مثبّت» للمدخلات الحالية، ورفض مقروء لكل فشل شبكة | ✅ |
 
 ### الجديد في 0.14.2
 | الميزة | الحالة |
@@ -210,6 +217,11 @@
 ---
 
 ## English
+
+### New in v0.14.3
+- **Community gallery** — the fourth «أجنحة مفتوحة» item: Arabic packs live in a public GitHub repository (`CTO-DRS/saqr-gallery`) and contribution is a pull request — no Saqr-side server, the community owns the shelf.
+- **Browse, search, one-tap install:** the Arabic-aware search matches through hamza forms and diacritics; installing an entry runs the exact same pack pipeline as a pasted `.saqrpack` — the template lands on the home screen and the commands merge beside the built-ins.
+- **Honest, offline-first UX:** the first visit fetches automatically, the last good copy survives offline with an explicit note, installed entries carry a «مثبّت» tag, a 404 names the missing index, and every failure is a readable refusal.
 
 ### New in v0.14.2
 - **Cloud build (BYOC)** — the third «أجنحة مفتوحة» item: the build runs on GitHub Actions inside the user's own repository — their token, their repo, never a Saqr cloud.

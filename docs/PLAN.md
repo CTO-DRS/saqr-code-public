@@ -37,8 +37,8 @@ Order follows priority: P0 first, then P1, then P2; each item ships as its own c
 ### 4. معرض المجتمع · Community gallery (P1)
 - معرض قوالب ومشاريع عربية يُسحب من مستودع GitHub عام، والمساهمة عبر PR.
 - A gallery of Arabic templates and projects pulled from a public GitHub repository, with PR-based contribution.
-- [ ] تصفح وتثبيت قالب من المعرض بنقرة.
-- [ ] Browse and install a template from the gallery in one tap.
+- [x] تصفح وتثبيت قالب من المعرض بنقرة. — شُحن في 0.14.3
+- [x] Browse and install a template from the gallery in one tap. — shipped in 0.14.3
 
 ### 5. مزامنة عبر المستودع · Repository-based sync (P2)
 - تصدير/استيراد الإعدادات والثيمات والأوامر المخصصة عبر ملف أو مستودع خاص مشفر — بلا خادم مركزي.
