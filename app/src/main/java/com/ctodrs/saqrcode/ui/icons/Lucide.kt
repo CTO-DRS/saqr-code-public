@@ -118,4 +118,7 @@ object Lucide {
     val Image: ImageVector by lazy { stroked("image", false, "M5.0,3.0h14.0a2.0,2.0 0 0 1 2.0,2.0v14.0a2.0,2.0 0 0 1 -2.0,2.0h-14.0a2.0,2.0 0 0 1 -2.0,-2.0v-14.0a2.0,2.0 0 0 1 2.0,-2.0Z", "M7.0,9.0a2.0,2.0 0 1,0 4.0,0a2.0,2.0 0 1,0 -4.0,0", "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21") }
     val Camera: ImageVector by lazy { stroked("camera", false, "M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z", "M9.0,13.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0") }
     val ScanEye: ImageVector by lazy { stroked("scan-eye", false, "M3 7V5a2 2 0 0 1 2-2h2", "M17 3h2a2 2 0 0 1 2 2v2", "M21 17v2a2 2 0 0 1-2 2h-2", "M7 21H5a2 2 0 0 1-2-2v-2", "M11.0,12.0a1.0,1.0 0 1,0 2.0,0a1.0,1.0 0 1,0 -2.0,0", "M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0") }
+    // v0.13.2 Falcon Router
+    val Route: ImageVector by lazy { stroked("route", false, "M9.0,19.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15", "M15.0,5.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0") }
+    val TrendingDown: ImageVector by lazy { stroked("trending-down", false, "m22 17-8.5-8.5-5 5L2 7", "M16 17h6v-6") }
 }

@@ -294,6 +294,8 @@
     <string name="budget_confirm_body">You’ve spent %1$s of your %2$s monthly budget. Send anyway?</string>
     <string name="send_anyway">Send anyway</string>
     <string name="usage_section">Usage &amp; budget</string>
+    <string name="falcon_savings">Saved by the router (this month)</string>
+    <string name="falcon_savings_desc">Routed calls cost %1$s instead of %2$s on the coder’s model</string>
     <string name="monthly_budget">Monthly budget (USD)</string>
     <string name="monthly_budget_desc" formatted="false">Warns at 80%, asks before sending at 100%. Leave empty for no budget.</string>
     <string name="prices_title">Prices (USD per 1M tokens)</string>
@@ -453,6 +455,9 @@
     <string name="review_model_desc">Blank = the coder model. A cheaper, faster model works well for review.</string>
     <string name="auto_compact">Auto context compaction</string>
     <string name="auto_compact_desc">Summarise old turns when the context grows, instead of silently losing the far end</string>
+    <!-- v0.13.2 Falcon Router -->
+    <string name="falcon_router">Falcon Router (موجّه النماذج)</string>
+    <string name="falcon_router_desc">Run planning, review and context compaction on the cheapest capable model — the coder keeps yours. Only routes when the price table proves it saves, and the saved number is shown in Usage &amp; budget</string>
     <!-- v0.7 templates -->
     <string name="tpl_compose">Compose app</string>
     <string name="tpl_compose_desc">Kotlin + Jetpack Compose, Arabic/RTL — builds on the phone</string>

@@ -109,6 +109,15 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("planner_model", "") ?: ""
         set(v) { prefs.edit().putString("planner_model", v.trim()).apply(); bump() }
 
+    /**
+     * v0.13.2 Falcon Router: route planner / review / compaction to the cheapest capable
+     * model of the active provider (only when the price table proves it saves money).
+     * Explicit per-stage picks still win over the router; the coder is never routed.
+     */
+    var falconRouter: Boolean
+        get() = prefs.getBoolean("falcon_router", true)
+        set(v) { prefs.edit().putBoolean("falcon_router", v).apply(); bump() }
+
     /** v0.8: MCP servers (name + URL); their auth headers live in [SecureStore]. */
     var mcpServers: List<com.ctodrs.saqrcode.agent.Mcp.Server>
         get() = com.ctodrs.saqrcode.agent.Mcp.decodeConfig(prefs.getString("mcp_servers", null))

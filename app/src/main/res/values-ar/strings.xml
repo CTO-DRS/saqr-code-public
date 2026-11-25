@@ -294,6 +294,8 @@
     <string name="budget_confirm_body">أنفقت %1$s من ميزانيتك الشهرية البالغة %2$s. هل تريد الإرسال على أي حال؟</string>
     <string name="send_anyway">أرسل على أي حال</string>
     <string name="usage_section">الاستهلاك والميزانية</string>
+    <string name="falcon_savings">وفّره الموجّه (هذا الشهر)</string>
+    <string name="falcon_savings_desc">كلفت النداءات الموجَّهة %1$s بدلاً من %2$s على نموذج المبرمج</string>
     <string name="monthly_budget">الميزانية الشهرية (دولار)</string>
     <string name="monthly_budget_desc" formatted="false">تنبيه عند 80٪، وتأكيد قبل الإرسال عند 100٪. اتركها فارغة لإلغاء الميزانية.</string>
     <string name="prices_title">الأسعار (دولار لكل مليون رمز)</string>
@@ -453,6 +455,9 @@
     <string name="review_model_desc">اتركه فارغاً لاستخدام نموذج المبرمج نفسه. نموذج أرخص وأسرع مناسب للمراجعة.</string>
     <string name="auto_compact">ضغط السياق تلقائياً</string>
     <string name="auto_compact_desc">تلخيص الجولات الأقدم عندما يكبر السياق، بدل فقدان الأجزاء البعيدة</string>
+    <!-- v0.13.2 موجّه النماذج -->
+    <string name="falcon_router">موجّه النماذج «صقر»</string>
+    <string name="falcon_router_desc">يشغّل التخطيط والمراجعة وضغط السياق على أرخص نموذج يكفي للمهمة — والمبرمج يبقى على نموذجك. لا يوجّه إلا حين يثبت جدول الأسعار توفيراً، والرقم الموفَّر يظهر في «الاستهلاك والميزانية»</string>
     <!-- v0.7 القوالب -->
     <string name="tpl_compose">تطبيق Compose</string>
     <string name="tpl_compose_desc">كوتلن + Jetpack Compose عربي RTL — يبنى على الجهاز</string>

@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.13.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.13.2** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,14 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.13.2
+| الميزة | الحالة |
+|---|---|
+| موجّه النماذج «صقر»: التخطيط والمراجعة وضغط السياق تُوجَّه تلقائياً إلى أرخص نموذج يكفي لدى مزوّدك — والمبرمج يبقى على نموذجك، والاختيار اليدوي لكل مرحلة يتقدم على الموجّه | ✅ |
+| حفاظ على الجودة: تصنيف القدرة بعائلة النموذج (خفيف/متوسط/كامل)، والمراجع يشترط متوسطاً فلا تُسند مراجعة الفروقات لنموذج ضعيف | ✅ |
+| لا توجيه بلا إثبات: يوجّه فقط حين يثبت جدول الأسعار توفيراً، والنماذج غير المُسعّرة تُتخطى ولا تُخمَّن أبداً | ✅ |
+| الرقم المعلن: كل نداء موجَّه يُسعَّر عند نموذجه وعند سعر نموذج المبرمج (خط الأس) ويُخزَّن يومياً — و«وفّره الموجّه» يظهر في الاستهلاك والميزانية | ✅ |
 
 ### الجديد في 0.13.1
 | الميزة | الحالة |
@@ -144,7 +152,7 @@
 واجهة مُعاد تصميمها بالكامل: نظام تصميم "Falcon" (داكن وفاتح، لون ذهبي مميز)، محادثة وكيل بشريط علوي عائم وحبة الخطة وصفوف أدوات مدمجة مع شارات الفروقات والمدة والحالة، عدّاد الخطوات والسياق، محرّك Markdown مع كتل كود قابلة للنسخ، أيقونات أنواع الملفات، أيقونة صقر جديدة، شاشة ترحيب، ومعاينة HTML. التفاصيل في `CHANGELOG.md`، ولقطات الشاشة في `dist/screens/`.
 
 ### البدء السريع
-1. ثبّت ملف `SaqrCode-v0.13.0-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
+1. ثبّت ملف `SaqrCode-v0.13.2-arm64-release.apk` على جهاز arm64 (أندرويد 8 أو أحدث).
 2. افتح **الإعدادات** ← اختر مزوّدًا ← الصق مفتاح API ← **حفظ** ← **استخدم هذا المزوّد**.
 3. أنشئ مشروعًا، ثم من تبويب **الطرفية** اضغط **تثبيت Alpine Linux**.
 4. من تبويب **الوكيل** اكتب مثلًا: «سوّ لي صفحة هبوط لمقهى باسم سراج، عربية RTL، فيها قائمة أسعار».
@@ -155,6 +163,11 @@
 ---
 
 ## English
+
+### New in v0.13.2
+- **Falcon Router (موجّه النماذج):** the light agent stages — planning, review, context compaction — route automatically to the **cheapest capable model** on your provider while the coder keeps yours. Capability is tiered by model family (haiku/mini/flash → light, opus/pro → full, rest → mid); the reviewer requires mid so diff review never lands on a weak model. An explicit per-stage pick always wins over the router.
+- **Provable savings only:** routing happens only when the price table proves it (a priced candidate cheaper than the coder); unpriced models are skipped, never guessed — and the original vendor-prefixed id (OpenRouter etc.) is what reaches the API.
+- **The published number:** every routed call is priced at its model and at the coder's price (baseline), persisted daily in `usage/falcon.json`, and shown as «Saved by the router (this month)» in Usage & budget — measured on your real workload, on your own price table.
 
 ### New in v0.13.1
 - **Project index (فهرس المشروع):** a lightweight symbol index (files, classes, objects, interfaces, enums, functions) built on a small worker pool when the project opens, refreshed when stale. The new `project_search(query)` tool answers «file:line · kind · name» instantly, so the agent locates code instead of listing directories or reading whole files.

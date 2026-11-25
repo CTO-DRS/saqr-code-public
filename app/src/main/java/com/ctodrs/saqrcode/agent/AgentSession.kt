@@ -123,6 +123,8 @@ class AgentSession(
     private val git: GitService = GitService(null, settings.accounts),
     pendingAskFile: File = File(checkpointRoot.parentFile ?: checkpointRoot, "pending_ask/$projectName.json"),
     val ledger: UsageLedger = UsageLedger(File(checkpointRoot.parentFile ?: checkpointRoot, "usage/usage.json")),
+    /** v0.13.2 Falcon Router: daily routed-call savings (actual, baseline) next to the usage ledger. */
+    val savings: SavingsLedger = SavingsLedger(File(checkpointRoot.parentFile ?: checkpointRoot, "usage/falcon.json")),
     /** v0.6: where this project's chat sessions are saved; null = in-memory only. */
     val store: SessionStore? = null,
     /** v0.6: the background runtime (foreground service, notifications). */
@@ -409,6 +411,31 @@ class AgentSession(
         usageVersion++
     }
 
+    /**
+     * v0.13.2 Falcon Router: the model for a light stage. The user's explicit pick wins;
+     * otherwise the router picks the cheapest capable model when enabled (and provably
+     * cheaper); otherwise the coder's model. Returns (model, routed).
+     */
+    private fun stageModel(stage: FalconRouter.Stage, explicit: String): Pair<String, Boolean> {
+        if (explicit.isNotBlank()) return explicit to false
+        if (!settings.falconRouter) {
+            val def = Providers.byId(settings.activeProvider)
+            return settings.config(def.id).model to false
+        }
+        val def = Providers.byId(settings.activeProvider)
+        val cfg = settings.config(def.id)
+        val picked = FalconRouter.pick(stage, cfg.model, (def.suggestedModels + cfg.model).distinct(), settings.prices())
+        return if (picked != null) picked to true else cfg.model to false
+    }
+
+    /** v0.13.2: price one routed call at its model (actual) and at the coder's price (baseline). */
+    private suspend fun recordSavings(model: String, u: Usage) {
+        val def = Providers.byId(settings.activeProvider)
+        val coderModel = settings.config(def.id).model
+        val m = FalconRouter.meter(listOf(FalconRouter.RoutedCall(model, u)), coderModel, settings.prices()) ?: return
+        withContext(Dispatchers.IO) { runCatching { savings.record(m.first, m.second) } }
+    }
+
     fun decide(item: ChatItem.Approval, approve: Boolean) {
         if (item.decision != null) return
         item.decision = approve
@@ -535,8 +562,10 @@ class AgentSession(
 
             // v0.7: team mode — a reviewer pass over the applied batch
             if (settings.agentMode == "team") runReview()
-            // v0.7: summarise old context when the history grows past the threshold
-            maybeCompact(llm, model)
+            // v0.7: summarise old context when the history grows past the threshold —
+            // v0.13.2: on the router's cheaper model when one is provably capable
+            val (cl, cm, cr) = compactClient(llm, model)
+            maybeCompact(cl, cm, cr)
         }
         items += ChatItem.Notice("Step limit reached ($MAX_STEPS). Send a message to continue.", kind = ChatItem.Notice.Kind.STEP_LIMIT)
         return RunOutcome(RunOutcome.Kind.STEP_LIMIT, NotifText.summary(lastText))
@@ -651,9 +680,9 @@ class AgentSession(
         if (reviewRounds >= MAX_REVIEW_ROUNDS) return
         reviewRounds++
         hooks.onActivity(projectName, step, RunActivity.forTool("review", "diff"))
+        val (model, routed) = stageModel(FalconRouter.Stage.REVIEWER, settings.reviewModel)
         val def = Providers.byId(settings.activeProvider)
         val cfg = settings.config(def.id)
-        val model = settings.reviewModel.ifBlank { cfg.model }
         val card = ChatItem.Review(model)
         items += card
         markDirty()
@@ -671,6 +700,7 @@ class AgentSession(
             val used = turn.usage ?: UsageParser.estimate(req.length, turn.text.length)
             recordUsage(model, used)
             reviewUsage[model] = (reviewUsage[model] ?: Usage.ZERO) + used // v0.8: shown separately
+            if (routed) recordSavings(model, used)
             val report = Reviewer.parse(turn.text)
             card.finish(report)
             history += Msg.User(
@@ -701,8 +731,20 @@ class AgentSession(
         return Reviewer.checksSection(results)
     }
 
+    /**
+     * v0.13.2: the compaction client — the coder's own unless Falcon Router found a cheaper
+     * capable model for summarising (compaction has no explicit per-stage pick).
+     */
+    private fun compactClient(coderLlm: LlmClient, coderModel: String): Triple<LlmClient, String, Boolean> {
+        val (model, routed) = stageModel(FalconRouter.Stage.COMPACTOR, "")
+        if (model == coderModel) return Triple(coderLlm, coderModel, false)
+        val def = Providers.byId(settings.activeProvider)
+        val cfg = settings.config(def.id)
+        return Triple(LlmClient(def, cfg.baseUrl, model, settings.apiKey(def.id)), model, routed)
+    }
+
     /** v0.7: summarise the oldest context into one note once it passes the threshold. */
-    private suspend fun maybeCompact(llm: LlmClient, model: String) {
+    private suspend fun maybeCompact(llm: LlmClient, model: String, routed: Boolean = false) {
         if (!settings.autoCompact) return
         val chars = history.sumOf { size(it) }.toLong()
         if (!ContextCompactor.needsCompact(chars, history.size)) return
@@ -714,7 +756,9 @@ class AgentSession(
                 override fun onText(delta: String) {}
             })
         }.getOrNull() ?: return
-        recordUsage(model, out.usage ?: UsageParser.estimate(rendered.length, out.text.length))
+        val used = out.usage ?: UsageParser.estimate(rendered.length, out.text.length)
+        recordUsage(model, used)
+        if (routed) recordSavings(model, used)
         val summary = out.text.trim()
         if (summary.length < 60) return
         val compacted = ContextCompactor.apply(history, cut, summary)
@@ -875,10 +919,10 @@ class AgentSession(
     private suspend fun runPlanner() {
         val user = currentUser ?: return
         if (!Planner.worthPlanning(user.text)) return
+        val (model, routed) = stageModel(FalconRouter.Stage.PLANNER, settings.plannerModel)
+        if (model.isBlank()) return
         val def = Providers.byId(settings.activeProvider)
         val cfg = settings.config(def.id)
-        val model = settings.plannerModel.ifBlank { cfg.model }
-        if (model.isBlank()) return
         hooks.onActivity(projectName, 0, RunActivity.forTool("planner", ""))
         val req = Planner.buildRequest(user.text)
         val out = runCatching {
@@ -891,6 +935,7 @@ class AgentSession(
             val used = turn.usage ?: UsageParser.estimate(req.length, turn.text.length)
             recordUsage(model, used)
             plannerUsage[model] = (plannerUsage[model] ?: Usage.ZERO) + used
+            if (routed) recordSavings(model, used)
             val parsed = Planner.parse(turn.text) ?: return
             plan.clear(); plan.addAll(Planner.toPlanItems(parsed))
             items += ChatItem.Notice("", kind = ChatItem.Notice.Kind.PLANNED, count = parsed.tasks.size)

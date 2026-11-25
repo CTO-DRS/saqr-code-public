@@ -54,10 +54,16 @@ import androidx.core.os.LocaleListCompat
 import com.ctodrs.saqrcode.BuildConfig
 import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.SaqrApp
+import com.ctodrs.saqrcode.agent.FalconRouter
 import com.ctodrs.saqrcode.agent.LlmClient
 import com.ctodrs.saqrcode.agent.ModelPrice
 import com.ctodrs.saqrcode.agent.PriceTable
+import com.ctodrs.saqrcode.agent.SavingsLedger
 import com.ctodrs.saqrcode.agent.SlashCommand
+import com.ctodrs.saqrcode.ui.chat.formatUsd
+import com.ctodrs.saqrcode.ui.chat.ltr
+import java.io.File
+import java.util.Locale
 import com.ctodrs.saqrcode.agent.SlashCommands
 import com.ctodrs.saqrcode.agent.ProviderDef
 import com.ctodrs.saqrcode.agent.Providers
@@ -130,6 +136,9 @@ class SettingsUi(
     val onPlannerModel: (String) -> Unit = {},
     val reviewAutoTests: Boolean = true,
     val onReviewAutoTests: (Boolean) -> Unit = {},
+    /** v0.13.2 Falcon Router: route the light stages to the cheapest capable model. */
+    val falconRouter: Boolean = true,
+    val onFalconRouter: (Boolean) -> Unit = {},
     /** v0.8 MCP servers (add returns an error message, or null on success). */
     val mcpServers: List<com.ctodrs.saqrcode.agent.Mcp.Server> = emptyList(),
     val onMcpAdd: (String, String, String) -> String? = { _, _, _ -> null },
@@ -230,6 +239,8 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
         onPlannerModel = { settings.plannerModel = it },
         reviewAutoTests = settings.reviewAutoTests,
         onReviewAutoTests = { settings.reviewAutoTests = it },
+        falconRouter = settings.falconRouter,
+        onFalconRouter = { settings.falconRouter = it },
         mcpServers = settings.mcpServers,
         onMcpAdd = { name, url, auth ->
             val err = McpSettings.validate(name, url, settings.mcpServers)
@@ -424,6 +435,13 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     )
                 }
             }
+            // v0.13.2 Falcon Router — works in solo mode too (compaction), so it sits outside the team gate
+            Group {
+                ListRow(
+                    title = stringResource(R.string.falcon_router), subtitle = stringResource(R.string.falcon_router_desc), icon = Lucide.Route,
+                    trailing = { SaqrSwitch(ui.falconRouter, ui.onFalconRouter) },
+                )
+            }
             if (ui.activeModel.isNotBlank()) Group { VisionEditor(ui) }
             // ---- v0.8/v0.9 MCP servers
             SectionLabel(stringResource(R.string.mcp_section), Modifier.padding(top = Sp.md))
@@ -532,6 +550,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             // ---- usage & budget
             SectionLabel(stringResource(R.string.usage_section), Modifier.padding(top = Sp.md))
             Group { BudgetEditor(ui) }
+            Group { FalconSavingsRow() }
             Group { PricesEditor(ui) }
 
             // ---- accounts
@@ -1004,6 +1023,34 @@ private fun SlashCommandsEditor(ui: SettingsUi) {
 }
 
 private fun fmtNum(v: Double): String = if (v == Math.floor(v)) v.toLong().toString() else v.toBigDecimal().stripTrailingZeros().toPlainString()
+
+/**
+ * v0.13.2 Falcon Router: the published savings number — what the routed planner / review /
+ * compaction calls cost this month versus running them on the coder's model. Hidden until
+ * the first routed call lands in the ledger (and unreadable rows are ignored, never guessed).
+ */
+@Composable
+private fun FalconSavingsRow() {
+    val c = Saqr.colors
+    val m = remember {
+        runCatching {
+            com.ctodrs.saqrcode.agent.SavingsLedger(java.io.File(SaqrApp.instance.filesDir, "usage/falcon.json")).month()
+        }.getOrNull()
+    } ?: return
+    val (actual, baseline) = m
+    if (baseline <= 0.0) return
+    val pct = com.ctodrs.saqrcode.agent.FalconRouter.savingsPct(actual, baseline) ?: return
+    val saved = baseline - actual
+    ListRow(
+        title = stringResource(R.string.falcon_savings),
+        subtitle = stringResource(R.string.falcon_savings_desc,
+            com.ctodrs.saqrcode.ui.chat.ltr(com.ctodrs.saqrcode.ui.chat.formatUsd(saved)),
+            com.ctodrs.saqrcode.ui.chat.ltr(com.ctodrs.saqrcode.ui.chat.formatUsd(baseline))),
+        icon = Lucide.TrendingDown,
+        iconTint = c.success,
+        trailing = { Tag(ltr(String.format(Locale.US, "%.0f%%", pct * 100)), color = c.success, dot = false) },
+    )
+}
 
 @Composable
 private fun BudgetEditor(ui: SettingsUi) {

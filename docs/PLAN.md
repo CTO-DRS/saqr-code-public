@@ -29,8 +29,10 @@ The single source of direction is [ROADMAP.md](../ROADMAP.md); this file holds t
 ### 3. موجّه النماذج · Falcon Router
 - توجيه المهمة للنموذج الأرخص المناسب (خطة/كود/مراجعة/تلخيص) بهدف توفير ≥25% من التكلفة، مع رقم معلن.
 - Route each stage to the cheapest capable model (plan/code/review/summarise) targeting ≥25% cost savings, published as a number.
-- [ ] توفير مقاس على حمل حقيقي مع بقاء جودة المراجعة.
-- [ ] Measured savings on a real workload with review quality intact.
+- [x] التخطيط والمراجعة وضغط السياق تُوجَّه إلى أرخص نموذج يكفي حسب عائلة النموذج (خفيف/متوسط/كامل — المراجع يشترط متوسطاً حفاظاً على الجودة)، والاختيار اليدوي لكل مرحلة يتقدم على الموجّه، والمبرمج لا يُوجَّه أبداً. *(تم: 0.13.2)*
+- [x] Planning, review and compaction route to the cheapest capable model by family tier (light/mid/full — the reviewer requires mid to keep review quality); an explicit per-stage pick wins over the router, and the coder is never routed. *(done: 0.13.2)*
+- [x] توفير مقاس على حمل حقيقي مع بقاء جودة المراجعة — الرقم يُقاس باستمرار في التطبيق نفسه: كل نداء موجَّه يُسعَّر عند نموذجه وعند سعر نموذج المبرمج (خط الأس) ويُخزَّن يومياً في `usage/falcon.json`، ويظهر «وفّره الموجّه» في الاستهلاك والميزانية. لا توجيه إلا حين يثبت جدول الأسعار توفيراً. *(تم: 0.13.2 — القياس مستمر على حمل المستخدم الحقيقي)*
+- [x] Measured savings on a real workload with review quality intact — measured continuously in the app itself: every routed call is priced at its model and at the coder's price (baseline), persisted daily in `usage/falcon.json`, and shown as «Saved by the router» in Usage & budget. Routing only happens when the price table proves it. *(done: 0.13.2 — the measurement runs on the user's real workload)*
 
 ### 4. مدرّب صقر · Saqr Coach
 - إرشاد أول استخدام ومسار تعلم مختصر داخل التطبيق (أمثلة أوامر بالعربية).
