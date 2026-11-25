@@ -747,4 +747,29 @@
     <string name="mcp_oauth_state_mismatch">استجابة الدخول لا تطابق هذا الجهاز — تم تجاهلها لأمانك</string>
     <string name="mcp_oauth_failed_invalid">استجابة دخول غير مقروءة</string>
     <string name="mcp_oauth_failed_short">فشل تسجيل الدخول — تحقق من معرّف العميل ونقاط النهاية ثم أعد المحاولة</string>
+    <!-- v0.14.2 البناء السحابي (BYOC) -->
+    <string name="build_cloud_title">البناء السحابي (BYOC)</string>
+    <string name="build_cloud_desc">يعمل البناء على GitHub Actions داخل مستودعك أنت — رمزك ومستودعك، بلا سحابة منا. صُنع للهواتف الضعيفة وقليلة البطارية، ويصل APK إلى هنا لتثبيته بنقرة.</string>
+    <string name="build_cloud_start">ابدأ البناء السحابي</string>
+    <string name="build_cloud_stop">إيقاف</string>
+    <string name="build_cloud_working">يعمل على GitHub Actions…</string>
+    <string name="build_cloud_needs_remote">اربط المشروع بمستودع GitHub أولًا من تبويب Git.</string>
+    <string name="build_cloud_needs_token">سجّل الدخول إلى GitHub أولًا من الإعدادات ← الحسابات.</string>
+    <string name="build_cloud_wf_installed">سير البناء مثبّت الآن في مستودعك</string>
+    <string name="build_cloud_dispatched">أُرسل البناء إلى GitHub Actions…</string>
+    <string name="build_cloud_state_queued">في الطابور</string>
+    <string name="build_cloud_state_running">يعمل الآن</string>
+    <string name="build_cloud_state_downloading">تنزيل APK</string>
+    <string name="build_cloud_state_success">APK جاهز</string>
+    <string name="build_cloud_state_failed">فشل</string>
+    <string name="build_cloud_state_cancelled">أُلغي</string>
+    <string name="build_cloud_timeout">تجاوز البناء حد الـ%1$d دقيقة — افتح التشغيل على GitHub لترى أين توقف.</string>
+    <string name="build_cloud_no_apk">لم يُوجد APK في نواتج التشغيل.</string>
+    <string name="build_cloud_generic_fail">فشل البناء السحابي — انظر أسطر السجل أدناه.</string>
+    <string name="build_cloud_cancelled">أُوقف البناء.</string>
+    <string name="build_cloud_apk_ready">APK جاهز: %1$s (%2$s ك.ب)</string>
+    <string name="build_cloud_install">تثبيت APK</string>
+    <string name="build_cloud_again">بناء من جديد</string>
+    <string name="build_cloud_open">افتح التشغيل على GitHub</string>
+    <string name="build_cloud_log_hint">آخر أسطر السجل</string>
 </resources>

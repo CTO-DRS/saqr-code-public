@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import com.ctodrs.saqrcode.R
+import com.ctodrs.saqrcode.git.CloudBuild
 import com.ctodrs.saqrcode.SaqrApp
 import com.ctodrs.saqrcode.ondevice.BuildCache
 import com.ctodrs.saqrcode.ondevice.OnDeviceBuild
@@ -158,6 +159,35 @@ fun BuildPane(ws: Workspace, onPaywall: () -> Unit = {}) {
             ksPass = ksPass, onKsPass = { ksPass = it },
             ksKeyPass = ksKeyPass, onKsKeyPass = { ksKeyPass = it },
             ksExists = ksExists,
+        )
+
+        // ---- v0.14.2 cloud build (BYOC): the build runs on the user's own GitHub repository
+        val cloud = remember(ws.name) {
+            val git = com.ctodrs.saqrcode.git.GitService(ctx.applicationContext.filesDir, settings.accounts)
+            com.ctodrs.saqrcode.git.CloudBuild(
+                ctx.applicationContext,
+                remoteUrl = {
+                    val rs = runCatching { git.remotes(ws.dir) }.getOrDefault(emptyList())
+                    (rs.firstOrNull { it.name == "origin" } ?: rs.firstOrNull())?.url
+                },
+                token = { settings.githubToken },
+            )
+        }
+        val cloudPhase by cloud.phase.collectAsState()
+        val cloudMsg by cloud.msg.collectAsState()
+        val cloudLog by cloud.log.collectAsState()
+        val cloudApk by cloud.apk.collectAsState()
+        val cloudRunUrl by cloud.runUrl.collectAsState()
+        CloudCard(
+            phase = cloudPhase, msg = cloudMsg, log = cloudLog, apk = cloudApk, runUrl = cloudRunUrl,
+            onStart = { cloud.start(scope) },
+            onStop = { cloud.cancel() },
+            onInstall = { runCatching { ctx.startActivity(cloud.installIntent()) } },
+            onOpen = {
+                runCatching {
+                    ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(cloudRunUrl)))
+                }
+            },
         )
 
         if (phase == OnDeviceBuild.Phase.BUILT && apk != null) {
@@ -360,6 +390,103 @@ private fun BuildPhaseTag(phase: OnDeviceBuild.Phase) {
         OnDeviceBuild.Phase.FAILED -> R.string.build_phase_failed to c.danger
     }
     com.ctodrs.saqrcode.ui.components.Tag(stringResource(res), color = color, dot = true)
+}
+
+/**
+ * v0.14.2 · بطاقة البناء السحابي · Cloud build (BYOC) card: start/stop a build on the user's
+ * own GitHub Actions, a live log tail of the running job, and a one-tap install of the APK
+ * that comes back as an artifact. Hints name exactly what is missing (remote or token).
+ */
+@Composable
+private fun CloudCard(
+    phase: com.ctodrs.saqrcode.git.CloudBuild.Phase,
+    msg: com.ctodrs.saqrcode.git.CloudBuild.Msg?,
+    log: List<String>,
+    apk: java.io.File?,
+    runUrl: String?,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onInstall: () -> Unit,
+    onOpen: () -> Unit,
+) {
+    val c = Saqr.colors
+    val busy = phase == CloudBuild.Phase.PREPARING || phase == CloudBuild.Phase.RUNNING || phase == CloudBuild.Phase.DOWNLOADING
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.lg))
+            .background(c.surface1).border(1.dp, c.border, RoundedCornerShape(Radius.lg)).padding(Sp.md),
+        verticalArrangement = Arrangement.spacedBy(Sp.xs),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SIcon(Lucide.CloudUpload, size = 16.dp, tint = c.accentText)
+            Spacer(Modifier.width(Sp.sm))
+            Text(stringResource(R.string.build_cloud_title), style = Saqr.type.label.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = c.text1, modifier = Modifier.weight(1f))
+            val (tagRes, tagColor) = when (phase) {
+                CloudBuild.Phase.PREPARING -> R.string.build_cloud_state_queued to c.warning
+                CloudBuild.Phase.RUNNING -> R.string.build_cloud_state_running to c.warning
+                CloudBuild.Phase.DOWNLOADING -> R.string.build_cloud_state_downloading to c.warning
+                CloudBuild.Phase.READY -> R.string.build_cloud_state_success to c.success
+                CloudBuild.Phase.FAILED -> R.string.build_cloud_state_failed to c.danger
+                CloudBuild.Phase.IDLE -> return@Row
+            }
+            com.ctodrs.saqrcode.ui.components.Tag(stringResource(tagRes), color = tagColor, dot = true)
+        }
+        Text(stringResource(R.string.build_cloud_desc), style = Saqr.type.caption, color = c.text3)
+        msg?.let { m ->
+            val (res, color) = when (m) {
+                com.ctodrs.saqrcode.git.CloudBuild.Msg.NEEDS_REMOTE -> R.string.build_cloud_needs_remote to c.text3
+                com.ctodrs.saqrcode.git.CloudBuild.Msg.NEEDS_TOKEN -> R.string.build_cloud_needs_token to c.text3
+                com.ctodrs.saqrcode.git.CloudBuild.Msg.WF_INSTALLED -> R.string.build_cloud_wf_installed to c.success
+                com.ctodrs.saqrcode.git.CloudBuild.Msg.DISPATCHED -> R.string.build_cloud_dispatched to c.accentText
+                com.ctodrs.saqrcode.git.CloudBuild.Msg.TIMEOUT -> R.string.build_cloud_timeout to c.danger
+                com.ctodrs.saqrcode.git.CloudBuild.Msg.NO_APK -> R.string.build_cloud_no_apk to c.danger
+                com.ctodrs.saqrcode.git.CloudBuild.Msg.FAILED -> R.string.build_cloud_generic_fail to c.danger
+                com.ctodrs.saqrcode.git.CloudBuild.Msg.CANCELLED -> R.string.build_cloud_cancelled to c.text2
+            }
+            Text(
+                if (m == com.ctodrs.saqrcode.git.CloudBuild.Msg.TIMEOUT)
+                    stringResource(res, com.ctodrs.saqrcode.git.CloudBuildKit.TIMEOUT_MINUTES.toInt())
+                else stringResource(res),
+                style = Saqr.type.caption, color = color,
+            )
+        }
+        when {
+            busy -> Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalAlignment = Alignment.CenterVertically) {
+                GhostButton(stringResource(R.string.build_cloud_working), {}, icon = Lucide.CloudUpload, enabled = false)
+                GhostButton(stringResource(R.string.build_cloud_stop), onStop, icon = Lucide.Square)
+            }
+            phase == CloudBuild.Phase.READY && apk != null -> Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalAlignment = Alignment.CenterVertically) {
+                PrimaryButton(stringResource(R.string.build_cloud_install), onInstall, icon = Lucide.Rocket)
+                GhostButton(stringResource(R.string.build_cloud_again), onStart, icon = Lucide.CloudUpload)
+            }
+            else -> Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalAlignment = Alignment.CenterVertically) {
+                PrimaryButton(stringResource(R.string.build_cloud_start), onStart, icon = Lucide.CloudUpload)
+                if (runUrl != null) {
+                    GhostButton(stringResource(R.string.build_cloud_open), onOpen, icon = Lucide.ExternalLink)
+                }
+            }
+        }
+        if (phase == CloudBuild.Phase.READY && apk != null) {
+            Text(
+                stringResource(R.string.build_cloud_apk_ready, apk.name, (apk.length() / 1024).toString()),
+                style = Saqr.type.caption.copy(textDirection = TextDirection.Ltr), color = c.success,
+            )
+        }
+        if (log.isNotEmpty()) {
+            Text(stringResource(R.string.build_cloud_log_hint), style = Saqr.type.caption, color = c.text3)
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2).padding(Sp.sm),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                log.takeLast(8).forEach { line ->
+                    Text(
+                        line, style = Saqr.type.monoMicro.copy(fontFamily = FontFamily.Monospace),
+                        color = if (line.startsWith("✗")) c.danger else if (line.startsWith("✓")) c.success else c.text2,
+                        maxLines = 2,
+                    )
+                }
+            }
+        }
+    }
 }
 
 /**

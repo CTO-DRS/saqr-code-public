@@ -31,8 +31,8 @@ Order follows priority: P0 first, then P1, then P2; each item ships as its own c
 ### 3. بناء سحابي اختياري (BYOC) · Bring-your-own-compute cloud build (P1)
 - للهواتف الضعيفة: تشغيل البناء على GitHub Actions في مستودع المستخدم نفسه، وإعادة APK للمعاينة والتثبيت داخل التطبيق.
 - For weak phones: run the build on GitHub Actions inside the user's own repository, and return the APK for in-app preview and install.
-- [ ] بناء قالب Compose سحابيًا في ≤ 15 دقيقة مع سجل مباشر.
-- [ ] Build a Compose template in the cloud in ≤ 15 minutes with a live log.
+- [x] بناء قالب Compose سحابيًا في ≤ 15 دقيقة مع سجل مباشر. — شُحن في 0.14.2
+- [x] Build a Compose template in the cloud in ≤ 15 minutes with a live log. — shipped in 0.14.2
 
 ### 4. معرض المجتمع · Community gallery (P1)
 - معرض قوالب ومشاريع عربية يُسحب من مستودع GitHub عام، والمساهمة عبر PR.

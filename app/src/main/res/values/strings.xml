@@ -747,4 +747,29 @@
     <string name="mcp_oauth_state_mismatch">The sign-in response does not match this device — for safety it was ignored</string>
     <string name="mcp_oauth_failed_invalid">Unreadable sign-in response</string>
     <string name="mcp_oauth_failed_short">Sign-in failed — check the client id and endpoints, then try again</string>
+    <!-- v0.14.2 Cloud build (BYOC) -->
+    <string name="build_cloud_title">Cloud build (BYOC)</string>
+    <string name="build_cloud_desc">The build runs on GitHub Actions inside your own repository — your token, your repo, no Saqr cloud. Made for weak phones and low battery; the APK lands back here for one-tap install.</string>
+    <string name="build_cloud_start">Start cloud build</string>
+    <string name="build_cloud_stop">Stop</string>
+    <string name="build_cloud_working">Working on GitHub Actions…</string>
+    <string name="build_cloud_needs_remote">Connect the project to a GitHub repository from the Git tab first.</string>
+    <string name="build_cloud_needs_token">Sign in to GitHub from Settings → Accounts first.</string>
+    <string name="build_cloud_wf_installed">Build workflow installed in your repository</string>
+    <string name="build_cloud_dispatched">The build was dispatched to GitHub Actions…</string>
+    <string name="build_cloud_state_queued">Queued</string>
+    <string name="build_cloud_state_running">Running</string>
+    <string name="build_cloud_state_downloading">Downloading APK</string>
+    <string name="build_cloud_state_success">APK ready</string>
+    <string name="build_cloud_state_failed">Failed</string>
+    <string name="build_cloud_state_cancelled">Cancelled</string>
+    <string name="build_cloud_timeout">The build exceeded the %1$d-minute limit — open the run on GitHub to see where it stopped.</string>
+    <string name="build_cloud_no_apk">No APK was found in the run artifacts.</string>
+    <string name="build_cloud_generic_fail">The cloud build failed — see the log lines below.</string>
+    <string name="build_cloud_cancelled">The build was stopped.</string>
+    <string name="build_cloud_apk_ready">APK ready: %1$s (%2$s KB)</string>
+    <string name="build_cloud_install">Install APK</string>
+    <string name="build_cloud_again">Build again</string>
+    <string name="build_cloud_open">Open the run on GitHub</string>
+    <string name="build_cloud_log_hint">Latest log lines</string>
 </resources>

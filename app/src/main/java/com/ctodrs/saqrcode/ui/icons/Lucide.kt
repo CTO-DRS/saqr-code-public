@@ -85,6 +85,7 @@ object Lucide {
     val CircleDot: ImageVector by lazy { stroked("circle-dot", false, "M2.0,12.0a10.0,10.0 0 1,0 20.0,0a10.0,10.0 0 1,0 -20.0,0", "M11.0,12.0a1.0,1.0 0 1,0 2.0,0a1.0,1.0 0 1,0 -2.0,0") }
     val ClipboardPaste: ImageVector by lazy { stroked("clipboard-paste", false, "M15 2H9a1 1 0 0 0-1 1v2c0 .6.4 1 1 1h6c.6 0 1-.4 1-1V3c0-.6-.4-1-1-1Z", "M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2M16 4h2a2 2 0 0 1 2 2v2M11 14h10", "m17 10 4 4-4 4") }
     val CloudDownload: ImageVector by lazy { stroked("cloud-download", false, "M12 13v8l-4-4", "m12 21 4-4", "M4.393 15.269A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.436 8.284") }
+    val CloudUpload: ImageVector by lazy { stroked("cloud-upload", false, "M12 13v8", "m8 17 4-4 4 4", "M4.393 15.269A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.436 8.284") }
     val Command: ImageVector by lazy { stroked("command", false, "M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3") }
     val CornerDownLeft: ImageVector by lazy { stroked("corner-down-left", true, "M9 L10 L4 L15 L9 L20", "M20 4v7a4 4 0 0 1-4 4H4") }
     val FileDiff: ImageVector by lazy { stroked("file-diff", false, "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", "M9 10h6", "M12 13V7", "M9 17h6") }

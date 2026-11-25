@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.14.1** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.14.2** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,13 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.14.2
+| الميزة | الحالة |
+|---|---|
+| البناء السحابي (BYOC) — البند الثالث من «أجنحة مفتوحة»: البناء يعمل على GitHub Actions داخل مستودع المستخدم نفسه — رمزه ومستودعه، بلا سحابة منا | ✅ |
+| نقرة واحدة: تثبيت سير البناء في المستودع، وإرساله على الفرع الافتراضي، ومتابعة حية بآخر أسطر سجل المهمة، ثم تنزيل ناتج APK وتثبيته داخل التطبيق | ✅ |
+| حالات صادقة بلون لكل مرحلة، ورسائل تسمّي ما ينقص (المستودع أو الرمز)، وإيقاف نظيف، وحد زمني 20 دقيقة، وأسطر الخطأ من سجل المهمة عند الفشل | ✅ |
 
 ### الجديد في 0.14.1
 | الميزة | الحالة |
@@ -203,6 +210,11 @@
 ---
 
 ## English
+
+### New in v0.14.2
+- **Cloud build (BYOC)** — the third «أجنحة مفتوحة» item: the build runs on GitHub Actions inside the user's own repository — their token, their repo, never a Saqr cloud.
+- **One tap end-to-end:** Saqr installs the build workflow into the repo, dispatches it on the default branch, streams a live log tail of the running job, then downloads the APK artifact for in-app install (debug APK — no signing setup needed).
+- **Honest UX:** colored state tag (queued / running / downloading / ready / failed), hints naming exactly what is missing, «open the run on GitHub», clean stop, a 20-minute time box, and the job's real error lines on failure.
 
 ### New in v0.14.1
 - **MCP over OAuth (PKCE)** — the second «أجنحة مفتوحة» item: protected MCP servers sign in from Settings → MCP servers → the server's browser, with automatic endpoint discovery (protected-resource metadata + RFC 8414) and manual overrides.
