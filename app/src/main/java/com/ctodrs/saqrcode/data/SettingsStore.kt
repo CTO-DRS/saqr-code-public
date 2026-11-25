@@ -298,6 +298,16 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getLong("gallery_fetched_at", 0L)
         set(v) { prefs.edit().putLong("gallery_fetched_at", v).apply(); bump() }
 
+    /** v0.14.4 repository sync: the private repo — "owner/repo", a GitHub URL, or just a name. */
+    var syncRepo: String
+        get() = prefs.getString("sync_repo", com.ctodrs.saqrcode.data.SyncKit.DEFAULT_REPO) ?: com.ctodrs.saqrcode.data.SyncKit.DEFAULT_REPO
+        set(v) { prefs.edit().putString("sync_repo", v.trim()).apply(); bump() }
+
+    /** v0.14.4 repository sync: wall-clock ms of the last successful push/pull (0 = never). */
+    var syncAt: Long
+        get() = prefs.getLong("sync_at", 0L)
+        set(v) { prefs.edit().putLong("sync_at", v).apply(); bump() }
+
     /** Terminal font size in sp. */
     var terminalFontSize: Int
         get() = prefs.getInt("term_font", 12)

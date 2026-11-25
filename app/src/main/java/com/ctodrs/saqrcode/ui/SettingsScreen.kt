@@ -691,6 +691,10 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             SectionLabel(stringResource(R.string.gallery_section), Modifier.padding(top = Sp.md))
             Group { GallerySection(ui) }
 
+            // ---- v0.14.4 repository sync: encrypted snapshot → the user's own private repo or a file
+            SectionLabel(stringResource(R.string.sync_section), Modifier.padding(top = Sp.md))
+            Group { SyncSection(ui) }
+
             // ---- usage & budget
             SectionLabel(stringResource(R.string.usage_section), Modifier.padding(top = Sp.md))
             Group { BudgetEditor(ui) }
@@ -1741,6 +1745,243 @@ private fun applyFetch(
 private fun fetchErrorRes(code: Int): Int = when (code) {
     404 -> R.string.gallery_no_index
     else -> R.string.gallery_fetch_fail
+}
+
+/** v0.14.4 repository sync: the encrypted snapshot travels through the user's own private repo — or a file. */
+@Composable
+private fun SyncSection(ui: SettingsUi) {
+    val c = Saqr.colors
+    val ctx = LocalContext.current
+    val settings = SaqrApp.instance.settings
+    val scope = rememberCoroutineScope()
+
+    var pass by remember { mutableStateOf("") }
+    var repoText by remember { mutableStateOf(settings.syncRepo) }
+    var busyKind by remember { mutableStateOf<String?>(null) }
+    var errRes by remember { mutableStateOf<Int?>(null) }
+    var pushedRepo by remember { mutableStateOf<String?>(null) }
+    var repoMissing by remember { mutableStateOf(false) }
+    var pending by remember { mutableStateOf<com.ctodrs.saqrcode.data.SyncPayload?>(null) }
+
+    // The import-from-file picker lands in the same decrypt path as a pull.
+    val filePicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        if (com.ctodrs.saqrcode.data.SyncKit.passphraseProblem(pass) != null) {
+            errRes = R.string.sync_pass_short; return@rememberLauncherForActivityResult
+        }
+        busyKind = "import"
+        scope.launch {
+            val text = withContext(kotlinx.coroutines.Dispatchers.IO) { syncReadText(ctx, uri) }
+            busyKind = null
+            val (payload, err) = syncOpenContainer(text, pass)
+            if (payload != null) { errRes = null; pending = payload } else errRes = err
+        }
+    }
+
+    fun tokenAndSlug(): Pair<String, Pair<String, String>>? {
+        val tok = settings.githubToken
+        if (tok == null) { errRes = R.string.sync_needs_account; return null }
+        val owner = settings.accounts.github?.login.orEmpty()
+        val slug = com.ctodrs.saqrcode.data.SyncKit.repoSlug(repoText, owner)
+        if (slug == null || slug.second.isBlank()) { errRes = R.string.sync_bad_repo; return null }
+        return tok to slug
+    }
+
+    fun failOf(e: Exception) {
+        when (e) {
+            is com.ctodrs.saqrcode.data.SyncException -> errRes = when (e.reason) {
+                "short" -> R.string.sync_pass_short
+                "passphrase" -> R.string.sync_bad_pass
+                else -> R.string.sync_bad_container
+            }
+            is com.ctodrs.saqrcode.git.GhException -> when (e.code) {
+                404 -> { repoMissing = true; errRes = R.string.sync_missing_repo }
+                403 -> errRes = R.string.sync_no_scope
+                else -> errRes = R.string.sync_net_fail
+            }
+            else -> errRes = R.string.sync_net_fail
+        }
+    }
+
+    fun push() {
+        errRes = null
+        if (com.ctodrs.saqrcode.data.SyncKit.passphraseProblem(pass) != null) { errRes = R.string.sync_pass_short; return }
+        val (tok, slug) = tokenAndSlug() ?: return
+        busyKind = "push"
+        scope.launch {
+            val res = runCatching {
+                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val client = com.ctodrs.saqrcode.data.SyncClient(tok)
+                    val payload = com.ctodrs.saqrcode.data.SyncKit.snapshot(
+                        settings, android.os.Build.MODEL, BuildConfig.VERSION_NAME, System.currentTimeMillis())
+                    val container = com.ctodrs.saqrcode.data.SyncKit.seal(payload, pass)
+                    val sha = client.headSha(slug.first, slug.second)
+                    client.put(slug.first, slug.second, container, "sync: encrypted Saqr snapshot", sha)
+                }
+            }
+            busyKind = null
+            res.fold(onSuccess = {
+                pushedRepo = slug.second; repoMissing = false
+                settings.syncRepo = repoText.trim(); settings.syncAt = System.currentTimeMillis()
+                android.widget.Toast.makeText(ctx, ctx.getString(R.string.sync_pushed, slug.second), android.widget.Toast.LENGTH_SHORT).show()
+            }, onFailure = { failOf(it as Exception) })
+        }
+    }
+
+    fun pull() {
+        errRes = null
+        if (com.ctodrs.saqrcode.data.SyncKit.passphraseProblem(pass) != null) { errRes = R.string.sync_pass_short; return }
+        val (tok, slug) = tokenAndSlug() ?: return
+        busyKind = "pull"
+        scope.launch {
+            val res = runCatching {
+                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    com.ctodrs.saqrcode.data.SyncClient(tok).get(slug.first, slug.second)
+                }
+            }
+            busyKind = null
+            res.fold(onSuccess = { body ->
+                repoMissing = false
+                try {
+                    val p = com.ctodrs.saqrcode.data.SyncKit.open(body, pass)
+                    if (p != null) { errRes = null; pending = p } else errRes = R.string.sync_bad_container
+                } catch (e: com.ctodrs.saqrcode.data.SyncException) {
+                    errRes = when (e.reason) { "passphrase" -> R.string.sync_bad_pass; else -> R.string.sync_bad_container }
+                }
+            }, onFailure = { failOf(it as Exception) })
+        }
+    }
+
+    fun createAndPush() {
+        val (tok, slug) = tokenAndSlug() ?: return
+        busyKind = "create"
+        scope.launch {
+            val res = runCatching {
+                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    com.ctodrs.saqrcode.data.SyncClient(tok).createPrivateRepo(slug.second)
+                }
+            }
+            busyKind = null
+            res.fold(onSuccess = {
+                android.widget.Toast.makeText(ctx, ctx.getString(R.string.sync_created, slug.second), android.widget.Toast.LENGTH_SHORT).show()
+                push()
+            }, onFailure = { e ->
+                if (e is com.ctodrs.saqrcode.git.GhException && e.code == 422) {
+                    // The name is taken — if it's the user's own repo, a plain push will do.
+                    errRes = R.string.sync_repo_exists
+                } else failOf(e as Exception)
+            })
+        }
+    }
+
+    fun share() {
+        errRes = null
+        if (com.ctodrs.saqrcode.data.SyncKit.passphraseProblem(pass) != null) { errRes = R.string.sync_pass_short; return }
+        val payload = com.ctodrs.saqrcode.data.SyncKit.snapshot(
+            settings, android.os.Build.MODEL, BuildConfig.VERSION_NAME, System.currentTimeMillis())
+        val container = com.ctodrs.saqrcode.data.SyncKit.seal(payload, pass)
+        runCatching {
+            val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "saqr-sync.saqrsync")
+                putExtra(android.content.Intent.EXTRA_TEXT, container)
+            }
+            ctx.startActivity(android.content.Intent.createChooser(send, null))
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+        Text(stringResource(R.string.sync_desc), style = Saqr.type.caption, color = c.text2)
+        Text(stringResource(R.string.sync_whats_in), style = Saqr.type.micro, color = c.text3)
+        SaqrField(
+            pass, { pass = it }, label = stringResource(R.string.sync_passphrase),
+            visual = PasswordVisualTransformation(), supporting = stringResource(R.string.sync_pass_hint),
+        )
+        SaqrField(
+            repoText, { repoText = it }, label = stringResource(R.string.sync_repo),
+            supporting = stringResource(R.string.sync_repo_hint),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
+            GhostButton(
+                if (busyKind == "push" || busyKind == "create") stringResource(R.string.sync_tag_pushing) else stringResource(R.string.sync_push),
+                { push() }, icon = Lucide.CloudUpload, enabled = busyKind == null,
+            )
+            GhostButton(
+                if (busyKind == "pull" || busyKind == "import") stringResource(R.string.sync_tag_pulling) else stringResource(R.string.sync_pull),
+                { pull() }, icon = Lucide.ArrowDownToLine, enabled = busyKind == null,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
+            GhostButton(stringResource(R.string.sync_share), { share() }, icon = Lucide.ArrowUpFromLine, enabled = busyKind == null)
+            GhostButton(stringResource(R.string.sync_import), { filePicker.launch(arrayOf("*/*")) }, icon = Lucide.HardDrive, enabled = busyKind == null)
+        }
+        if (settings.accounts.github == null) {
+            Text(stringResource(R.string.sync_needs_account), style = Saqr.type.micro, color = c.text3)
+        }
+        if (settings.syncAt > 0L) {
+            Text(stringResource(R.string.sync_last, syncFmt(settings.syncAt)), style = Saqr.type.micro, color = c.text3)
+        }
+        pushedRepo?.let {
+            Text(stringResource(R.string.sync_pushed, it), style = Saqr.type.micro, color = c.success)
+        }
+
+        pending?.let { p ->
+            val saved = com.ctodrs.saqrcode.ui.theme.ThemeStudio.decodePacks(p.themes["saved"].orEmpty()).size
+            val cmds = com.ctodrs.saqrcode.agent.SlashCommands.decode(p.commandsJson).size
+            val packs = com.ctodrs.saqrcode.data.SaqrPackCodec.decodePacks(p.packsJson).size
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surface2)
+                    .border(1.dp, c.accent.copy(alpha = 0.45f), RoundedCornerShape(Radius.sm)).padding(Sp.md),
+                verticalArrangement = Arrangement.spacedBy(Sp.sm),
+            ) {
+                Text(
+                    stringResource(R.string.sync_snapshot_from, p.device.ifBlank { "—" }, syncFmt(p.createdAt)),
+                    style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1,
+                )
+                Text(stringResource(R.string.sync_counts, p.settings.size, saved, cmds, packs), style = Saqr.type.micro, color = c.text2)
+                Text(stringResource(R.string.sync_apply_warn), style = Saqr.type.micro, color = c.warning)
+                PrimaryButton(stringResource(R.string.sync_apply), {
+                    val a = com.ctodrs.saqrcode.data.SyncKit.apply(p, settings)
+                    settings.syncAt = System.currentTimeMillis()
+                    pending = null
+                    android.widget.Toast.makeText(
+                        ctx,
+                        ctx.getString(R.string.sync_applied, a.settings, a.themes, a.commands, a.packs),
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                }, icon = Lucide.Check)
+            }
+        }
+        if (repoMissing) {
+            GhostButton(stringResource(R.string.sync_create_repo), { createAndPush() }, icon = Lucide.ExternalLink, enabled = busyKind == null)
+        }
+        errRes?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger) }
+    }
+}
+
+private fun syncFmt(ms: Long): String =
+    java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT).format(java.util.Date(ms))
+
+/** One text read of a picked document, or null (the caller refuses honestly). */
+private fun syncReadText(ctx: android.content.Context, uri: android.net.Uri): String? = runCatching {
+    ctx.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+}.getOrNull()
+
+/** File-import path = pull path: decrypt with the same passphrase, parse strictly. */
+private fun syncOpenContainer(text: String?, pass: String): Pair<com.ctodrs.saqrcode.data.SyncPayload?, Int> {
+    if (text.isNullOrBlank()) return null to R.string.sync_bad_container
+    return try {
+        val p = com.ctodrs.saqrcode.data.SyncKit.open(text, pass)
+        if (p == null) null to R.string.sync_bad_container else p to 0
+    } catch (e: com.ctodrs.saqrcode.data.SyncException) {
+        null to when (e.reason) {
+            "short" -> R.string.sync_pass_short
+            "passphrase" -> R.string.sync_bad_pass
+            else -> R.string.sync_bad_container
+        }
+    }
 }
 
 @Composable

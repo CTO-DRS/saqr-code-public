@@ -43,8 +43,8 @@ Order follows priority: P0 first, then P1, then P2; each item ships as its own c
 ### 5. مزامنة عبر المستودع · Repository-based sync (P2)
 - تصدير/استيراد الإعدادات والثيمات والأوامر المخصصة عبر ملف أو مستودع خاص مشفر — بلا خادم مركزي.
 - Export/import settings, themes and custom commands via a file or an encrypted private repository — no central server.
-- [ ] إعداد جهاز ثانٍ في ≤ دقيقتين.
-- [ ] Set up a second device in ≤ 2 minutes.
+- [x] إعداد جهاز ثانٍ في ≤ دقيقتين. — شُحن في 0.14.4
+- [x] Set up a second device in ≤ 2 minutes. — shipped in 0.14.4
 
 ### 6. صقر الحارس · Saqr Guard (P2)
 - مهام مجدولة محلية: اختبارات ليلية، تقرير صباحي بإشعار، مراقبة فروقات مستودع المستخدم.

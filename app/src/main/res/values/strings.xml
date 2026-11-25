@@ -792,4 +792,36 @@
     <string name="build_cloud_again">Build again</string>
     <string name="build_cloud_open">Open the run on GitHub</string>
     <string name="build_cloud_log_hint">Latest log lines</string>
+    <!-- v0.14.4 repository sync -->
+    <string name="sync_section">Repository sync</string>
+    <string name="sync_desc">Your settings, themes, custom commands and skill packs — encrypted on this device and backed up to a private repository you own, or shared as a file. No Saqr server, ever. A second device: link the same GitHub account, type the same passphrase, pull, apply.</string>
+    <string name="sync_whats_in">Inside the snapshot: settings, themes, custom commands, skill packs, price rows, MCP server URLs — never API keys, tokens or auth headers.</string>
+    <string name="sync_passphrase">Passphrase</string>
+    <string name="sync_pass_hint">Encrypts the snapshot here (AES-GCM, PBKDF2) — never stored or sent; the same phrase opens it on the other device.</string>
+    <string name="sync_repo">Private repository</string>
+    <string name="sync_repo_hint">owner/repo — or just a name (saqr-sync) on your account</string>
+    <string name="sync_push">Push encrypted copy</string>
+    <string name="sync_pull">Pull</string>
+    <string name="sync_apply">Apply to this device</string>
+    <string name="sync_apply_warn">Applying replaces the current themes, commands and packs with the snapshot\'s.</string>
+    <string name="sync_create_repo">Create the private repository, then push</string>
+    <string name="sync_share">Share as a file</string>
+    <string name="sync_import">Import from a file</string>
+    <string name="sync_counts">%1$d settings · %2$d themes · %3$d commands · %4$d packs</string>
+    <string name="sync_snapshot_from">Snapshot from %1$s · %2$s</string>
+    <string name="sync_pushed">Encrypted copy pushed to %1$s</string>
+    <string name="sync_last">Last sync: %1$s</string>
+    <string name="sync_needs_account">Link your GitHub account first — Accounts.</string>
+    <string name="sync_bad_repo">That repository name doesn\'t work — use owner/repo or a plain name.</string>
+    <string name="sync_pass_short">The passphrase needs at least 8 characters.</string>
+    <string name="sync_bad_pass">Wrong passphrase, or the copy is damaged.</string>
+    <string name="sync_missing_repo">The repository doesn\'t exist yet — create it privately in one tap.</string>
+    <string name="sync_no_scope">The token can\'t write to this repository — check the name and the account\'s permissions.</string>
+    <string name="sync_net_fail">Couldn\'t reach GitHub — check the connection and try again.</string>
+    <string name="sync_bad_container">This isn\'t a Saqr sync container (SAQRSYNC1).</string>
+    <string name="sync_repo_exists">That name is taken — if it\'s your own repository, push again.</string>
+    <string name="sync_created">Private repository %1$s created — pushing…</string>
+    <string name="sync_applied">Synced: %1$d settings, %2$d themes, %3$d commands, %4$d packs</string>
+    <string name="sync_tag_pushing">Pushing…</string>
+    <string name="sync_tag_pulling">Pulling…</string>
 </resources>

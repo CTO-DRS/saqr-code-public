@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.14.3** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.14.4** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,14 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.14.4
+| الميزة | الحالة |
+|---|---|
+| المزامنة عبر المستودع — البند الخامس من «أجنحة مفتوحة»: الإعدادات والثيمات والأوامر المخصصة وحزم المهارات نسخة واحدة تُشفَّر على الجهاز وتُرفع إلى مستودع خاص تملكه — أو تُشارك كملف، بلا خادم منا إطلاقًا | ✅ |
+| الجهاز الثاني في أقل من دقيقتين: الحساب نفسه، عبارة المرور نفسها، «اجلب» ثم راجع أعداد النسخة وطبّقها بنقرة تحذّر من الاستبدال | ✅ |
+| الأسرار مستثناة بالبناء: قائمة لقطة صريحة — ولا مفاتيح API ولا رموز GitHub ولا ترويسات تخويل MCP ولا رموز OAuth أبدًا | ✅ |
+| حالات صادقة: ما ينقص يُسمّى قبل البدء، والعبارة الخاطئة تُرفض سطرًا واحدًا صادقًا، والمستودع المفقود يُنشأ بنقرة، وختم آخر مزامنة ظاهر | ✅ |
 
 ### الجديد في 0.14.3
 | الميزة | الحالة |
@@ -217,6 +225,11 @@
 ---
 
 ## English
+
+### New in v0.14.4
+- **Repository sync** — the fifth «أجنحة مفتوحة» item: settings, themes, custom commands and skill packs become one snapshot, **encrypted on the device** (AES-GCM + PBKDF2 passphrase) and pushed to a private repository the user owns — their token, their repo, no Saqr server — or shared as a file offline.
+- **A second device in under two minutes:** link the same GitHub account, type the same passphrase, pull, review the snapshot's device/date/counts, then apply with a button that explicitly warns it replaces themes, commands and packs.
+- **Secrets excluded by construction:** the snapshot whitelist is an explicit auditable table — API keys, GitHub tokens, MCP auth headers and OAuth tokens never enter the payload; a wrong passphrase or a damaged copy refuses with one honest line; a missing repository becomes a one-tap private-repo creation.
 
 ### New in v0.14.3
 - **Community gallery** — the fourth «أجنحة مفتوحة» item: Arabic packs live in a public GitHub repository (`CTO-DRS/saqr-gallery`) and contribution is a pull request — no Saqr-side server, the community owns the shelf.

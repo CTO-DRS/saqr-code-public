@@ -792,4 +792,36 @@
     <string name="build_cloud_again">بناء من جديد</string>
     <string name="build_cloud_open">افتح التشغيل على GitHub</string>
     <string name="build_cloud_log_hint">آخر أسطر السجل</string>
+    <!-- v0.14.4 المزامنة عبر المستودع -->
+    <string name="sync_section">المزامنة عبر المستودع</string>
+    <string name="sync_desc">إعداداتك وثيماتك وأوامرك المخصصة وحزم مهاراتك — تُشفَّر على هذا الجهاز وتُحفظ نسخة احتياطية في مستودع خاص تملكه، أو تُشارك كملف. بلا خادم منا إطلاقًا. الجهاز الثاني: اربط الحساب نفسه، واكتب عبارة المرور نفسها، ثم اجلب وطبّق.</string>
+    <string name="sync_whats_in">داخل النسخة: الإعدادات والثيمات والأوامر المخصصة وحزم المهارات وأسعار النماذج وروابط خوادم MCP — ولا مفاتيح API ولا رموز ولا ترويسات تخويل أبدًا.</string>
+    <string name="sync_passphrase">عبارة المرور</string>
+    <string name="sync_pass_hint">تشفّر النسخة هنا (AES-GCM، PBKDF2) — لا تُخزَّن ولا تُرسل؛ العبارة نفسها تفتحها على الجهاز الآخر.</string>
+    <string name="sync_repo">المستودع الخاص</string>
+    <string name="sync_repo_hint">owner/repo — أو اسم فقط (saqr-sync) على حسابك</string>
+    <string name="sync_push">ارفع النسخة المشفرة</string>
+    <string name="sync_pull">اجلب</string>
+    <string name="sync_apply">طبّق على هذا الجهاز</string>
+    <string name="sync_apply_warn">التطبيق يستبدل الثيمات والأوامر والحزم الحالية بنسخة اللقطة.</string>
+    <string name="sync_create_repo">أنشئ المستودع الخاص ثم ارفع</string>
+    <string name="sync_share">شارك كملف</string>
+    <string name="sync_import">استورد من ملف</string>
+    <string name="sync_counts">%1$d إعداد · %2$d ثيم · %3$d أمر · %4$d حزمة</string>
+    <string name="sync_snapshot_from">نسخة من %1$s · %2$s</string>
+    <string name="sync_pushed">رُفعت النسخة المشفرة إلى %1$s</string>
+    <string name="sync_last">آخر مزامنة: %1$s</string>
+    <string name="sync_needs_account">اربط حساب GitHub أولًا — من «الحسابات».</string>
+    <string name="sync_bad_repo">اسم المستودع غير صالح — استخدم owner/repo أو اسمًا بسيطًا.</string>
+    <string name="sync_pass_short">عبارة المرور تحتاج 8 أحرف على الأقل.</string>
+    <string name="sync_bad_pass">العبارة غير صحيحة، أو النسخة تالفة.</string>
+    <string name="sync_missing_repo">المستودع غير موجود بعد — أنشئه خاصًا بنقرة واحدة.</string>
+    <string name="sync_no_scope">الرمز لا يستطيع الكتابة إلى هذا المستودع — تحقق من الاسم ومن صلاحيات الحساب.</string>
+    <string name="sync_net_fail">تعذر الوصول إلى GitHub — تحقق من الاتصال وحاول من جديد.</string>
+    <string name="sync_bad_container">هذا ليس حاوية مزامنة صقر (SAQRSYNC1).</string>
+    <string name="sync_repo_exists">الاسم محجوز — إن كان مستودعك هو نفسه فاضغط «ارفع» من جديد.</string>
+    <string name="sync_created">أُنشئ المستودع الخاص %1$s — يرفع الآن…</string>
+    <string name="sync_applied">تمّت المزامنة: %1$d إعداد، %2$d ثيم، %3$d أمر، %4$d حزمة</string>
+    <string name="sync_tag_pushing">يرفع الآن…</string>
+    <string name="sync_tag_pulling">يجلب الآن…</string>
 </resources>
