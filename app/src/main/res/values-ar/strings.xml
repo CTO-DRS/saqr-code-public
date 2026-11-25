@@ -431,6 +431,17 @@
     <string name="hands_free_wake">إيقاظ «يا صقر»</string>
     <string name="hands_free_hint">يبقى الصقر في إنصات ما دام المشروع مفتوحًا. في وضع الإيقاظ قل «يا صقر» ثم أمرك فيُرسل تلقائيًا. أوقفه متى شئت من الإشعار أو زر الميكروفون.</string>
     <string name="hands_free_stopped">أُوقف الإملاء بلا يدين</string>
+    <!-- v0.13.5 وضع صحراوي -->
+    <string name="desert_section">وضع صحراوي</string>
+    <string name="desert_title">أولًا بلا شبكة (وضع صحراوي)</string>
+    <string name="desert_off">إيقاف</string>
+    <string name="desert_auto">عند الانقطاع</string>
+    <string name="desert_always">دائمًا</string>
+    <string name="desert_hint">بلا شبكة ولا دراما: الميزات السحابية تتوقف برسالة واضحة واحدة — والأوامر المحلية والطرفية والذاكرة والإيداعات المحلية والبناء على الجهاز (من بيئة مخزّنة) تستمر كما هي.</string>
+    <string name="desert_status_active">الصحراء نشطة — الميزات السحابية متوقفة، وكل ما هو محلي يعمل.</string>
+    <string name="desert_status_idle">الشبكة متاحة — الميزات السحابية تعمل.</string>
+    <string name="desert_banner">وضع صحراوي: الوكيل وأدوات الويب وخوادم MCP البعيدة والدفع والسحب متوقفة حتى تعود الشبكة. الملفات والطرفية والإيداعات المحلية وبيئة البناء المخزّنة تعمل.</string>
+    <string name="notice_desert">وضع صحراوي نشط (لا شبكة): إرسال أمر يحتاج اتصالاً. كل ما هو محلي — الملفات والطرفية والذاكرة والإيداعات المحلية وبيئة البناء المخزّنة — يعمل، ونصك يبقى هنا دون إرسال.</string>
     <!-- v0.7 بناء -->
     <string name="tab_build">بناء</string>
     <string name="build_title">بناء APK على الجهاز</string>

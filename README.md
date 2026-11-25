@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.13.4** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.13.5** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,14 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.13.5
+| الميزة | الحالة |
+|---|---|
+| وضع صحراوي (البند الأخير من «عقل الصقر»): ثلاث حالات — إيقاف، «عند الانقطاع» يُفعَّل تلقائيًا عبر مراقب اتصال حيّ (إنترنت مُتحقَّق منه فقط)، و«دائمًا» لترشيد البيانات والبطارية حتى والشبكة موجودة | ✅ |
+| كل ميزة سحابية تُجاب برسالة واضحة واحدة بلا انهيار ولا تعليق: الإرسال بإشعار واحد غير متكدس، وأدوات الويب وMCP البعيدة ودفع/سحب Git برفض مقروء يسمّي ما يبقى شغّالًا، وخوادم MCP البعيدة تُتخطى بإشعار بدل المهلة | ✅ |
+| كل ما هو محلي يستمر: الملفات والطرفية وبنك الذاكرة وفهرس الرموز وgit المحلي والفحص والاختبارات وخوادم stdio المحلية | ✅ |
+| البناء على الجهاز بلا شبكة: بيئة مخزّنة بالكامل تُبنى عليها كما هي، ولا يتوقف التجهيز إلا عند الجزء الناقص فعلًا بسطر يسمّيه ويبيّن المخرج | ✅ |
 
 ### الجديد في 0.13.4
 | الميزة | الحالة |
@@ -179,6 +187,12 @@
 ---
 
 ## English
+
+### New in v0.13.5
+- **Desert mode (وضع صحراوي):** the final «عقل الصقر» item — an offline-first mode with three settings: off, **«عند الانقطاع»** (activates automatically while the device has no validated internet) and **«دائمًا»** (forced rationing of data / battery / heat even online).
+- **Every cloud feature degrades gracefully:** a fresh send lands as one deduped desert notice; web tools, remote MCP servers and git push/pull answer the model mid-turn with a readable refusal naming what still works; remote MCP servers are skipped with a notice instead of timing out. No crash, no hang.
+- **Everything local keeps working:** files, terminal, memory bank, symbol index, local git, lint/tests, local stdio MCP servers — untouched.
+- **On-device build offline:** a fully cached environment builds as-is; only a genuinely missing download stops, with a log line naming it and the way out.
 
 ### New in v0.13.4
 - **Hands-free voice (صوت بلا يدين):** the fifth «عقل الصقر» item. Continuous dictation keeps re-listening while a project is open — each utterance chains into the next with a gentle back-off (350ms → 4s) on transient errors (silence, busy service, network), and a hard stop after 4 consecutive failures so a broken recognizer never spins forever.

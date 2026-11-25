@@ -221,6 +221,11 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("dictation_mode", "") ?: ""
         set(v) { prefs.edit().putString("dictation_mode", v).apply(); bump() }
 
+    /** v0.13.5 desert mode: DesertMode.Mode.key — "" off, "auto" follow the network, "always" forced. */
+    var desert: String
+        get() = prefs.getString("desert_mode", "") ?: ""
+        set(v) { prefs.edit().putString("desert_mode", v).apply(); bump() }
+
     /** Terminal font size in sp. */
     var terminalFontSize: Int
         get() = prefs.getInt("term_font", 12)

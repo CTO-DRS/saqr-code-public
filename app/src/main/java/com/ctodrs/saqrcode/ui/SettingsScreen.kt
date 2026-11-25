@@ -126,6 +126,9 @@ class SettingsUi(
     /** v0.13.4 hands-free: Dictation.Mode.key (""/"on"/"wake"). */
     val dictation: String = "",
     val onDictation: (String) -> Unit = {},
+    /** v0.13.5 desert mode: DesertMode.Mode.key (""/"auto"/"always"). */
+    val desert: String = "",
+    val onDesert: (String) -> Unit = {},
     val keepInBackground: Boolean = true,
     val onKeepInBackground: (Boolean) -> Unit = {},
     val onBatterySettings: () -> Unit = {},
@@ -244,6 +247,11 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
         onVoiceLang = { settings.voiceLang = it },
         dictation = settings.dictation,
         onDictation = { settings.dictation = it },
+        desert = settings.desert,
+        onDesert = {
+            settings.desert = it
+            com.ctodrs.saqrcode.agent.DesertState.mode = com.ctodrs.saqrcode.agent.DesertMode.Mode.from(it)
+        },
         keepInBackground = settings.keepInBackground,
         onKeepInBackground = { settings.keepInBackground = it },
         onBatterySettings = { showBattery = true },
@@ -585,6 +593,30 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                         val cur = when { ui.voiceLang.startsWith("ar") -> 1; ui.voiceLang.startsWith("en") -> 2; else -> 0 }
                         Segmented(listOf(stringResource(R.string.voice_follow_app), stringResource(R.string.lang_ar), stringResource(R.string.lang_en)), cur, { ui.onVoiceLang(tags[it]) })
                         Text(stringResource(R.string.voice_language_hint), style = Saqr.type.caption, color = Saqr.colors.text3)
+                    }
+                }
+            }
+
+            // ---- desert mode (v0.13.5): offline-first rationing with a live status line
+            SectionLabel(stringResource(R.string.desert_section), Modifier.padding(top = Sp.md))
+            Group {
+                Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+                    LabeledIcon(Lucide.WifiOff, stringResource(R.string.desert_title))
+                    val modes = com.ctodrs.saqrcode.agent.DesertMode.Mode.entries
+                    val cur = modes.indexOfFirst { it.key == ui.desert }.coerceAtLeast(0)
+                    Segmented(
+                        listOf(stringResource(R.string.desert_off), stringResource(R.string.desert_auto), stringResource(R.string.desert_always)),
+                        cur, { ui.onDesert(modes[it].key) },
+                    )
+                    Text(stringResource(R.string.desert_hint), style = Saqr.type.caption, color = Saqr.colors.text3)
+                    val activeNow = com.ctodrs.saqrcode.agent.DesertState.active
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
+                        SIcon(if (activeNow) Lucide.WifiOff else Lucide.CircleCheck, size = 14.dp,
+                            tint = if (activeNow) Saqr.colors.warning else Saqr.colors.success)
+                        Text(
+                            stringResource(if (activeNow) R.string.desert_status_active else R.string.desert_status_idle),
+                            style = Saqr.type.caption, color = Saqr.colors.text3,
+                        )
                     }
                 }
             }

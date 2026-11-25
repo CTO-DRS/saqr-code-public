@@ -146,11 +146,23 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
 
     // ------------------------------------------------------------ bootstrap
 
+    /**
+     * v0.13.5 desert mode: a bootstrap download that is actually needed cannot run offline.
+     * Called *after* every cache check, so a fully cached environment keeps building offline —
+     * only the genuinely missing piece stops, with a line that says exactly what to do.
+     */
+    private fun desertGuard(step: String) {
+        if (com.ctodrs.saqrcode.agent.DesertState.active)
+            error("Desert mode is active (no network): \"$step\" needs a download that is not cached yet. " +
+                "Connect once to fetch it — everything already downloaded keeps building offline.")
+    }
+
     suspend fun bootstrap(): Boolean = withContext(Dispatchers.IO) {
         if (_phase.value == Phase.READY) return@withContext true
         _phase.value = Phase.BOOTSTRAPPING
         try {
             if (!File(rootfs, ".saqr_installed").isFile) {
+                desertGuard("Debian base (rootfs)")
                 val t0 = System.currentTimeMillis()
                 val gz = fetch(ART_ROOTFS, "Downloading Debian base (ubuntu-base arm64)…", "rootfs (~34 MB)")
                 rootfs.deleteRecursively(); rootfs.mkdirs()
@@ -164,6 +176,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             }
 
             if (!File(rootfs, javaHome + "/bin/java").isFile) {
+                desertGuard("OpenJDK 17 (apt)")
                 val t0 = System.currentTimeMillis()
                 _line.value = "Installing OpenJDK 17 (apt)…"
                 addLog("• apt-get install openjdk-17-jdk-headless unzip (several minutes on first run)…")
@@ -177,6 +190,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             }
 
             if (!File(sdkDir, "cmdline-tools/latest/bin/sdkmanager").isFile) {
+                desertGuard("Android cmdline-tools")
                 val t0 = System.currentTimeMillis()
                 val zip = fetch(ART_CMDTOOLS, "Downloading Android cmdline-tools…", "cmdline-tools (~150 MB)")
                 addLog("• Extracting cmdline-tools…")
@@ -194,6 +208,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             }
 
             if (!File(sdkDir, "platforms/android-35").isDirectory) {
+                desertGuard("android-35 platform (sdkmanager)")
                 val t0 = System.currentTimeMillis()
                 _line.value = "Installing android-35 platform (sdkmanager)…"
                 addLog("• sdkmanager platforms;android-35…")
@@ -212,6 +227,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             if (fetchAapt2()) measured("bootstrap", "aapt2", tAapt)
 
             if (!File(gradleDir, "gradle-8.11.1/bin/gradle").isFile) {
+                desertGuard("Gradle 8.11.1")
                 val t0 = System.currentTimeMillis()
                 val zip = fetch(ART_GRADLE, "Downloading Gradle 8.11.1…", "Gradle (~130 MB)")
                 val tmp = File(context.cacheDir, "gradle-unz")
@@ -246,6 +262,7 @@ class OnDeviceBuild(private val context: Context, val projectDir: File) {
             aapt2.delete()
         }
         _line.value = "Fetching arm64 aapt2…"
+        desertGuard("arm64 aapt2")
         aapt2.parentFile?.mkdirs()
         val dl = File(aapt2.path + ".dl")
         val preset = Aapt2Mirrors.resolve(aapt2Mirror)

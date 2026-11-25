@@ -431,6 +431,17 @@
     <string name="hands_free_wake">“Ya Saqr” wake</string>
     <string name="hands_free_hint">Keeps listening while a project is open. In wake mode, say “Ya Saqr” then your command and it sends itself. Stop any time from the notification or the mic button.</string>
     <string name="hands_free_stopped">Hands-free off</string>
+    <!-- v0.13.5 desert mode -->
+    <string name="desert_section">Desert mode</string>
+    <string name="desert_title">Offline-first (desert mode)</string>
+    <string name="desert_off">Off</string>
+    <string name="desert_auto">When offline</string>
+    <string name="desert_always">Always</string>
+    <string name="desert_hint">No network, no drama: cloud features pause with one clear message — local commands, the terminal, memory, local commits and the on-device build (from a cached environment) keep working.</string>
+    <string name="desert_status_active">Desert active — cloud features are paused; everything local keeps working.</string>
+    <string name="desert_status_idle">Network available — cloud features are on.</string>
+    <string name="desert_banner">Desert mode: the agent, web tools, remote MCP and push/pull are paused until the network returns. Files, terminal, local commits and the cached build environment still work.</string>
+    <string name="notice_desert">Desert mode is active (no network): sending a command needs a connection. Everything local — files, terminal, memory, local commits, the cached build environment — still works, and your text stays here unsent.</string>
     <!-- v0.7 build tab -->
     <string name="tab_build">Build</string>
     <string name="build_title">On-device APK build</string>

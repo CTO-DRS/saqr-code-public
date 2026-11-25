@@ -122,4 +122,6 @@ object Lucide {
     // v0.13.2 Falcon Router
     val Route: ImageVector by lazy { stroked("route", false, "M9.0,19.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0", "M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15", "M15.0,5.0a3.0,3.0 0 1,0 6.0,0a3.0,3.0 0 1,0 -6.0,0") }
     val TrendingDown: ImageVector by lazy { stroked("trending-down", false, "m22 17-8.5-8.5-5 5L2 7", "M16 17h6v-6") }
+    // v0.13.5 desert mode
+    val WifiOff: ImageVector by lazy { stroked("wifi-off", false, "m2 2 20 20", "M8.5 16.5a5 5 0 0 1 7 0", "M5 12.55a10.94 10.94 0 0 1 5.17-2.39", "M10.71 5.05A16 16 0 0 1 22.58 9", "M1.42 9a15.91 15.91 0 0 1 4.7-2.88", "M16.72 11.06A10.94 10.94 0 0 1 19 12.55", "M12 20h.01") }
 }

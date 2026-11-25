@@ -215,6 +215,8 @@ fun ChatContent(
         if (shown.isNotEmpty() || state.sessionTokens > 0) StepMeter(state, onMeter)
         if (state.voice.listening) ListeningBar(state.voice)
         if (state.budgetLevel == Budget.Level.WARN || state.budgetLevel == Budget.Level.OVER) BudgetBanner(state, onMeter)
+        // v0.13.5 desert mode: the composer names the state before the user wonders why a send does nothing.
+        if (com.ctodrs.saqrcode.agent.DesertState.active) DesertBanner()
         val slash = remember(input, state.customCommands) { SlashCommands.suggestions(input, state.customCommands) }
         val replyText = if (!state.running) (last as? ChatItem.Assistant)?.takeIf { !it.streaming }?.text else null
         val quick = remember(replyText) { replyText?.let { QuickReplies.detect(it) }.orEmpty() }
@@ -644,6 +646,7 @@ private fun NoticeCard(item: ChatItem.Notice) {
             ChatItem.Notice.Kind.COMPACTED -> stringResource(R.string.notice_compacted)
             ChatItem.Notice.Kind.LOOP -> stringResource(R.string.notice_loop)
             ChatItem.Notice.Kind.PLANNED -> stringResource(R.string.notice_planned, item.count.coerceAtLeast(0).toString())
+            ChatItem.Notice.Kind.DESERT -> stringResource(R.string.notice_desert)
             else -> item.text
         }
         Text(body, style = Saqr.type.bodySmall.copy(color = c.text1, textDirection = TextDirection.Content))
@@ -744,6 +747,25 @@ private fun StepMeter(state: ChatUiState, onClick: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+/**
+ * v0.13.5 desert mode: a slim banner above the composer naming what still works offline.
+ */
+@Composable
+private fun DesertBanner() {
+    val c = Saqr.colors
+    val shape = RoundedCornerShape(Radius.md)
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = Sp.md, vertical = Sp.xs).clip(shape)
+            .background(c.warningBg).border(1.dp, c.warningBorder, shape)
+            .padding(horizontal = Sp.md, vertical = Sp.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SIcon(Lucide.WifiOff, size = 16.dp, tint = c.warning)
+        Spacer(Modifier.width(Sp.sm))
+        Text(stringResource(R.string.desert_banner), style = Saqr.type.caption, color = c.text1, modifier = Modifier.weight(1f))
     }
 }
 

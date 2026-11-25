@@ -55,8 +55,10 @@ The single source of direction is [ROADMAP.md](../ROADMAP.md); this file holds t
 ### 6. وضع صحراوي · Desert mode
 - وضع انقطاع الشبكة: قوائم أوامر محلية، إلغاء الميزات السحابية تلقائيًا، ومتابعة البناء المحلي.
 - Offline-first mode: local command lists, cloud features gracefully off, on-device build keeps working.
-- [ ] كل ميزة سحابية تتعامل مع الانقطاع برسالة واضحة بلا انهيار.
-- [ ] Every cloud feature degrades gracefully with a clear message, no crash.
+- [x] كل ميزة سحابية تتعامل مع الانقطاع برسالة واضحة بلا انهيار. *(تم: 0.13.5 — ثلاث حالات: إيقاف / «عند الانقطاع» عبر مراقب اتصال حيّ / «دائمًا»؛ الإرسال يُرفض بإشعار واحد غير متكدس، وأدوات الويب وMCP البعيدة ودفع/سحب Git تُجاب برفض مقروء وسط الدور، وخوادم MCP البعيدة تُتخطى بإشعار بدل المهلة، والتجهيز يتوقف عند الجزء الناقص فقط بعد فحص المخزون)*
+- [x] Every cloud feature degrades gracefully with a clear message, no crash. *(done: 0.13.5 — three modes: off / «when offline» via a live connectivity watcher / «always»; a fresh send lands as one deduped notice, web tools, remote MCP and push/pull answer the model mid-turn with a readable refusal, remote MCP servers are skipped with a notice instead of timing out, and build preparation stops only at the genuinely missing download after its cache check)*
+- [x] قوائم الأوامر المحلية والبناء المحلي يستمران: الملفات والطرفية والذاكرة والفهرس وgit المحلي والفحص والاختبارات وخوادم stdio المحلية وبيئة البناء المخزّنة تعمل بلا مساس. *(تم: 0.13.5)*
+- [x] Local command lists and the on-device build keep working: files, terminal, memory, the symbol index, local git, lint/tests, local stdio MCP servers and the cached build environment are untouched. *(done: 0.13.5)*
 
 ---
 

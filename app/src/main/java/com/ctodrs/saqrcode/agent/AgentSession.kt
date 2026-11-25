@@ -83,8 +83,8 @@ sealed class ChatItem {
         fun update(q: AskQuestion, a: AskAnswer) { if (status == Status.PENDING) answers = answers + (q.id to a) }
     }
     class Notice(val text: String, val isError: Boolean = false, val kind: Kind = if (isError) Kind.ERROR else Kind.INFO, val count: Int = -1) : ChatItem() {
-        /** INTERRUPTED: a turn was cut off (app killed / phone off) and can be resumed; RESUMED: it was. COMPACTED: v0.7 context compaction; LOOP: v0.7 loop detector stopped the turn. PLANNED: v0.8 planner produced a task plan; MCP: v0.8 MCP server connection problem. */
-        enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED, INTERRUPTED, RESUMED, COMPACTED, LOOP, PLANNED, MCP }
+        /** INTERRUPTED: a turn was cut off (app killed / phone off) and can be resumed; RESUMED: it was. COMPACTED: v0.7 context compaction; LOOP: v0.7 loop detector stopped the turn. PLANNED: v0.8 planner produced a task plan; MCP: v0.8 MCP server connection problem; DESERT: v0.13.5 offline gate refused a send. */
+        enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED, INTERRUPTED, RESUMED, COMPACTED, LOOP, PLANNED, MCP, DESERT }
     }
 
     /** v0.7 team mode: the reviewer's verdict on an applied batch (running → ok / issues / failed). */
@@ -321,6 +321,8 @@ class AgentSession(
     /** Send [text] to the agent; the chat bubble shows [display] (e.g. the slash command as typed). */
     fun send(text: String, display: String = text, images: List<ImagePart> = emptyList()) {
         if (running || (text.isBlank() && images.isEmpty())) return
+        // v0.13.5 desert mode: no cloud turn starts offline — one clear notice instead of a hanging socket error.
+        if (DesertState.active) { desertNotice(); return }
         // v0.13.3 Saqr Coach: the first real command completes the «message» step.
         if (settings.coachFirstMessageAt == 0L) settings.coachFirstMessageAt = System.currentTimeMillis()
         // typing instead of answering a card restored after a restart dismisses it
@@ -389,6 +391,17 @@ class AgentSession(
     }
 
     fun stop() { job?.cancel() }
+
+    /**
+     * v0.13.5 desert mode: a send refused offline lands as one DESERT notice
+     * (localized in the chat UI); repeated sends do not stack duplicate cards.
+     */
+    private fun desertNotice() {
+        val last = items.lastOrNull() as? ChatItem.Notice
+        if (last?.kind == ChatItem.Notice.Kind.DESERT) return
+        items += ChatItem.Notice("", kind = ChatItem.Notice.Kind.DESERT)
+        markDirty()
+    }
 
     /** "/clear" and "New chat": keep the old conversation in the Sessions list and start fresh. */
     fun clear() = newSession()
@@ -806,6 +819,9 @@ class AgentSession(
     }
 
     private suspend fun runTool(name: String, a: JSONObject): String = withContext(Dispatchers.IO) {
+        // v0.13.5 desert mode: cloud-bound tools refuse clearly mid-turn (the turn may have started online);
+        // local tools — files, terminal, memory, index, local git, lint/tests — keep working untouched.
+        DesertMode.cloudTool(name)?.let { f -> if (DesertState.active) return@withContext DesertMode.toolMessage(f) }
         when {
             name.startsWith(Mcp.PREFIX) -> runMcpTool(name, a)
             name in Tools.GIT -> GitTools.run(name, a, projectDir, git, settings.gitName, settings.gitEmail)
@@ -852,6 +868,14 @@ class AgentSession(
         if (servers.isEmpty() && settings.mcpStdioServers.isEmpty()) return
         var anyOk = false
         for (s in servers) {
+            // v0.13.5 desert mode: remote servers are skipped (with a notice) instead of timing out one by one.
+            if (DesertState.active) {
+                items += ChatItem.Notice(
+                    "MCP \u201c${s.name}\u201d: desert mode is active (no network) — its tools are skipped this turn.",
+                    isError = false, kind = ChatItem.Notice.Kind.MCP,
+                )
+                continue
+            }
             val cl = McpClient(Mcp.Server(s.name, s.url, settings.mcpAuth(s.name)))
             val tools = withContext(Dispatchers.IO) { runCatching { cl.listTools() }.getOrNull() }
             if (tools == null || tools.isEmpty()) {
@@ -903,6 +927,8 @@ class AgentSession(
             ?: return@withContext "Error: malformed MCP tool name '$full' (expected mcp_<server>_<tool>)"
         val http = mcpClients.firstOrNull { it.first.slug == slug }?.second
         val stdio = if (http == null) stdioClients.firstOrNull { it.first.slug == slug }?.second else null
+        // v0.13.5 desert mode: remote (HTTP) servers are cloud-bound; local stdio servers keep working.
+        if (http != null && DesertState.active) return@withContext DesertMode.toolMessage(DesertMode.Feature.MCP_REMOTE)
         if (http == null && stdio == null) {
             return@withContext "Error: MCP server '$slug' is not connected this turn. Tell the user to check Settings → MCP servers."
         }

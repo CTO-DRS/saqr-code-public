@@ -27,6 +27,10 @@ class SaqrApp : Application() {
         projects = ProjectRepository(this)
         linux = LinuxEnv(this)
         builds = com.ctodrs.saqrcode.data.BuildHistory(this)
+        // v0.13.5 desert mode: the stored mode seeds the gate, then the network watcher keeps it honest.
+        com.ctodrs.saqrcode.agent.DesertState.mode =
+            com.ctodrs.saqrcode.agent.DesertMode.Mode.from(settings.desert)
+        registerConnectivityWatcher()
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityStarted(a: android.app.Activity) { com.ctodrs.saqrcode.service.AgentRuntime.visibleActivities++ }
             override fun onActivityStopped(a: android.app.Activity) {
@@ -42,5 +46,30 @@ class SaqrApp : Application() {
 
     companion object {
         lateinit var instance: SaqrApp; private set
+    }
+
+    /**
+     * v0.13.5 desert mode: one default-network callback feeds [DesertState.online].
+     * "Usable internet" means a network that both has the INTERNET capability and was
+     * validated by the system (captive portals stay desert until they let traffic through).
+     */
+    private fun registerConnectivityWatcher() {
+        val cm = getSystemService(android.net.ConnectivityManager::class.java) ?: return
+        fun usable(n: android.net.Network?): Boolean {
+            val caps = n?.let { cm.getNetworkCapabilities(it) } ?: return false
+            return caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        }
+        com.ctodrs.saqrcode.agent.DesertState.online = usable(cm.activeNetwork)
+        runCatching {
+            cm.registerDefaultNetworkCallback(object : android.net.ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) { com.ctodrs.saqrcode.agent.DesertState.online = usable(cm.activeNetwork) || usable(network) }
+                override fun onCapabilitiesChanged(network: android.net.Network, caps: android.net.NetworkCapabilities) {
+                    com.ctodrs.saqrcode.agent.DesertState.online = caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                        caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                }
+                override fun onLost(network: android.net.Network) { com.ctodrs.saqrcode.agent.DesertState.online = usable(cm.activeNetwork) }
+            })
+        }
     }
 }
