@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui.chat
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.Role
 import android.text.format.DateUtils
 import androidx.compose.foundation.background
@@ -133,7 +134,7 @@ fun SessionsSheetContent(
             BasicTextField(query, onQuery, singleLine = true, modifier = Modifier.fillMaxWidth(),
                 textStyle = Saqr.type.body.copy(color = c.text1, textDirection = TextDirection.Content), cursorBrush = SolidColor(c.accent))
         }
-        if (query.isNotEmpty()) Box(Modifier.size(24.dp).clip(CircleShape).clickable(role = Role.Button) { onQuery("") }, contentAlignment = Alignment.Center) {
+        if (query.isNotEmpty()) Box(Modifier.minimumInteractiveComponentSize().size(24.dp).clip(CircleShape).clickable(role = Role.Button) { onQuery("") }, contentAlignment = Alignment.Center) {
             SIcon(Lucide.X, size = 15.dp, tint = c.text3, contentDescription = stringResource(R.string.cancel))
         }
     }
@@ -213,7 +214,7 @@ private fun SessionRow(m: SessionMeta, current: Boolean, enabled: Boolean, now: 
                 style = Saqr.type.caption, color = if (current) c.accentText else c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Box {
-            Box(Modifier.size(40.dp).clip(CircleShape).clickable(role = Role.Button) { menu = true }, contentAlignment = Alignment.Center) {
+            Box(Modifier.minimumInteractiveComponentSize().size(40.dp).clip(CircleShape).clickable(role = Role.Button) { menu = true }, contentAlignment = Alignment.Center) {
                 SIcon(Lucide.EllipsisVertical, size = 18.dp, tint = c.text2, contentDescription = stringResource(R.string.more))
             }
             DropdownMenu(menu, { menu = false }, Modifier.background(c.surface2)) {

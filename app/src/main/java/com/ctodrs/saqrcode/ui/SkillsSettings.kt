@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
@@ -510,7 +511,7 @@ private fun SkillDetails(
                 Text(stringResource(R.string.skills_checksum), style = Saqr.type.caption.copy(fontWeight = FontWeight.SemiBold), color = c.text1)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(s.sha256.take(16) + "…" + s.sha256.takeLast(8), style = Saqr.type.mono, color = c.text2, modifier = Modifier.weight(1f))
-                    Box(Modifier.size(30.dp).clip(RoundedCornerShape(Radius.sm)).clickable(role = Role.Button) {
+                    Box(Modifier.minimumInteractiveComponentSize().size(30.dp).clip(RoundedCornerShape(Radius.sm)).clickable(role = Role.Button) {
                         val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                         cm.setPrimaryClip(android.content.ClipData.newPlainText("sha256", s.sha256))
                         toastOf(ctx, R.string.skills_checksum_copied)
@@ -521,7 +522,7 @@ private fun SkillDetails(
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     (1..5).forEach { n ->
                         val rateLabel = stringResource(R.string.skills_rate_n, n)
-                        Box(Modifier.size(34.dp).clip(RoundedCornerShape(Radius.sm)).clickable(role = Role.RadioButton) { ui.onRate(k.id, if (s.rating == n) 0 else n) },
+                        Box(Modifier.minimumInteractiveComponentSize().size(34.dp).clip(RoundedCornerShape(Radius.sm)).clickable(role = Role.RadioButton) { ui.onRate(k.id, if (s.rating == n) 0 else n) },
                             contentAlignment = Alignment.Center) {
                             Text(if (n <= s.rating) "★" else "☆", modifier = Modifier.semantics { contentDescription = rateLabel }, style = Saqr.type.title3, color = if (n <= s.rating) c.warning else c.text3)
                         }

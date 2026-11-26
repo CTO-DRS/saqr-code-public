@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui.chat
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.Role
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -1004,7 +1005,7 @@ private fun Composer(
         Spacer(Modifier.height(Sp.sm))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box {
-                Box(Modifier.size(40.dp).pressable { attach = true }.clip(CircleShape).background(c.surface2).border(1.dp, c.border, CircleShape),
+                Box(Modifier.minimumInteractiveComponentSize().size(40.dp).pressable { attach = true }.clip(CircleShape).background(c.surface2).border(1.dp, c.border, CircleShape),
                     contentAlignment = Alignment.Center) { SIcon(Lucide.Plus, size = 20.dp, tint = c.text1, contentDescription = stringResource(R.string.attach_file)) }
                 DropdownMenu(attach, { attach = false }, Modifier.heightIn(max = 420.dp).background(c.surface2)) {
                     DropdownMenuItem(
@@ -1114,7 +1115,7 @@ private fun MicButton(v: VoiceUi, onTap: () -> Unit, onLongPress: () -> Unit) {
 private fun SendButton(running: Boolean, enabled: Boolean, onSend: () -> Unit, onStop: () -> Unit) {
     val c = Saqr.colors
     if (running) {
-        Box(Modifier.size(42.dp).pressable(onClick = onStop), contentAlignment = Alignment.Center) {
+        Box(Modifier.minimumInteractiveComponentSize().size(42.dp).pressable(onClick = onStop), contentAlignment = Alignment.Center) {
             Spinner(42.dp, c.accent, 2.dp)
             Box(Modifier.size(34.dp).clip(CircleShape).background(c.surface3), contentAlignment = Alignment.Center) {
                 Box(Modifier.size(12.dp).clip(RoundedCornerShape(3.dp)).background(c.text1))
@@ -1122,7 +1123,7 @@ private fun SendButton(running: Boolean, enabled: Boolean, onSend: () -> Unit, o
         }
     } else {
         Box(
-            Modifier.size(42.dp).pressable(enabled, onSend).clip(CircleShape)
+            Modifier.minimumInteractiveComponentSize().size(42.dp).pressable(enabled, onSend).clip(CircleShape)
                 .background(if (enabled) Brush.verticalGradient(listOf(c.accent, Color(0xFFCF962F))) else SolidColor(c.surface3)),
             contentAlignment = Alignment.Center,
         ) { SIcon(Lucide.ArrowUp, size = 20.dp, tint = if (enabled) c.onAccent else c.text3, contentDescription = stringResource(R.string.send)) }
@@ -1138,7 +1139,7 @@ fun PlanPillContent(plan: List<PlanItem>, running: Boolean, onPause: () -> Unit,
     Box {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (running) {
-                Box(Modifier.size(32.dp).pressable(onClick = onPause).clip(CircleShape), contentAlignment = Alignment.Center) {
+                Box(Modifier.minimumInteractiveComponentSize().size(32.dp).pressable(onClick = onPause).clip(CircleShape), contentAlignment = Alignment.Center) {
                     SIcon(Lucide.Pause, size = 18.dp, tint = c.text1, contentDescription = stringResource(R.string.stop))
                 }
             } else Spacer(Modifier.width(Sp.sm))

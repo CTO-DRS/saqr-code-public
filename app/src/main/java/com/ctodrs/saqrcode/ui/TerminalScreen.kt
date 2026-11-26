@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.Role
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -137,6 +138,7 @@ fun TerminalContent(
     onRestart: () -> Unit, onSelectTab: (Int) -> Unit, onNewTab: () -> Unit, onCloseTab: (Int) -> Unit, onFont: (Int) -> Unit,
     showKeyboardRow: Boolean = true,
 ) {
+    val haptics = com.ctodrs.saqrcode.ui.theme.rememberSaqrHaptics()
     val c = Saqr.colors
     val palette = TermPalette.Saqr
     var ctrl by remember { mutableStateOf(false) }
@@ -206,12 +208,12 @@ fun TerminalContent(
                                 Spacer(Modifier.width(6.dp))
                                 Text(t.title.ifBlank { (if (linuxReady) "alpine" else "sh") + " " + t.id }, style = Saqr.type.monoMicro,
                                     color = if (sel) Color(0xFFEDEEF0) else chromeText, maxLines = 1)
-                                Box(Modifier.size(22.dp).clip(CircleShape).clickable(role = Role.Button) { onCloseTab(i) }, contentAlignment = Alignment.Center) {
+                                Box(Modifier.minimumInteractiveComponentSize().size(22.dp).clip(CircleShape).clickable(role = Role.Button) { haptics.perform(com.ctodrs.saqrcode.ui.theme.HapticKind.POP); onCloseTab(i) }, contentAlignment = Alignment.Center) {
                                     SIcon(Lucide.X, size = 11.dp, tint = chromeText, contentDescription = stringResource(R.string.close))
                                 }
                             }
                         }
-                        Box(Modifier.size(28.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onNewTab), contentAlignment = Alignment.Center) {
+                        Box(Modifier.minimumInteractiveComponentSize().size(28.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onNewTab), contentAlignment = Alignment.Center) {
                             SIcon(Lucide.Plus, size = 15.dp, tint = chromeText, contentDescription = stringResource(R.string.term_new_tab))
                         }
                     }
@@ -251,7 +253,7 @@ fun TerminalContent(
                 // ---- input
                 Row(Modifier.fillMaxWidth().background(Color(0xFF0C0E11)).padding(start = Sp.md, end = 6.dp, top = 4.dp, bottom = 6.dp),
                     verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(30.dp).clip(CircleShape).background(if (direct) c.accentSoft else Color.Transparent).clickable(role = Role.Switch) { flushLine(); direct = !direct },
+                    Box(Modifier.minimumInteractiveComponentSize().size(30.dp).clip(CircleShape).background(if (direct) c.accentSoft else Color.Transparent).clickable(role = Role.Switch) { flushLine(); direct = !direct },
                         contentAlignment = Alignment.Center) {
                         SIcon(Lucide.Keyboard, size = 16.dp, tint = if (direct) c.accent else chromeText, contentDescription = stringResource(R.string.term_direct))
                     }
@@ -282,7 +284,7 @@ fun TerminalContent(
                             }
                         },
                     )
-                    Box(Modifier.size(36.dp).pressable { if (direct) onWrite("\r") else { onWrite(line + "\r"); line = "" } }.clip(CircleShape)
+                    Box(Modifier.minimumInteractiveComponentSize().size(36.dp).pressable { if (direct) onWrite("\r") else { onWrite(line + "\r"); line = "" } }.clip(CircleShape)
                         .background(if (line.isNotBlank()) c.accent else Color(0xFF1B1F25)), contentAlignment = Alignment.Center) {
                         SIcon(Lucide.CornerDownLeft, size = 16.dp, tint = if (line.isNotBlank()) c.onAccent else Color(0xFF6D737D), contentDescription = stringResource(R.string.run))
                     }
@@ -294,7 +296,7 @@ fun TerminalContent(
 
 @Composable
 private fun ChromeIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    Box(Modifier.size(30.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClick), contentAlignment = Alignment.Center) {
+    Box(Modifier.minimumInteractiveComponentSize().size(30.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClick), contentAlignment = Alignment.Center) {
         SIcon(icon, size = 14.dp, tint = Color(0xFF8A919B), contentDescription = label)
     }
 }

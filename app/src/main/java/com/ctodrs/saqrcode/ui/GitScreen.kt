@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.Role
 import android.content.Intent
 import android.net.Uri
@@ -305,7 +306,7 @@ private fun SyncCount(icon: ImageVector, n: Int) {
 private fun HeaderButton(icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit, accent: Boolean = false) {
     val c = Saqr.colors
     Box(
-        Modifier.padding(start = 4.dp).size(38.dp).pressable(enabled, onClick).clip(CircleShape)
+        Modifier.padding(start = 4.dp).minimumInteractiveComponentSize().size(38.dp).pressable(enabled, onClick).clip(CircleShape)
             .background(if (accent && enabled) c.accent else c.surface2)
             .border(1.dp, if (accent && enabled) c.accent else c.border, CircleShape),
         contentAlignment = Alignment.Center,
@@ -326,7 +327,7 @@ private fun ToastBar(t: GitToast, a: GitActions) {
         Text(t.text, style = Saqr.type.caption.copy(textDirection = TextDirection.Content), color = c.text1, maxLines = 4,
             overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         if (t.link != null) GhostButton(stringResource(R.string.open), { a.onOpenLink(t.link) }, icon = Lucide.ExternalLink)
-        Box(Modifier.size(30.dp).clip(CircleShape).clickable(role = Role.Button, onClick = a.onDismissToast), contentAlignment = Alignment.Center) {
+        Box(Modifier.minimumInteractiveComponentSize().size(30.dp).clip(CircleShape).clickable(role = Role.Button, onClick = a.onDismissToast), contentAlignment = Alignment.Center) {
             SIcon(Lucide.X, size = 14.dp, tint = c.text3, contentDescription = stringResource(R.string.close))
         }
     }
@@ -445,7 +446,7 @@ private fun FileRow(f: GitFileStatus, staged: Boolean, a: GitActions) {
                 Spacer(Modifier.width(Sp.sm))
                 KindBadge(kind)
                 Spacer(Modifier.width(Sp.xs))
-                Box(Modifier.size(36.dp).clip(CircleShape).clickable(role = Role.Checkbox) { a.onToggle(f) }, contentAlignment = Alignment.Center) {
+                Box(Modifier.minimumInteractiveComponentSize().size(36.dp).clip(CircleShape).clickable(role = Role.Checkbox) { a.onToggle(f) }, contentAlignment = Alignment.Center) {
                     Box(
                         Modifier.size(20.dp).clip(RoundedCornerShape(6.dp)).background(if (staged) c.accent else Color.Transparent)
                             .border(1.5.dp, if (staged) c.accent else c.borderStrong, RoundedCornerShape(6.dp)),
@@ -596,7 +597,7 @@ private fun BranchesList(state: GitUiState, a: GitActions) {
                         Text(r.name, style = Saqr.type.mono.copy(fontWeight = FontWeight.Medium), color = c.text1)
                         Text(r.url, style = Saqr.type.monoMicro, color = c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Box(Modifier.size(34.dp).clip(CircleShape).clickable(role = Role.Button) { a.onRemoveRemote(r.name) }, contentAlignment = Alignment.Center) {
+                    Box(Modifier.minimumInteractiveComponentSize().size(34.dp).clip(CircleShape).clickable(role = Role.Button) { a.onRemoveRemote(r.name) }, contentAlignment = Alignment.Center) {
                         SIcon(Lucide.Trash2, size = 15.dp, tint = c.text3, contentDescription = stringResource(R.string.delete))
                     }
                 }
@@ -781,7 +782,7 @@ fun DiffViewerContent(title: String, diff: String, onClose: () -> Unit) {
     val (add, del) = remember(diff) { com.ctodrs.saqrcode.git.GitService.diffStats(diff) }
     Column(Modifier.fillMaxSize().background(c.bg).statusBarsPadding().navigationBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(Sp.md), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(40.dp).clip(CircleShape).background(c.surface2).clickable(role = Role.Button, onClick = onClose), contentAlignment = Alignment.Center) {
+            Box(Modifier.minimumInteractiveComponentSize().size(40.dp).clip(CircleShape).background(c.surface2).clickable(role = Role.Button, onClick = onClose), contentAlignment = Alignment.Center) {
                 SIcon(Lucide.X, size = 18.dp, tint = c.text1, contentDescription = stringResource(R.string.close))
             }
             Spacer(Modifier.width(Sp.md))

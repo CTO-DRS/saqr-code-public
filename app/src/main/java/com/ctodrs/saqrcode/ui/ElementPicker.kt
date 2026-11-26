@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.Role
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -181,7 +182,7 @@ fun PreviewPane(ws: Workspace) {
                     contentAlignment = Alignment.Center,
                 ) { SIcon(Lucide.Crosshair, size = 16.dp, tint = if (picking) c.onAccent else c.text1, contentDescription = stringResource(R.string.pick_element)) }
                 Spacer(Modifier.width(2.dp))
-                Box(Modifier.size(32.dp).clip(CircleShape).clickable(role = Role.Button) { reload++ }, contentAlignment = Alignment.Center) { SIcon(Lucide.RefreshCw, size = 15.dp) }
+                Box(Modifier.minimumInteractiveComponentSize().size(32.dp).clip(CircleShape).clickable(role = Role.Button) { reload++ }, contentAlignment = Alignment.Center) { SIcon(Lucide.RefreshCw, size = 15.dp) }
             }
         }
         if (picking) PickHint()

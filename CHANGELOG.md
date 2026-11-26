@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.2] — 2026-11-26 — Touch targets + haptics · أهداف اللمس والاهتزاز
+
+- **48dp:** every clickable box under 48dp (tab close in Panes and Terminal, terminal direct-mode switch, Git toast and row actions, skill rating, remove-host and others, 36 sites) now keeps its look but gets a 48dp minimum touch target. `V0102TouchTargetGuardTest` fails the build if a new one is added without it.
+- **Haptics:** all pressable buttons give a light tick, switches tick on change, closing a tab gives a pop, and confirming a project delete gives a heavy tap. Uses the existing semantic tokens, so the system haptics setting still rules.
+- Tab rows may grow slightly where the close button was under 48dp. Real feel and spacing are device-QA.
+- versionName 0.1.2, versionCode 41.
+
 ## [0.1.1] — 2026-11-26 — Render audit 2: sizes · تدقيق الأحجام
 
 - **Fix:** the floating search/export pill covered the first message at the top of the chat on every size; the list now starts below it.

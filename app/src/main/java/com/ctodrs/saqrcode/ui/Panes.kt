@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.Role
 import android.annotation.SuppressLint
 import android.webkit.WebView
@@ -180,6 +181,7 @@ fun FilesPaneContent(
     onShowTree: (Boolean) -> Unit, onActivate: (Int) -> Unit, onClose: (Int) -> Unit, onSave: (OpenFile) -> Unit,
     onOpen: (String) -> Unit, onLongPress: (FsNode) -> Unit, onNewFile: () -> Unit, onNewFolder: () -> Unit, onRefresh: () -> Unit,
 ) {
+    val haptics = com.ctodrs.saqrcode.ui.theme.rememberSaqrHaptics()
     val c = Saqr.colors
     // v0.12: editor font size + line wrap come from settings and apply live.
     val editorSettings = com.ctodrs.saqrcode.SaqrApp.instance.settings
@@ -190,7 +192,7 @@ fun FilesPaneContent(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(Modifier.fillMaxWidth().padding(horizontal = Sp.md, vertical = Sp.xs), verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier.size(38.dp).pressable { onShowTree(!showTree) }.clip(RoundedCornerShape(Radius.sm))
+                    Modifier.minimumInteractiveComponentSize().size(38.dp).pressable { onShowTree(!showTree) }.clip(RoundedCornerShape(Radius.sm))
                         .background(if (showTree) c.accentSoft else c.surface2).border(1.dp, if (showTree) c.accent.copy(alpha = 0.4f) else c.border, RoundedCornerShape(Radius.sm)),
                     contentAlignment = Alignment.Center,
                 ) { SIcon(Lucide.FolderOpen, size = 18.dp, tint = if (showTree) c.accentText else c.text1) }
@@ -208,7 +210,7 @@ fun FilesPaneContent(
                             FileTypeIcon(t.path.substringAfterLast('/'), 16.dp)
                             Spacer(Modifier.width(6.dp))
                             Text(t.path.substringAfterLast('/'), style = Saqr.type.monoSmall, color = if (sel) c.text1 else c.text2, maxLines = 1)
-                            Box(Modifier.size(26.dp).clip(CircleShape).clickable(role = Role.Button) { onClose(i) }, contentAlignment = Alignment.Center) {
+                            Box(Modifier.minimumInteractiveComponentSize().size(26.dp).clip(CircleShape).clickable(role = Role.Button) { haptics.perform(com.ctodrs.saqrcode.ui.theme.HapticKind.POP); onClose(i) }, contentAlignment = Alignment.Center) {
                                 if (t.dirty) Box(Modifier.size(7.dp).clip(CircleShape).background(c.accent))
                                 else SIcon(Lucide.X, size = 13.dp, tint = c.text3, contentDescription = stringResource(R.string.close))
                             }
@@ -219,7 +221,7 @@ fun FilesPaneContent(
                 if (cur != null && !showTree) {
                     Spacer(Modifier.width(Sp.sm))
                     Box(
-                        Modifier.size(38.dp).pressable(cur.dirty) { onSave(cur) }.clip(RoundedCornerShape(Radius.sm))
+                        Modifier.minimumInteractiveComponentSize().size(38.dp).pressable(cur.dirty) { onSave(cur) }.clip(RoundedCornerShape(Radius.sm))
                             .background(if (cur.dirty) c.accent else c.surface2).border(1.dp, if (cur.dirty) c.accent else c.border, RoundedCornerShape(Radius.sm)),
                         contentAlignment = Alignment.Center,
                     ) { SIcon(Lucide.Save, size = 17.dp, tint = if (cur.dirty) c.onAccent else c.text3, contentDescription = stringResource(R.string.save)) }
@@ -232,7 +234,7 @@ fun FilesPaneContent(
                 GhostButton(stringResource(R.string.new_file), onNewFile, icon = Lucide.FilePlus)
                 GhostButton(stringResource(R.string.new_folder), onNewFolder, icon = Lucide.FolderPlus)
                 Spacer(Modifier.weight(1f))
-                Box(Modifier.size(38.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onRefresh), contentAlignment = Alignment.Center) {
+                Box(Modifier.minimumInteractiveComponentSize().size(38.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onRefresh), contentAlignment = Alignment.Center) {
                     SIcon(Lucide.RefreshCw, size = 17.dp)
                 }
             }

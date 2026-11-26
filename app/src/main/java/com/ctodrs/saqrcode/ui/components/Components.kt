@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui.components
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -74,8 +75,9 @@ import com.ctodrs.saqrcode.ui.theme.Sp
 fun Modifier.pressable(enabled: Boolean = true, onClick: () -> Unit): Modifier = composed {
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
+    val haptics = com.ctodrs.saqrcode.ui.theme.rememberSaqrHaptics()
     val s by animateFloatAsState(if (pressed) 0.96f else 1f, tween(Motion.fast, easing = Motion.standard), label = "press")
-    this.scale(s).clickable(interactionSource = src, indication = androidx.compose.material3.ripple(), enabled = enabled, onClick = onClick)
+    this.scale(s).clickable(interactionSource = src, indication = androidx.compose.material3.ripple(), enabled = enabled, onClick = { haptics.perform(com.ctodrs.saqrcode.ui.theme.HapticKind.TICK); onClick() })
 }
 
 /** Moving highlight used while content is streaming / loading. */
@@ -148,7 +150,7 @@ fun GlassPill(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, cont
 fun PillIcon(icon: ImageVector, contentDescription: String?, onClick: () -> Unit, active: Boolean = false) {
     val c = Saqr.colors
     Box(
-        Modifier.size(36.dp).pressable(onClick = onClick).clip(CircleShape).background(if (active) c.accentSoft else Color.Transparent),
+        Modifier.minimumInteractiveComponentSize().size(36.dp).pressable(onClick = onClick).clip(CircleShape).background(if (active) c.accentSoft else Color.Transparent),
         contentAlignment = Alignment.Center,
     ) { SIcon(icon, size = 20.dp, tint = if (active) c.accentText else c.text1, contentDescription = contentDescription) }
 }
@@ -307,8 +309,9 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier, trailing: (@Compos
 @Composable
 fun SaqrSwitch(checked: Boolean, onChange: (Boolean) -> Unit) {
     val c = Saqr.colors
+    val haptics = com.ctodrs.saqrcode.ui.theme.rememberSaqrHaptics()
     Switch(
-        checked, onChange,
+        checked, { haptics.perform(com.ctodrs.saqrcode.ui.theme.HapticKind.TICK); onChange(it) },
         colors = SwitchDefaults.colors(
             checkedThumbColor = c.onAccent, checkedTrackColor = c.accent, checkedBorderColor = c.accent,
             uncheckedThumbColor = c.text3, uncheckedTrackColor = c.surface3, uncheckedBorderColor = c.borderStrong,

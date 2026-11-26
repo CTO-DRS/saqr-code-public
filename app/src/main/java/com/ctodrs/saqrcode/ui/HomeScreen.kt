@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.Role
 import android.text.format.DateUtils
 import androidx.compose.foundation.Canvas
@@ -105,6 +106,7 @@ fun branchOf(dir: java.io.File): String? = runCatching {
 
 @Composable
 fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -> Unit = {}) {
+    val haptics = com.ctodrs.saqrcode.ui.theme.rememberSaqrHaptics()
     val app = SaqrApp.instance
     val version by app.settings.version.collectAsState()
     var refresh by remember { mutableIntStateOf(0) }
@@ -197,7 +199,7 @@ fun HomeScreen(onOpen: (String) -> Unit, onSettings: () -> Unit, onPaywall: () -
             icon = { SIcon(Lucide.Trash2, size = 24.dp, tint = c.danger) },
             text = { Text(stringResource(R.string.delete_project_q, name), style = Saqr.type.body) },
             confirmButton = {
-                TextButton(onClick = { app.projects.get(name)?.let { app.projects.delete(it) }; app.builds.clear(name); toDelete = null; refresh++ }) {
+                TextButton(onClick = { haptics.perform(com.ctodrs.saqrcode.ui.theme.HapticKind.HEAVY); app.projects.get(name)?.let { app.projects.delete(it) }; app.builds.clear(name); toDelete = null; refresh++ }) {
                     Text(stringResource(R.string.delete), color = c.danger)
                 }
             },
@@ -382,7 +384,7 @@ private fun ProjectRow(p: ProjectCard, now: Long, onOpen: () -> Unit, onDelete: 
                     }
                 }
             }
-            Box(Modifier.size(40.dp).clip(RoundedCornerShape(50)).clickable(role = Role.Button, onClick = onDelete), contentAlignment = Alignment.Center) {
+            Box(Modifier.minimumInteractiveComponentSize().size(40.dp).clip(RoundedCornerShape(50)).clickable(role = Role.Button, onClick = onDelete), contentAlignment = Alignment.Center) {
                 SIcon(Lucide.Trash2, size = 17.dp, tint = c.text3, contentDescription = stringResource(R.string.delete))
             }
         }

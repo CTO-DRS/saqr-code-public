@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.Role
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
@@ -573,7 +574,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Tag(stringResource(R.string.mcp_browse), color = c.accentText, dot = false)
                                         Spacer(Modifier.width(Sp.xs))
-                                        Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onMcpRemove(s.name) }, contentAlignment = Alignment.Center) {
+                                        Box(Modifier.minimumInteractiveComponentSize().size(44.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onMcpRemove(s.name) }, contentAlignment = Alignment.Center) {
                                             SIcon(Lucide.Trash2, size = 18.dp, tint = Saqr.colors.danger, contentDescription = stringResource(R.string.delete))
                                         }
                                     }
@@ -594,7 +595,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                                 title = s.name, subtitle = s.command,
                                 icon = Lucide.SquareTerminal,
                                 trailing = {
-                                    Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onMcpStdioRemove(s.name) }, contentAlignment = Alignment.Center) {
+                                    Box(Modifier.minimumInteractiveComponentSize().size(44.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onMcpStdioRemove(s.name) }, contentAlignment = Alignment.Center) {
                                         SIcon(Lucide.Trash2, size = 18.dp, tint = Saqr.colors.danger, contentDescription = stringResource(R.string.delete))
                                     }
                                 },
@@ -851,7 +852,7 @@ private fun ModelPickerField(value: String, onChange: (String) -> Unit, suggesti
         Box(Modifier.weight(1f)) {
             SaqrField(value, onChange, label = stringResource(R.string.model),
                 placeholder = "claude-haiku-4-5 / gemini-2.5-flash", mono = true, trailing = {
-                    Box(Modifier.size(32.dp).clip(CircleShape).clickable(role = Role.Button, enabled = suggestions.isNotEmpty()) { menu = true }, contentAlignment = Alignment.Center) {
+                    Box(Modifier.minimumInteractiveComponentSize().size(32.dp).clip(CircleShape).clickable(role = Role.Button, enabled = suggestions.isNotEmpty()) { menu = true }, contentAlignment = Alignment.Center) {
                         SIcon(Lucide.ChevronDown, size = 16.dp)
                     }
                 })
@@ -1080,7 +1081,7 @@ private fun McpToolsBrowser(
                                     modifier = Modifier.weight(1f),
                                 )
                                 // v0.10: hide/show this tool for the agent (allow/deny per server).
-                                Box(Modifier.size(34.dp).clip(CircleShape).clickable(role = Role.Button) { onToggleTool(raw, !disabled) }, contentAlignment = Alignment.Center) {
+                                Box(Modifier.minimumInteractiveComponentSize().size(34.dp).clip(CircleShape).clickable(role = Role.Button) { onToggleTool(raw, !disabled) }, contentAlignment = Alignment.Center) {
                                     SIcon(if (disabled) Lucide.EyeOff else Lucide.Eye, size = 15.dp, tint = if (disabled) c.text3 else c.text2)
                                 }
                                 Spacer(Modifier.width(Sp.xs))
@@ -1269,7 +1270,7 @@ private fun ProviderItem(def: ProviderDef, cfg: ProviderConfig, active: Boolean,
                     visual = PasswordVisualTransformation(), keyboard = KeyboardOptions(keyboardType = KeyboardType.Password), mono = true)
                 Box {
                     SaqrField(model, { model = it }, label = stringResource(R.string.model), mono = true, trailing = {
-                        Box(Modifier.size(32.dp).clip(CircleShape).clickable(role = Role.Button) { menu = true }, contentAlignment = Alignment.Center) { SIcon(Lucide.ChevronDown, size = 16.dp) }
+                        Box(Modifier.minimumInteractiveComponentSize().size(32.dp).clip(CircleShape).clickable(role = Role.Button) { menu = true }, contentAlignment = Alignment.Center) { SIcon(Lucide.ChevronDown, size = 16.dp) }
                     })
                     DropdownMenu(menu, { menu = false }, Modifier.heightIn(max = 360.dp).background(c.surface2)) {
                         models.forEach { m -> DropdownMenuItem(text = { Text(m, style = Saqr.type.monoSmall, color = c.text1) }, onClick = { model = m; menu = false }) }
@@ -1311,7 +1312,7 @@ private fun SlashCommandsEditor(ui: SettingsUi) {
                     Text(cmd.template, style = Saqr.type.caption.copy(textDirection = androidx.compose.ui.text.style.TextDirection.Content),
                         color = c.text2, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
-                Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onDeleteCommand(cmd.name) }, contentAlignment = Alignment.Center) {
+                Box(Modifier.minimumInteractiveComponentSize().size(44.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onDeleteCommand(cmd.name) }, contentAlignment = Alignment.Center) {
                     SIcon(Lucide.Trash2, size = 17.dp, tint = c.danger, contentDescription = stringResource(R.string.delete))
                 }
             }
@@ -1513,13 +1514,13 @@ private fun ThemeStudioCard(ui: SettingsUi) {
                         }
                         ColorDot(p.colors.accent); Spacer(Modifier.width(4.dp)); ColorDot(p.colors.bg)
                         Spacer(Modifier.width(Sp.sm))
-                        Box(Modifier.size(30.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onCopyPack(p) }, contentAlignment = Alignment.Center) {
+                        Box(Modifier.minimumInteractiveComponentSize().size(30.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onCopyPack(p) }, contentAlignment = Alignment.Center) {
                             SIcon(Lucide.Copy, size = 14.dp, tint = c.text3, contentDescription = stringResource(R.string.studio_copy))
                         }
-                        Box(Modifier.size(30.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onDeletePack(p.id) }, contentAlignment = Alignment.Center) {
+                        Box(Modifier.minimumInteractiveComponentSize().size(30.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onDeletePack(p.id) }, contentAlignment = Alignment.Center) {
                             SIcon(Lucide.Trash2, size = 14.dp, tint = c.danger, contentDescription = stringResource(R.string.delete))
                         }
-                        Box(Modifier.size(30.dp).clip(CircleShape).clickable(role = Role.Button) { apply(p); toast(ctx, R.string.studio_applied) }, contentAlignment = Alignment.Center) {
+                        Box(Modifier.minimumInteractiveComponentSize().size(30.dp).clip(CircleShape).clickable(role = Role.Button) { apply(p); toast(ctx, R.string.studio_applied) }, contentAlignment = Alignment.Center) {
                             SIcon(Lucide.Check, size = 15.dp, tint = c.accentText, contentDescription = stringResource(R.string.studio_apply))
                         }
                     }
@@ -1589,7 +1590,7 @@ private fun SaqrPacksCard(ui: SettingsUi) {
                         style = Saqr.type.micro, color = c.text3, maxLines = 1,
                     )
                 }
-                Box(Modifier.size(30.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onRemovePack(p.id); err = null }, contentAlignment = Alignment.Center) {
+                Box(Modifier.minimumInteractiveComponentSize().size(30.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onRemovePack(p.id); err = null }, contentAlignment = Alignment.Center) {
                     SIcon(Lucide.Trash2, size = 14.dp, tint = c.danger, contentDescription = stringResource(R.string.delete))
                 }
             }
