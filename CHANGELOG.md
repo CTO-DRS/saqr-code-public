@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.19.6] — 2026-11-26 — Majlis 3: action bar + sources · شريط الإجراءات والمصادر
+
+- **Per-message action bar** under the reply that ends a turn: copy, good answer, bad answer (toggle, announced as selected), read aloud (existing speaker), share. Each button is 48dp with a role and a label, EN + AR.
+- **«المصادر» row**: chips (icon + short label) for the files read or changed, commands run, web pages, git actions, memory and checks of that turn (since the last user message, max 8, plan and ask_user not counted). Each chip is announced as "kind: label".
+- Icons added: thumbs-up, thumbs-down, share-2. Feedback is in memory for the session (not persisted yet).
+- **Tests:** `V0196ActionBarTest` (5): sources logic, 48dp size, labels, toggle and selected state, RTL locale.
+- versionName 0.19.6, versionCode 35.
+
 ## [0.19.5] — 2026-11-26 — Majlis 2: file cards · بطاقات الملفات
 
 - **Bug (user report):** files the agent made (zip, apk, ...) were only mentioned as a sandbox path. Now an assistant reply that names a file existing in the project shows a **file card** under the message (icon, name, size, Open, Share) through the FileProvider (`projects/` added to file_paths).

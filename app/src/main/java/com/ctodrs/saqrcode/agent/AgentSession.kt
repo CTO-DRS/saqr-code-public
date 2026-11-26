@@ -59,6 +59,8 @@ sealed class ChatItem {
     class Assistant : ChatItem() {
         var text by mutableStateOf("")
         var streaming by mutableStateOf(true)
+        /** Majlis: 0 none, 1 good, -1 bad. In memory for this session. */
+        var feedback by mutableIntStateOf(0)
         var calls: List<ToolCall> = emptyList()
         val results = LinkedHashMap<String, String>()
         /** Shown in the chat: blank turns that only called tools are hidden. */

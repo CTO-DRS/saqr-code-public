@@ -44,8 +44,8 @@ object Deliverables {
 
     fun human(bytes: Long): String = when {
         bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> "%.1f KB".format(bytes / 1024.0)
-        else -> "%.1f MB".format(bytes / 1024.0 / 1024.0)
+        bytes < 1024 * 1024 -> "%.1f KB".format(java.util.Locale.US, bytes / 1024.0)
+        else -> "%.1f MB".format(java.util.Locale.US, bytes / 1024.0 / 1024.0)
     }
 
     fun mime(f: File): String = when (f.extension.lowercase()) {

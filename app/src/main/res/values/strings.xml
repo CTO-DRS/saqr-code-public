@@ -1044,4 +1044,14 @@
     <string name="skill_err_hidden_unicode">Hidden characters</string>
     <string name="skill_err_changelog">Invalid changelog</string>
     <string name="skills_rate_n">Rate %1$d of 5</string>
+    <string name="msg_good">Good answer</string>
+    <string name="msg_bad">Bad answer</string>
+    <string name="sources_title">Sources</string>
+    <string name="src_file">File</string>
+    <string name="src_terminal">Terminal</string>
+    <string name="src_web">Web</string>
+    <string name="src_search">Search</string>
+    <string name="src_git">Git</string>
+    <string name="src_memory">Memory</string>
+    <string name="src_tests">Checks</string>
 </resources>

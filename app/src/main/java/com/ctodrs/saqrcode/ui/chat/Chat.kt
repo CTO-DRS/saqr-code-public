@@ -197,6 +197,7 @@ fun ChatContent(
                                 !(state.running && i == shown.lastIndex)
                             ChatRow(item, onDecide, onAnswer, onRestore = if (state.running) null else onRestore,
                                 onSpeak = if (endsTurn) onSpeak else null, speaking = item.key == state.speakingKey,
+                                showActions = endsTurn, sources = if (endsTurn) Sources.forTurn(shown, i) else emptyList(),
                                 onResumeTask = if (state.running) null else onResumeTask, workspaceDir = workspaceDir)
                         }
                     }
@@ -256,6 +257,8 @@ fun ChatRow(
     speaking: Boolean = false,
     onResumeTask: (() -> Unit)? = null,
     workspaceDir: java.io.File? = null,
+    showActions: Boolean = false,
+    sources: List<SourceRef> = emptyList(),
 ) {
     when (item) {
         is ChatItem.User -> Column(Modifier.fillMaxWidth()) {
@@ -269,7 +272,10 @@ fun ChatRow(
                 val files = androidx.compose.runtime.remember(item.text, workspaceDir) { Deliverables.find(item.text, workspaceDir) }
                 files.forEach { FileCard(it, Modifier.padding(top = Sp.sm)) }
             }
-            if (onSpeak != null && item.text.isNotBlank()) ReadAloud(speaking) { onSpeak(item) }
+            if (showActions && item.text.isNotBlank()) {
+                if (sources.isNotEmpty()) SourcesRow(sources, Modifier.padding(top = Sp.sm))
+                MessageActionBar(item.text, item.feedback, { item.feedback = it }, speaking, onSpeak?.let { s -> { s(item) } })
+            }
         }
         is ChatItem.Tool -> ToolRow(item)
         is ChatItem.Approval -> if (item.decision == null) ApprovalCard(item, onDecide)

@@ -1044,4 +1044,14 @@
     <string name="skill_err_hidden_unicode">محارف مخفية</string>
     <string name="skill_err_changelog">سجل تغييرات غير صالح</string>
     <string name="skills_rate_n">قيّم %1$d من 5</string>
+    <string name="msg_good">إجابة جيدة</string>
+    <string name="msg_bad">إجابة سيئة</string>
+    <string name="sources_title">المصادر</string>
+    <string name="src_file">ملف</string>
+    <string name="src_terminal">الطرفية</string>
+    <string name="src_web">الويب</string>
+    <string name="src_search">بحث</string>
+    <string name="src_git">Git</string>
+    <string name="src_memory">الذاكرة</string>
+    <string name="src_tests">فحوصات</string>
 </resources>
