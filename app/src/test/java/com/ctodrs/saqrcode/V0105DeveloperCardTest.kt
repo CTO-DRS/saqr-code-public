@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.ctodrs.saqrcode.ui.DeveloperCard
 import com.ctodrs.saqrcode.ui.DeveloperLinks
+import com.ctodrs.saqrcode.ui.DeveloperLinkSheetContent
 import com.ctodrs.saqrcode.ui.theme.SaqrTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -39,12 +40,20 @@ class V0105DeveloperCardTest {
         assertTrue(DeveloperLinks.all.all { it.url.startsWith("https://") })
     }
 
-    @Test fun `eight 48dp labelled buttons open their links`() {
-        val opened = mutableListOf<String>()
-        rule.setContent { SaqrTheme("dark") { DeveloperCard(onOpen = { opened += it }) } }
+    @Test fun `eight 48dp labelled buttons and each tap opens its QR sheet`() {
+        rule.setContent { SaqrTheme("dark") { DeveloperCard(versionName = "0.1.5") } }
         val labels = listOf("واتساب", "تيليجرام", "تيك توك", "إنستغرام", "إكس", "يوتيوب", "GitHub", "الموقع")
         labels.forEach { rule.onNodeWithContentDescription(it).assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp).assertHasClickAction() }
-        labels.forEach { rule.onNodeWithContentDescription(it).performClick() }
-        assertEquals(DeveloperLinks.all.map { it.url }, opened)
+        rule.onNodeWithContentDescription("تيليجرام").performClick()
+        rule.waitForIdle()
+        rule.onNodeWithContentDescription("QR: تيليجرام").assertExists()
+    }
+
+    @Test fun `sheet buttons fire open and copy`() {
+        var open = 0; var copy = 0
+        rule.setContent { SaqrTheme("dark") { DeveloperLinkSheetContent(DeveloperLinks.all[1], { open++ }, { copy++ }) } }
+        rule.onNodeWithContentDescription("فتح").assertHeightIsAtLeast(48.dp).performClick()
+        rule.onNodeWithContentDescription("نسخ الرابط").assertHeightIsAtLeast(48.dp).performClick()
+        assertEquals(1, open); assertEquals(1, copy)
     }
 }

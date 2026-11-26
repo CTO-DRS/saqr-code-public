@@ -48,6 +48,25 @@ class ScreenshotTestDeveloper {
         File(outDir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    private fun sheetShot(name: String) {
+        rule.setContent {
+            SaqrTheme("dark") {
+                Column(Modifier.fillMaxSize().background(Saqr.colors.surface1).padding(top = 360.dp)) {
+                    Column(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xF20B0C24), androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).padding(top = 20.dp)) {
+                        com.ctodrs.saqrcode.ui.DeveloperLinkSheetContent(com.ctodrs.saqrcode.ui.DeveloperLinks.all[1], {}, {})
+                    }
+                }
+            }
+        }
+        rule.waitForIdle(); rule.mainClock.advanceTimeBy(300)
+        val root = rule.activity.window.decorView
+        val bmp = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
+        root.draw(Canvas(bmp))
+        File(outDir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-night-xxhdpi") @Test fun sheetAr() = sheetShot("dev-sheet-ar")
+    @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi") @Test fun sheetEn() = sheetShot("dev-sheet-en")
     @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-night-xxhdpi") @Test fun ar() = shot("dev-ar", "dark")
     @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi") @Test fun en() = shot("dev-en", "dark")
     @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-notnight-xxhdpi") @Test fun arLight() = shot("dev-ar-light", "light")

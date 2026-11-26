@@ -355,6 +355,10 @@
     <string name="dev_l_youtube">يوتيوب</string>
     <string name="dev_l_telegram">تيليجرام</string>
     <string name="dev_l_whatsapp">واتساب</string>
+    <string name="dev_qr_open">فتح</string>
+    <string name="dev_qr_copy">نسخ الرابط</string>
+    <string name="dev_qr_copied">تم نسخ الرابط</string>
+    <string name="dev_qr_scan">امسح الرمز للفتح</string>
     <string name="dev_photo_desc">صورة %1$s</string>
     <string name="slash_custom">أمر مخصص</string>
     <string name="commit_review_title">الموافقة على الإيداع</string>

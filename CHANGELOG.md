@@ -2,9 +2,9 @@
 
 ## [0.1.5] — 2026-11-26 — About the developer · عن المطور
 
-- **About the developer card** in Settings, under About: circular photo, name "CTO.DRS" with a verified badge, a role line, a footer with the app version, and eight brand-coloured icon links with labels (WhatsApp, Telegram, TikTok, Instagram, X, YouTube, GitHub, website). Tapping the photo opens it large. Each is labelled for screen readers and opens in the browser or the app. EN + AR, RTL, dark and light.
+- **About the developer card** in Settings, under About: circular photo, name "CTO.DRS" with a verified badge, a role line, a footer with the app version, and eight brand-coloured icon links with labels (WhatsApp, Telegram, TikTok, Instagram, X, YouTube, GitHub, website). Tapping the photo opens it large. Tapping an account opens a glass sheet with a QR code generated on the device (own encoder, `QrCode`, byte mode, level M, best-of-8 masks) plus Open and Copy link buttons. Each is labelled for screen readers and opens in the browser or the app. EN + AR, RTL, dark and light.
 - New filled brand glyphs (`Brands`, Simple Icons, CC0). `DeveloperLinks` holds the URLs as plain data.
-- **Tests:** `V0105DeveloperCardTest` (2): exact URLs, 48dp labelled buttons, taps open the right link.
+- **Tests:** `V0105DeveloperCardTest` (3): exact URLs, 48dp labelled buttons, a tap opens the QR sheet, Open/Copy fire. `V0106QrCodeTest` (2): sizes, finders, all 8 links. All 8 matrices were also decoded with OpenCV in the sandbox and match their URLs.
 - versionName 0.1.5, versionCode 44.
 
 ## [0.1.4] — 2026-11-26 — Majlis 7: smart suggestions · الاقتراحات الذكية

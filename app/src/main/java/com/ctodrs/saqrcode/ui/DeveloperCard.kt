@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -108,6 +109,7 @@ fun DeveloperCard(modifier: Modifier = Modifier, versionName: String = "", onOpe
     val ctx = LocalContext.current
     val open = onOpen ?: { url -> runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }; Unit }
     var viewer by remember { mutableStateOf(false) }
+    var sheetFor by remember { mutableStateOf<DeveloperLinks.Link?>(null) }
     val shape = RoundedCornerShape(24.dp)
     val photoDesc = stringResource(R.string.dev_photo_desc, DeveloperLinks.NAME)
     Column(
@@ -139,7 +141,7 @@ fun DeveloperCard(modifier: Modifier = Modifier, versionName: String = "", onOpe
                 row.forEach { link ->
                     val label = labelFor(link.id)
                     Column(
-                        Modifier.width(68.dp).minimumInteractiveComponentSize().pressable { open(link.url) }
+                        Modifier.width(68.dp).minimumInteractiveComponentSize().pressable { sheetFor = link }
                             .semantics(mergeDescendants = true) { role = Role.Button; contentDescription = label },
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -156,10 +158,90 @@ fun DeveloperCard(modifier: Modifier = Modifier, versionName: String = "", onOpe
         Spacer(Modifier.height(10.dp))
         Text(stringResource(R.string.dev_footer, versionName), style = TextStyle(fontSize = 11.sp, textDirection = TextDirection.Content), color = Color(0xFF64748B))
     }
+    sheetFor?.let { l -> DeveloperLinkSheet(l, onDismiss = { sheetFor = null }, onOpen = { open(l.url) }) }
     if (viewer) Dialog(onDismissRequest = { viewer = false }) {
         Image(
             painterResource(R.drawable.dev_avatar), contentDescription = photoDesc, contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(24.dp)).clickable { viewer = false },
         )
+    }
+}
+
+/** Tap on an account: a glass sheet with an on-device QR code, plus Open and Copy link. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun DeveloperLinkSheet(link: DeveloperLinks.Link, onDismiss: () -> Unit, onOpen: () -> Unit) {
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = Color(0xF20B0C24), contentColor = Color.White, scrimColor = Color(0x99000000),
+    ) {
+        val clip = androidx.compose.ui.platform.LocalClipboardManager.current
+        val toastCtx = LocalContext.current
+        val copied = stringResource(R.string.dev_qr_copied)
+        DeveloperLinkSheetContent(
+            link,
+            onOpen = { onOpen(); onDismiss() },
+            onCopy = { clip.setText(androidx.compose.ui.text.AnnotatedString(link.url)); android.widget.Toast.makeText(toastCtx, copied, android.widget.Toast.LENGTH_SHORT).show() },
+        )
+    }
+}
+
+@Composable
+fun DeveloperLinkSheetContent(link: DeveloperLinks.Link, onOpen: () -> Unit, onCopy: () -> Unit) {
+    val label = labelFor(link.id)
+    Column(
+        Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(40.dp).clip(CircleShape).background(Color(link.brand)).border(1.dp, Color(0x40FFFFFF), CircleShape), contentAlignment = Alignment.Center) {
+                SIcon(iconFor(link.id), size = 20.dp, tint = Color.White)
+            }
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(label, style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold), color = Color.White)
+                Text(stringResource(R.string.dev_qr_scan), style = TextStyle(fontSize = 12.sp), color = Color(0xFFA5B4FC))
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        QrImage(link.url, Modifier.size(208.dp).semantics { contentDescription = "QR: $label" })
+        Spacer(Modifier.height(12.dp))
+        Text(
+            link.url, style = TextStyle(fontSize = 12.sp, textDirection = TextDirection.Ltr, textAlign = TextAlign.Center, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+            color = Color(0xFFCBD5E1),
+        )
+        Spacer(Modifier.height(18.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SheetButton(stringResource(R.string.dev_qr_open), Lucide.ExternalLink, true, Modifier.weight(1f), onOpen)
+            SheetButton(stringResource(R.string.dev_qr_copy), Lucide.Copy, false, Modifier.weight(1f), onCopy)
+        }
+    }
+}
+
+@Composable
+private fun SheetButton(text: String, icon: ImageVector, primary: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(16.dp)
+    val bg = if (primary) Brush.linearGradient(listOf(Color(0xFF6366F1), Color(0xFF8B5CF6))) else Brush.linearGradient(listOf(Color(0x1AFFFFFF), Color(0x1AFFFFFF)))
+    Row(
+        modifier.height(52.dp).clip(shape).background(bg).border(1.dp, Color(0x33FFFFFF), shape).pressable(onClick = onClick)
+            .semantics(mergeDescendants = true) { role = Role.Button; contentDescription = text },
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SIcon(icon, size = 18.dp, tint = Color.White)
+        Spacer(Modifier.width(8.dp))
+        Text(text, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold), color = Color.White)
+    }
+}
+
+/** White tile with a 2-module quiet zone; the matrix is drawn dark on white so every scanner reads it. */
+@Composable
+fun QrImage(text: String, modifier: Modifier = Modifier) {
+    val matrix = remember(text) { QrCode.encode(text) }
+    androidx.compose.foundation.Canvas(modifier.clip(RoundedCornerShape(16.dp)).background(Color.White)) {
+        val n = matrix.size + 4
+        val cell = size.minDimension / n
+        for (y in matrix.indices) for (x in matrix.indices) if (matrix[y][x])
+            drawRect(Color(0xFF0B0C24), Offset((x + 2) * cell, (y + 2) * cell), Size(cell + 0.5f, cell + 0.5f))
     }
 }
