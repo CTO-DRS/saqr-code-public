@@ -172,3 +172,29 @@ Extends skill packs (v0.14) and the community gallery (v0.14.3) without rebuildi
 ## بعد 0.14 · After 0.14
 - تُفتح هذه الوثيقة مجددًا لـ 1.0 «الانقضض»: إثبات ميداني نهائي، إطلاق Google Play، أداء واستقرار، تدقيق أمني، توثيق وإطلاق، ترحيب جديد.
 - This file reopens for 1.0 «The Strike»: final field proof, Google Play launch, performance & stability, security audit, docs & launch, a fresh onboarding.
+
+---
+
+## Phase 7 · خارطة الطريق حسب النظام · Roadmap by system (approved 2026-11-26)
+
+Names: **Majlis** (مجلس, chat) · **Raqeem** (editor/AI edit) · **Diwan** (git) · **Hisn** (security) · **Souq** (skill gallery) · **Warsha** (project workshop/build) · **Wasl** (sync/backup) · **Bawsala** (growth/learn).
+Rules for every item: small verified commits, tests, EN+AR, RTL, a11y roles, 48dp targets, mirror synced, AR+EN screenshots per milestone; device-bound parts go on the device-QA list.
+
+### Majlis (chat), in order
+1. Deliverable file card (zip/apk/export; open, share, save; `sandbox:` link resolver) — priority bug. 2. Per-message action bar (copy, like/dislike, read aloud via a `TtsSpeaker` interface, share) + sources row (المصادر). 3. Regenerate, edit-and-resend. 4. In-conversation search, transcript export. 5. Render audit (RTL, streaming, scroll, input bar). 6. Prompt library. 7. Smart suggestion chips. 8. Chat branching. 9. Attachments to the model (images, files; vision per provider). 10. Completion notifications (display is device-QA). 11. Live preview in chat (WebView, device-QA).
+Done: v0.19.4 link-in-bold RTL fix.
+
+### Top 8 (after the Majlis queue)
+1. Plan Mode · 2. Arabic voice input · 3. Project memory file · 4. Secret scanner before commit/push (Hisn/Diwan) · 5. AI commit messages (Diwan) · 6. Checkpoints and one-tap rollback · 7. Diff review with per-hunk accept/reject · 8. One-tap deploy.
+
+### Remaining groups (ordered by impact and dependency)
+- **Majlis:** chat memory, pins, share.
+- **Warsha:** templates, image-to-UI, backend presets, APK build.
+- **Raqeem:** inline AI edit, repo map.
+- **Diwan:** merge-conflict resolver.
+- **Souq:** ratings and badges.
+- **Hisn:** biometric lock, keystore vault, audit log.
+- **Wasl:** sync/backup.
+- **Bawsala:** growth items, including Arabic learn mode.
+
+Choices to record when built: STT/TTS use the Android system engines behind interfaces (most reliable, no key); deploy target picked and noted at implementation.
