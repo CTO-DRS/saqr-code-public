@@ -68,6 +68,28 @@ class ScreenshotTestDeveloper {
     @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-night-xxhdpi") @Test fun fullAr() = fullShot("dev-full-ar")
     @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi") @Test fun fullEn() = fullShot("dev-full-en")
 
+    private fun branchShot(name: String, ar: Boolean) {
+        val u = com.ctodrs.saqrcode.agent.ChatItem.User(if (ar) "اشرح لي الفرق بين الخيطين والكوروتينات" else "Explain threads vs coroutines")
+        u.branches = com.ctodrs.saqrcode.agent.Branches().also { it.tails.addAll(listOf(emptyList(), emptyList(), emptyList())); it.count = 3; it.active = 1 }
+        val a = com.ctodrs.saqrcode.agent.ChatItem.Assistant().apply { text = if (ar) "الكوروتين أخف من الخيط ويعلّق دون حجز خيط النظام." else "A coroutine is lighter than a thread and suspends without blocking one."; streaming = false }
+        rule.setContent {
+            SaqrTheme("dark") {
+                Column(Modifier.fillMaxSize().background(Saqr.colors.surface1).padding(top = 200.dp, start = 16.dp, end = 16.dp)) {
+                    com.ctodrs.saqrcode.ui.chat.ChatRow(u, { _, _ -> }, onEditResend = { _, _ -> }, onSwitchBranch = { _, _ -> })
+                    com.ctodrs.saqrcode.ui.chat.ChatRow(a, { _, _ -> })
+                }
+            }
+        }
+        rule.waitForIdle(); rule.mainClock.advanceTimeBy(300)
+        val root = rule.activity.window.decorView
+        val bmp = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
+        root.draw(Canvas(bmp))
+        File(outDir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-night-xxhdpi") @Test fun branchAr() = branchShot("branch-ar", true)
+    @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi") @Test fun branchEn() = branchShot("branch-en", false)
+
     private fun sheetShot(name: String) {
         rule.setContent {
             SaqrTheme("dark") {

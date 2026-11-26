@@ -62,6 +62,8 @@ sealed class ChatItem {
     class User(val text: String, val images: List<ImagePart> = emptyList(), val prompt: String = text) : ChatItem() {
         /** Checkpoint recorded before this message's turn changed files; null when none (or restored). */
         var checkpointId by mutableStateOf<String?>(null)
+        /** Majlis: shared by every branch of this message (edit / regenerate keep the old answer). */
+        var branches: Branches? = null
     }
     /** One model turn: its text, plus the tool calls it made and their results (so history can be rebuilt from items). */
     class Assistant : ChatItem() {
@@ -470,12 +472,24 @@ class AgentSession(
     }
 
     private fun rewindAndSend(idx: Int, prompt: String, display: String, images: List<ImagePart>, note: String): Boolean {
-        while (items.size > idx) items.removeAt(items.size - 1)
+        val b = BranchOps.fork(items, idx)
         pendingAsk.clear(); plan.clear()
         pendingNote = note
         markDirty()
         send(prompt, display, images)
+        if (!BranchOps.attach(items, idx, b)) { BranchOps.undo(items, b); return false }
         return true
+    }
+
+    /** Majlis: flip the user message [target] to its next (+1) or previous (-1) branch. */
+    fun switchBranch(target: ChatItem.User, delta: Int): Boolean {
+        if (running) return false
+        val idx = Rewind.indexOfUser(items, target)
+        if (idx < 0) return false
+        pendingAsk.clear(); plan.clear()
+        val ok = BranchOps.switch(items, idx, delta)
+        if (ok) { currentUser = items.lastOrNull { it is ChatItem.User } as ChatItem.User?; markDirty() }
+        return ok
     }
 
     /** Continue the turn that a restart cut off (from the saved items). */

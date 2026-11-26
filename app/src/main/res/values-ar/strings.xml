@@ -1105,6 +1105,9 @@
     <string name="src_memory">الذاكرة</string>
     <string name="src_tests">فحوصات</string>
     <string name="msg_regenerate">إعادة التوليد</string>
+    <string name="branch_prev">النسخة السابقة</string>
+    <string name="branch_next">النسخة التالية</string>
+    <string name="branch_position">%1$d/%2$d</string>
     <string name="msg_edit">تعديل وإعادة الإرسال</string>
     <string name="msg_edit_title">تعديل الرسالة</string>
     <string name="chat_search">بحث في المحادثة</string>

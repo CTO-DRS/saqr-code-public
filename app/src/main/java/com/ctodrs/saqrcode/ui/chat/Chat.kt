@@ -2,6 +2,8 @@ package com.ctodrs.saqrcode.ui.chat
 
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
@@ -169,6 +171,7 @@ fun ChatContent(
     workspaceDir: java.io.File? = null,
     onRegenerate: (() -> Unit)? = null,
     onEditResend: ((ChatItem.User, String) -> Unit)? = null,
+    onSwitchBranch: ((ChatItem.User, Int) -> Unit)? = null,
 ) {
     val c = Saqr.colors
     var modelMenu by remember { mutableStateOf(false) }
@@ -208,7 +211,8 @@ fun ChatContent(
                                 showActions = endsTurn, sources = if (endsTurn) Sources.forTurn(shown, i) else emptyList(),
                                 onResumeTask = if (state.running) null else onResumeTask, workspaceDir = workspaceDir,
                                 onRegenerate = if (state.running || i != lastAssistantIdx) null else onRegenerate,
-                                onEditResend = if (state.running) null else onEditResend)
+                                onEditResend = if (state.running) null else onEditResend,
+                                onSwitchBranch = if (state.running) null else onSwitchBranch)
                         }
                     }
                     val showWorking = state.running && when (last) {
@@ -289,11 +293,14 @@ fun ChatRow(
     sources: List<SourceRef> = emptyList(),
     onRegenerate: (() -> Unit)? = null,
     onEditResend: ((ChatItem.User, String) -> Unit)? = null,
+    onSwitchBranch: ((ChatItem.User, Int) -> Unit)? = null,
 ) {
     when (item) {
         is ChatItem.User -> Column(Modifier.fillMaxWidth()) {
             if (item.images.isNotEmpty()) UserImages(item.images)
             if (item.text.isNotBlank()) UserBubble(item.text)
+            val br = item.branches
+            if (br != null && br.count > 1 && onSwitchBranch != null) BranchSwitcher(br.active + 1, br.count, { onSwitchBranch(item, -1) }, { onSwitchBranch(item, 1) })
             if (onEditResend != null && item.text.isNotBlank()) EditResend(item.text) { onEditResend(item, it) }
             if (item.checkpointId != null && onRestore != null) RestoreHere { onRestore(item) }
         }
@@ -1237,4 +1244,25 @@ private fun EditResend(original: String, onSubmit: (String) -> Unit) {
         },
         dismissButton = { androidx.compose.material3.TextButton(onClick = { open = false }) { Text(stringResource(R.string.cancel)) } },
     )
+}
+
+/** "‹ 2/3 ›" under a user message that has more than one branch. 48dp targets, labelled, mirrors in RTL. */
+@Composable
+internal fun BranchSwitcher(current: Int, total: Int, onPrev: () -> Unit, onNext: () -> Unit) {
+    val c = Saqr.colors
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = stringResource(R.string.branch_prev)) { onPrev() },
+            contentAlignment = Alignment.Center,
+        ) { SIcon(Lucide.ChevronLeft, size = 18.dp, tint = c.text2, contentDescription = stringResource(R.string.branch_prev)) }
+        Text(
+            stringResource(R.string.branch_position, current, total),
+            style = Saqr.type.caption.copy(textDirection = TextDirection.Ltr), color = c.text2,
+            modifier = Modifier.semantics { contentDescription = "$current / $total" },
+        )
+        Box(
+            Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = stringResource(R.string.branch_next)) { onNext() },
+            contentAlignment = Alignment.Center,
+        ) { SIcon(Lucide.ChevronRight, size = 18.dp, tint = c.text2, contentDescription = stringResource(R.string.branch_next)) }
+    }
 }

@@ -1,5 +1,14 @@
 # Changelog · سجل التغييرات
 
+## [0.1.8] — 2026-11-26 — Majlis 8: chat branching · تفرّع المحادثة
+
+- **Edit and regenerate keep the old answer.** Everything from the edited (or regenerated) message on is saved as a branch. A "‹ 2/3 ›" switcher under that message flips between versions, including the tool rows and approvals of each. The model always continues from the branch on screen.
+- `Branches` / `BranchOps` are pure and tested: fork, attach, undo (when a send does not happen), switch with wrap-around, branches inside branches.
+- Branches live in memory for the session. After an app restart you keep the branch you were on.
+- 48dp targets, labels EN + AR, arrows mirror in RTL.
+- **Tests:** `V0109BranchingTest` (5).
+- versionName 0.1.8, versionCode 47.
+
 ## [0.1.7] — 2026-11-26 — Developer system · منظومة المطور
 
 - **QR sheet sharing:** Share link (native share sheet with the URL) and Share QR image (PNG rendered on the device, shared through the app's FileProvider; no network).

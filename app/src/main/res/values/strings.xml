@@ -1105,6 +1105,9 @@
     <string name="src_memory">Memory</string>
     <string name="src_tests">Checks</string>
     <string name="msg_regenerate">Regenerate</string>
+    <string name="branch_prev">Previous version</string>
+    <string name="branch_next">Next version</string>
+    <string name="branch_position">%1$d/%2$d</string>
     <string name="msg_edit">Edit and resend</string>
     <string name="msg_edit_title">Edit message</string>
     <string name="chat_search">Search in chat</string>

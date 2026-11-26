@@ -445,6 +445,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                                 workspaceDir = ws.dir,
                                 onRegenerate = { beforeFirstBackgroundRun(); ws.agent.regenerate() },
                                 onEditResend = { u, txt -> beforeFirstBackgroundRun(); ws.agent.editAndResend(u, txt) },
+                                onSwitchBranch = { u, d -> ws.agent.switchBranch(u, d) },
                             )
                         }
                     }
