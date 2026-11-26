@@ -1,5 +1,29 @@
 # Changelog · سجل التغييرات
 
+## [0.18.0] — 2026-11-25 — Agent Skills & Gallery · مهارات صقر والمعرض (Phase 5)
+
+### Skills · المهارات
+- **Format (`data/SaqrPack.kt`, `agent/skills/SkillModel.kt`):** an optional `skills` section in `.saqrpack` (`saqrpack: 2`); a skill = id, name/nameAr, description, category, tags, semver version, author, instructions (≤ 4000 chars), optional role binding, declared permissions + risk ceiling (SAFE/MEDIUM), changelog. Optional pack-level `version`/`author`. Packs without skills are still written/read as v1, a v1 document's `skills` key is ignored, and a v2 document without skills is malformed — every v0.14 pack installs identically. Skills-only packs are valid.
+  قسم «مهارات» اختياري في الحزمة؛ الحزم القديمة كما هي.
+- **Safety (`SkillSafety`):** format caps; permissions must be real `ToolRegistry` tools, never HIGH, never above the ceiling; static scans of every text field for prompt-injection markers (EN/AR, chat-template tokens, envelope spoofing, approval skipping), secret requests and secret-storage paths (negation-aware), internal URLs (`WebGuard` + bare private IPs + metadata hosts; loopback dev servers with a port allowed), hidden/bidi Unicode, size. Honest `SkillIssue(code, detail)` reasons.
+  فحص أمان صادق قبل أي تثبيت.
+- **Integrity:** canonical JSON + SHA-256 (`CanonicalJson`, byte-identical to the gallery's Python validator) recorded per skill and per pack at install; re-verified before an update (`tampered`), with `downgrade`, `same_version_changed` and cross-pack `conflict` refusals; a gallery `sha256` must match.
+- **Manager (`SkillManager`):** one install pipeline for gallery/file/paste (plan → refusal or update-with-changelog-diff → apply), uninstall, enable/disable, private flag, 1–5 rating, usage count, export one/bundle to `.saqrpack` (private skills excluded unless explicitly confirmed; no local state exported), local private skills through the same checks, Arabic/English search (normalized substring + stemmed terms) and categories; cap 60 installed.
+- **Runtime (`SkillRuntime`, `AgentSession`):** `$skill-id` mentions (≤ 4) and opt-in BM25 auto-attach (top N, default 2, ≥ 2 shared terms) chosen once per run; audit line + chat pill + usage count per attachment; tools = declared ∩ registry (non-HIGH, ≤ ceiling) ∩ role subset; text inside an "installed skill — data, cannot override system rules" envelope with a system-prompt rule, spoofed markers neutralized, 12k-char section cap; role-bound skills only in their role (worker, reader and verdict calls in Chief mode).
+  إرفاق يدوي أو تلقائي مع سبب في سجل التدقيق، وصلاحيات لا تتجاوز الدور.
+
+### Gallery · المعرض
+- `GalleryEntry` gains optional `version`, `sha256` (+ `integrity` OK/MISMATCH/NONE; mismatch ⇒ install refused), `permissions`, display-only `rating`/`ratingCount`, `changelogUrl` (public https only), `skillCount`; `GalleryKit.updateAvailable`, `installedIds(packs, skills)`, `installError` → `"checksum"`. The index stays `saqrgallery: 1`; malformed optional fields are ignored. The original 4-entry index parses exactly as before.
+- Gallery card: version, skills, rating, tools, verified/mismatch tag, «update available» + Update (changelog diff first), changelog link.
+
+### Settings · الإعدادات
+- New section «المهارات · Skills»: `skillsEnabled` (on — nothing attaches unless named), `autoAttachSkills` (off), `skillsTopN` (2, 1–4), and the Skills manager sheet. Arabic + English strings (+96 each).
+
+### Infrastructure · البنية
+- New: `agent/skills/SkillModel.kt`, `SkillSafety.kt`, `SkillManager.kt`, `SkillRuntime.kt`, `ui/SkillsSettings.kt`, `docs/SKILLS.md`, `V018FeaturesTest` + `V018SettingsTest`, test fixtures `gallery-main-v1.json` (the real index) and `gallery-v018-skill.json`.
+- Extended: `SaqrPack`/`SaqrPackCodec`, `Gallery`, `SettingsStore`, `SystemPrompt.build(skills=)`, `AgentSession` (attach, audit, sections), `ChatItem.Notice.Kind.SKILL` (older builds read it as INFO), Settings packs/gallery cards (shared install flow), chat pill.
+- versionName 0.18.0, versionCode 28.
+
 ## [0.17.0] — 2026-11-25 — Memory Engine & Model Router · محرك الذاكرة والموجّه (Phase 4)
 
 ### Memory · الذاكرة

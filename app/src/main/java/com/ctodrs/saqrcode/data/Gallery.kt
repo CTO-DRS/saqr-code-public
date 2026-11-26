@@ -1,6 +1,10 @@
 package com.ctodrs.saqrcode.data
 
 import com.ctodrs.saqrcode.agent.SlashCommands
+import com.ctodrs.saqrcode.agent.WebGuard
+import com.ctodrs.saqrcode.agent.skills.CanonicalJson
+import com.ctodrs.saqrcode.agent.skills.InstalledSkill
+import com.ctodrs.saqrcode.agent.skills.SemVer
 import com.ctodrs.saqrcode.git.GitHubApi
 import com.ctodrs.saqrcode.git.GhException
 import okhttp3.OkHttpClient
@@ -28,7 +32,25 @@ data class GalleryEntry(
     val packJson: String = "",
     /** The validated pack (ready to install). */
     val pack: SaqrPack? = null,
-)
+    // ---- v0.18 optional fields (an old index without them parses exactly as before)
+    /** The entry's semantic version (falls back to the pack's own version). */
+    val version: String = "",
+    /** The gallery's SHA-256 of the canonical pack JSON; blank = the index gives none. */
+    val sha256: String = "",
+    /** Short permissions summary shown before install (tool names). */
+    val permissions: List<String> = emptyList(),
+    /** Gallery-provided aggregate rating 0–5 (display only; never affects install). */
+    val rating: Double? = null,
+    val ratingCount: Int = 0,
+    /** Public https link to the entry's changelog. */
+    val changelogUrl: String = "",
+    /** How many skills the pack carries (counted from the pack itself). */
+    val skillCount: Int = 0,
+    val integrity: Integrity = Integrity.NONE,
+) {
+    /** NONE = no checksum given; OK = the content matches it; MISMATCH = refuse to install. */
+    enum class Integrity { NONE, OK, MISMATCH }
+}
 
 data class GalleryIndex(
     val entries: List<GalleryEntry> = emptyList(),
@@ -52,6 +74,9 @@ object GalleryKit {
     const val MAX_DESC = 160
     const val MAX_TAGS = 4
     const val MAX_TAG = 24
+    // v0.18 optional entry fields
+    const val MAX_PERMISSIONS = 10
+    const val MAX_URL = 200
 
     // ------------------------------------------------------------ codec
 
@@ -82,6 +107,26 @@ object GalleryKit {
                     if (t.isNotBlank()) tags += t
                 }
             }
+            // v0.18 optional fields — each one ignored (not fatal) when malformed
+            val sha = e.optString("sha256").trim().lowercase().takeIf { CanonicalJson.isSha256(it) } ?: ""
+            val integrity = when {
+                sha.isEmpty() -> GalleryEntry.Integrity.NONE
+                CanonicalJson.packSha256(packJson) == sha -> GalleryEntry.Integrity.OK
+                else -> GalleryEntry.Integrity.MISMATCH
+            }
+            val perms = ArrayList<String>()
+            e.optJSONArray("permissions")?.let { pa ->
+                for (j in 0 until pa.length()) {
+                    if (perms.size >= MAX_PERMISSIONS) break
+                    val t = pa.optString(j).trim().take(MAX_TAG)
+                    if (t.isNotBlank()) perms += t
+                }
+            }
+            if (perms.isEmpty()) pack.skills.flatMap { it.permissions }.distinct().take(MAX_PERMISSIONS).let { perms += it }
+            val rating = if (e.has("rating")) e.optDouble("rating", Double.NaN).takeIf { !it.isNaN() && it in 0.0..5.0 } else null
+            val changelog = e.optString("changelogUrl").trim().take(MAX_URL)
+                .takeIf { it.startsWith("https://") && WebGuard.check(it).allowed } ?: ""
+            val version = e.optString("version").trim().takeIf { SemVer.isValid(it) } ?: pack.version.takeIf { SemVer.isValid(it) } ?: ""
             out += GalleryEntry(
                 id = id,
                 name = e.optString("name").trim().take(MAX_NAME),
@@ -91,6 +136,14 @@ object GalleryKit {
                 tags = tags,
                 packJson = packJson,
                 pack = pack,
+                version = version,
+                sha256 = sha,
+                permissions = perms,
+                rating = rating,
+                ratingCount = e.optInt("ratingCount", 0).coerceAtLeast(0),
+                changelogUrl = changelog,
+                skillCount = pack.skills.size,
+                integrity = integrity,
             )
         }
         GalleryIndex(entries = out, updated = o.optLong("updated", 0L))
@@ -140,11 +193,29 @@ object GalleryKit {
         return sb.toString()
     }
 
-    /** The install error key from the pack pipeline ("json"/"path"/"size"/…) — null on success. */
+    /** The install error key from the pack pipeline ("json"/"path"/"size"/…, v0.18 "checksum") — null on success. */
     fun installError(entry: GalleryEntry): String? {
         val p = entry.pack ?: return "json"
+        if (entry.integrity == GalleryEntry.Integrity.MISMATCH) return "checksum"
         return SaqrPackCodec.validate(p)
     }
+
+    /**
+     * v0.18 «update available»: the entry is newer than what is installed — the pack's version
+     * (when both sides have one) or any of its skills' versions against the installed skill.
+     */
+    fun updateAvailable(entry: GalleryEntry, packs: List<SaqrPack>, skills: List<InstalledSkill>): Boolean {
+        val installedPack = packs.firstOrNull { it.id == entry.id }
+        if (installedPack != null && entry.version.isNotBlank() && installedPack.version.isNotBlank() &&
+            SemVer.newer(entry.version, installedPack.version)
+        ) return true
+        val pk = entry.pack ?: return false
+        return pk.skills.any { s -> skills.any { it.skill.id == s.id && it.packId == pk.id && SemVer.newer(s.version, it.skill.version) } }
+    }
+
+    /** Ids installed as packs or as skill packs — the gallery marks them «مثبّت». */
+    fun installedIds(packs: List<SaqrPack>, skills: List<InstalledSkill>): Set<String> =
+        packs.map { it.id }.toSet() + skills.map { it.packId }.toSet()
 }
 
 /**

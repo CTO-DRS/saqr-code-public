@@ -95,7 +95,8 @@ sealed class ChatItem {
         /** v0.15: VERIFY = completion gate verdict ([count] = CompletionGate.Status ordinal, or [VERIFY_RETRY]); BUDGET = a run budget stopped the turn ([text] = time/cost); FALLBACK = a step moved to the fallback model ([text] = its label). */
         /** v0.16: TEAM = a Chief-mode event; [count] is one of the TEAM_* subtypes and [text] its data (rendered localized by the chat). */
         /** v0.17: ROUTER = a smart-router decision ([text] = "label|provider · model|reason"); LESSON = a lesson was captured ([text] = its error signature, [count] 0 new / 1 updated). BUDGET [text] may also be "daily_cap" / "monthly_cap". */
-        enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED, INTERRUPTED, RESUMED, COMPACTED, LOOP, PLANNED, MCP, DESERT, VERIFY, BUDGET, FALLBACK, TEAM, ROUTER, LESSON }
+        /** v0.18: SKILL = an installed skill was attached to the run ([text] = "name|version|reason", [count] 1 = named by the user, 0 = auto-attached). */
+        enum class Kind { INFO, WARNING, ERROR, STOPPED, STEP_LIMIT, RESTORED, INTERRUPTED, RESUMED, COMPACTED, LOOP, PLANNED, MCP, DESERT, VERIFY, BUDGET, FALLBACK, TEAM, ROUTER, LESSON, SKILL }
         companion object {
             const val VERIFY_RETRY = 9
             /** TEAM subtypes. SELECTED: text = role ids joined by ',' (empty = answered without a team). */
@@ -243,6 +244,8 @@ class AgentSession(
     private var teamGraph: TaskGraph? = null
     /** Chief mode decided "no team" (a question): the classic single loop answers. */
     private var chiefSolo = false
+    /** v0.18: installed skills attached to this run (null = not chosen yet this run). */
+    private var runSkills: List<com.ctodrs.saqrcode.agent.skills.SkillRuntime.Attached>? = null
 
     // ---- v0.8 planner / MCP / review cost
     /** MCP tools discovered for the current turn (empty in single mode or when no server). */
@@ -520,7 +523,7 @@ class AgentSession(
     private fun beginTask(resume: Boolean) {
         failPrints.clear(); stepOk.clear(); turnTouched.clear(); gateRounds = 0; verification = null
         turnUsage.clear(); costWarned = false; waitMs = 0L
-        roleUsage.clear(); teamGraph = null; chiefSolo = false; currentRole = null; roleChanges = null
+        roleUsage.clear(); teamGraph = null; chiefSolo = false; currentRole = null; roleChanges = null; runSkills = null
         gateFail = null; fixFiles.clear(); capHit = SpendCap.Hit.NONE; routeProviders.clear(); lastRouteNotice = ""
         val now = System.currentTimeMillis()
         runStartedAt = now
@@ -716,6 +719,8 @@ class AgentSession(
             val d = smartRoute(ModelTier.STRONG, "coder", needsVision, ctx)
             if (d.routed) { llm = clientFor(d.target.model); model = d.target.model }
         }
+        // v0.18: installed skills named by the user (or, opt-in, the most relevant ones) join this run
+        attachSkills(currentUser?.text.orEmpty())
         // v0.16 Chief mode: the Chief staffs the request with the minimum set of roles
         if (settings.agentMode == "team" && settings.chiefMode && !chiefSolo) return chiefLoop(llm, model)
         val team = settings.agentMode == "team" && !chiefSolo
@@ -757,7 +762,8 @@ class AgentSession(
             items += bubble
             val sys = withContext(Dispatchers.IO) {
                 SystemPrompt.build(projectDir, touched, linux.ready, team, mcpSpecs.map { it.name },
-                    memory = memoryBlock(), untrusted = settings.untrustedMarking, riskyApproval = settings.confirmRiskyCommands)
+                    memory = memoryBlock(), untrusted = settings.untrustedMarking, riskyApproval = settings.confirmRiskyCommands,
+                    skills = skillSection(null))
             }
             val inputChars = sys.length + history.sumOf { size(it) }
             contextTokens = (inputChars / 3.6).toInt()
@@ -1683,7 +1689,8 @@ class AgentSession(
                 val roleMcp = if (role.mcp) mcpSpecs else emptyList()
                 val sys = withContext(Dispatchers.IO) {
                     SystemPrompt.build(projectDir, touched, linux.ready, false, roleMcp.map { it.name },
-                        memory = memoryBlock(context), untrusted = settings.untrustedMarking, riskyApproval = settings.confirmRiskyCommands) +
+                        memory = memoryBlock(context), untrusted = settings.untrustedMarking, riskyApproval = settings.confirmRiskyCommands,
+                        skills = skillSection(role)) +
                         AgentRoles.systemSection(role, arabic)
                 }
                 val inputChars = sys.length + history.sumOf { size(it) }
@@ -1747,7 +1754,7 @@ class AgentSession(
             items += bubble
             val sys = withContext(Dispatchers.IO) {
                 SystemPrompt.build(projectDir, touched, linux.ready, false, emptyList(), memory = memoryBlock(context),
-                    untrusted = settings.untrustedMarking, riskyApproval = false) + AgentRoles.systemSection(role, arabic)
+                    untrusted = settings.untrustedMarking, riskyApproval = false, skills = skillSection(role)) + AgentRoles.systemSection(role, arabic)
             }
             val (turn, usedModel) = completeStep(rl, rm, sys, h, if (finalCall) emptyList() else specs, bubble)
             val used = turn.usage ?: UsageParser.estimate(sys.length + h.sumOf { size(it) }, turn.text.length + turn.toolCalls.sumOf { it.argsJson.length })
@@ -1806,7 +1813,7 @@ class AgentSession(
         items += card
         markDirty()
         val checks = if (role == AgentRole.REVIEWER && settings.reviewAutoTests) collectChecks() else null
-        val sys = Reviewer.SYSTEM + "\n\n# Your focus as the ${role.nameEn} (${role.nameAr})\n" + role.prompt
+        val sys = Reviewer.SYSTEM + "\n\n# Your focus as the ${role.nameEn} (${role.nameAr})\n" + role.prompt + skillSection(role)
         val req = Reviewer.buildRequest(currentUser?.text ?: "", diff, checks) + "\n\n## Team context\n" + context.take(3_000)
         val out = runCatching {
             rl.complete(sys, listOf(Msg.User(req)), emptyList(), object : StreamListener { override fun onText(delta: String) {} })
@@ -1895,6 +1902,31 @@ class AgentSession(
             markDirty()
         }
     }
+
+    // ------------------------------------------------------------------ v0.18 agent skills
+
+    /**
+     * Chooses this run's skills once: the enabled skills the user named as `${'$'}id`, plus — with
+     * autoAttachSkills on — the top-N relevant ones. Each attachment is audited with its reason,
+     * shown as a quiet pill and counted in the skill's usage. Never throws.
+     */
+    private fun attachSkills(request: String) {
+        if (runSkills != null) return
+        val installed = runCatching { settings.installedSkills }.getOrDefault(emptyList())
+        val picked = com.ctodrs.saqrcode.agent.skills.SkillRuntime.select(installed, request, settings.skillsEnabled, settings.autoAttachSkills, settings.skillsTopN)
+        runSkills = picked
+        if (picked.isEmpty()) return
+        for (a in picked) {
+            audit("skills", Risk.SAFE, AuditEntry.Decision.AUTO, true, 0, com.ctodrs.saqrcode.agent.skills.SkillRuntime.auditLine(a), null)
+            items += ChatItem.Notice("${a.skill.name}|${a.skill.version}|${a.reason}", kind = ChatItem.Notice.Kind.SKILL, count = if (a.explicit) 1 else 0)
+        }
+        runCatching { settings.installedSkills = com.ctodrs.saqrcode.agent.skills.SkillManager.recordUse(installed, picked.map { it.skill.id }) }
+        markDirty()
+    }
+
+    /** The installed-skills section for [role] (null = the single agent): enveloped, permission-bounded, empty when none apply. */
+    private fun skillSection(role: AgentRole?): String =
+        com.ctodrs.saqrcode.agent.skills.SkillRuntime.section(runSkills.orEmpty(), role)
 
     /** Flags memories whose files disappeared (the Memory sheet calls this when it opens). */
     fun refreshMemoryStale(): Int = memory.refreshStale { File(projectDir, it).exists() }
@@ -2036,6 +2068,8 @@ object SystemPrompt {
         untrusted: Boolean = false,
         /** v0.15: HIGH-risk commands wait for the user's approval card. */
         riskyApproval: Boolean = false,
+        /** v0.18: the installed-skills section ([com.ctodrs.saqrcode.agent.skills.SkillRuntime.section]); empty = none. */
+        skills: String = "",
     ): String {
         val rules = File(projectDir, "AGENTS.md").takeIf { it.isFile }?.readText()?.take(4000)
         return buildString {
@@ -2081,6 +2115,10 @@ You operate on the user's project through tools. The project root is the current
             if (memory.isNotBlank()) {
                 appendLine("# MEMORY (remembered from earlier sessions — honor it, keep it fresh with memory_save/memory_forget)")
                 appendLine(memory)
+                appendLine()
+            }
+            if (skills.isNotBlank()) {
+                appendLine(skills.trim())
                 appendLine()
             }
             appendLine("# PROJECT MAP")

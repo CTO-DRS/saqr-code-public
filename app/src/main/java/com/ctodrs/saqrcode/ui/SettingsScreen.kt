@@ -208,6 +208,8 @@ class SettingsUi(
     val onInstallPack: (String) -> String? = { null },
     val onInstallFlask: () -> Unit = {},
     val onRemovePack: (String) -> Unit = {},
+    /** v0.18 agent skills: switches, installed skills and the shared install pipeline. */
+    val skills: SkillsUi = SkillsUi(),
 )
 
 @Composable
@@ -392,19 +394,13 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
         editorWrap = settings.editorWrap,
         onEditorWrap = { settings.editorWrap = it },
         packs = com.ctodrs.saqrcode.data.SaqrPackCodec.decodePacks(settings.packsJson),
+        // v0.18: every pack (with or without skills) goes through the one skill-aware pipeline;
+        // a v0.14 pack ends exactly as before (commands merged, pack upserted for the home screen)
         onInstallPack = { raw ->
-            val p = com.ctodrs.saqrcode.data.SaqrPackCodec.fromJson(raw)
-            val err = if (p == null) "json" else com.ctodrs.saqrcode.data.SaqrPackCodec.validate(p)
-            if (err == null) {
-                val (cmds, packs) = com.ctodrs.saqrcode.data.SaqrPackCodec.install(
-                    settings.customCommands,
-                    com.ctodrs.saqrcode.data.SaqrPackCodec.decodePacks(settings.packsJson),
-                    p!!, System.currentTimeMillis(),
-                )
-                settings.customCommands = cmds
-                settings.packsJson = com.ctodrs.saqrcode.data.SaqrPackCodec.encodePacks(packs)
+            when (val plan = com.ctodrs.saqrcode.agent.skills.SkillManager.plan(raw, com.ctodrs.saqrcode.agent.skills.SkillSource.PASTE, settings.installedSkills)) {
+                is com.ctodrs.saqrcode.agent.skills.InstallPlan.Refused -> plan.reasons.firstOrNull()?.code ?: "json"
+                is com.ctodrs.saqrcode.agent.skills.InstallPlan.Ready -> { SkillsUi.applyPlan(settings, plan); null }
             }
-            err
         },
         onInstallFlask = {
             val (cmds, packs) = com.ctodrs.saqrcode.data.SaqrPackCodec.install(
@@ -420,6 +416,7 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
                 com.ctodrs.saqrcode.data.SaqrPackCodec.remove(
                     com.ctodrs.saqrcode.data.SaqrPackCodec.decodePacks(settings.packsJson), id))
         },
+        skills = SkillsUi.from(settings),
     )
     if (showBattery) BatteryDialog(onDismiss = { showBattery = false })
     com.ctodrs.saqrcode.billing.PaywallDialog(
@@ -705,6 +702,10 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             // ---- v0.14.3 community gallery: browse + one-tap install from the public repo
             SectionLabel(stringResource(R.string.gallery_section), Modifier.padding(top = Sp.md))
             Group { GallerySection(ui) }
+
+            // ---- v0.18 agent skills: switches + the skills manager (list, search, details, update, export)
+            SectionLabel(stringResource(R.string.skills_section), Modifier.padding(top = Sp.md))
+            Group { SkillsSection(ui.skills) }
 
             // ---- v0.14.4 repository sync: encrypted snapshot → the user's own private repo or a file
             SectionLabel(stringResource(R.string.sync_section), Modifier.padding(top = Sp.md))
@@ -1558,6 +1559,8 @@ private fun SaqrPacksCard(ui: SettingsUi) {
     val ctx = LocalContext.current
     var importJson by remember { mutableStateOf("") }
     var err by remember { mutableStateOf<Int?>(null) }
+    // v0.18: the same pipeline as the gallery — refusal reasons or an update dialog when needed
+    val installer = rememberSkillInstaller(ui.skills)
 
     Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
         Text(stringResource(R.string.pack_hint), style = Saqr.type.caption, color = c.text2)
@@ -1591,10 +1594,12 @@ private fun SaqrPacksCard(ui: SettingsUi) {
         }, icon = Lucide.Package)
         SaqrField(importJson, { importJson = it; err = null }, label = stringResource(R.string.pack_import), placeholder = "{\"saqrpack\":1,…}", mono = true)
         GhostButton(stringResource(R.string.pack_install), {
-            if (ui.onInstallPack(importJson) == null) {
-                importJson = ""; err = null
-                toast(ctx, R.string.pack_installed)
-            } else err = R.string.pack_bad_json
+            installer.install(importJson, com.ctodrs.saqrcode.agent.skills.SkillSource.PASTE, onRefused = { err = R.string.pack_bad_json }) { ok ->
+                if (ok) {
+                    importJson = ""; err = null
+                    toast(ctx, R.string.pack_installed)
+                }
+            }
         }, icon = Lucide.Upload)
         err?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger) }
     }
@@ -1648,7 +1653,8 @@ private fun GallerySection(ui: SettingsUi) {
     val shown = remember(index, query) {
         com.ctodrs.saqrcode.data.GalleryKit.search(index?.entries ?: emptyList(), query)
     }
-    val installed = com.ctodrs.saqrcode.data.GalleryKit.installedIds(ui.packs)
+    val installed = com.ctodrs.saqrcode.data.GalleryKit.installedIds(ui.packs, ui.skills.installed)
+    val installer = rememberSkillInstaller(ui.skills)
 
     Column(verticalArrangement = Arrangement.spacedBy(Sp.md)) {
         Text(stringResource(R.string.gallery_desc), style = Saqr.type.caption, color = c.text2)
@@ -1682,7 +1688,25 @@ private fun GallerySection(ui: SettingsUi) {
                             style = Saqr.type.micro, color = c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    if (isInstalled) Tag(stringResource(R.string.gallery_installed), color = c.success, dot = true)
+                    val updatable = isInstalled && com.ctodrs.saqrcode.data.GalleryKit.updateAvailable(e, ui.packs, ui.skills.installed)
+                    if (updatable) Tag(stringResource(R.string.skills_update_available), color = c.accentText, dot = true)
+                    else if (isInstalled) Tag(stringResource(R.string.gallery_installed), color = c.success, dot = true)
+                }
+                // v0.18 optional entry fields: version, skills, rating (display only), permissions, checksum
+                val meta = buildList {
+                    if (e.version.isNotBlank()) add("v" + e.version)
+                    if (e.skillCount > 0) add(stringResource(R.string.skills_gallery_skills, e.skillCount))
+                    e.rating?.let { add(stringResource(R.string.skills_gallery_rating, String.format(java.util.Locale.ROOT, "%.1f", it), e.ratingCount)) }
+                }
+                if (meta.isNotEmpty()) Text(meta.joinToString("  ·  "), style = Saqr.type.micro, color = c.text3, maxLines = 1)
+                if (e.permissions.isNotEmpty()) {
+                    Text(stringResource(R.string.skills_gallery_perms, e.permissions.joinToString(", ")),
+                        style = Saqr.type.micro, color = c.text3, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+                when (e.integrity) {
+                    com.ctodrs.saqrcode.data.GalleryEntry.Integrity.OK -> Tag(stringResource(R.string.skills_gallery_verified), color = c.success, dot = true)
+                    com.ctodrs.saqrcode.data.GalleryEntry.Integrity.MISMATCH -> Tag(stringResource(R.string.skills_gallery_mismatch), color = c.danger, dot = true)
+                    com.ctodrs.saqrcode.data.GalleryEntry.Integrity.NONE -> Unit
                 }
                 if (e.description.isNotBlank() && e.nameAr.isNotBlank()) {
                     Text(e.description, style = Saqr.type.micro, color = c.text3, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -1697,15 +1721,31 @@ private fun GallerySection(ui: SettingsUi) {
                     },
                     style = Saqr.type.micro, color = c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
-                GhostButton(
-                    stringResource(if (isInstalled) R.string.gallery_reinstall else R.string.gallery_install),
-                    {
-                        val key = ui.onInstallPack(e.packJson)
-                        if (key == null) toast(ctx, R.string.gallery_installed_toast)
-                        else errRes = R.string.gallery_install_failed
-                    },
-                    icon = Lucide.Package,
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                    val updatable = isInstalled && com.ctodrs.saqrcode.data.GalleryKit.updateAvailable(e, ui.packs, ui.skills.installed)
+                    GhostButton(
+                        stringResource(when {
+                            updatable -> R.string.skills_update
+                            isInstalled -> R.string.gallery_reinstall
+                            else -> R.string.gallery_install
+                        }),
+                        {
+                            // v0.18: the gallery's SHA-256 (when listed) must match, and updates show their changelog first
+                            installer.install(e.packJson, com.ctodrs.saqrcode.agent.skills.SkillSource.GALLERY, e.sha256,
+                                onRefused = { errRes = R.string.gallery_install_failed }) { ok ->
+                                if (ok) {
+                                    errRes = null
+                                    val skillsOnly = e.pack?.templateRef.isNullOrBlank() && e.pack?.files.isNullOrEmpty()
+                                    toast(ctx, if (skillsOnly) R.string.skills_installed_toast else R.string.gallery_installed_toast)
+                                }
+                            }
+                        },
+                        icon = if (updatable) Lucide.RefreshCw else Lucide.Package,
+                    )
+                    if (e.changelogUrl.isNotBlank()) GhostButton(stringResource(R.string.skills_gallery_changelog), {
+                        runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(e.changelogUrl))) }
+                    }, icon = Lucide.ExternalLink)
+                }
             }
         }
         if (index != null && shown.isEmpty()) {

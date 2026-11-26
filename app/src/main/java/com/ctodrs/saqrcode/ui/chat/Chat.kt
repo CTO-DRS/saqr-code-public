@@ -650,15 +650,28 @@ private fun NoticeCard(item: ChatItem.Notice) {
         return
     }
     // v0.17: router decisions and captured lessons are quiet pills (the audit log keeps the full line)
-    if (item.kind == ChatItem.Notice.Kind.ROUTER || item.kind == ChatItem.Notice.Kind.LESSON) {
-        val text = if (item.kind == ChatItem.Notice.Kind.ROUTER) {
-            val p = item.text.split('|')
-            stringResource(R.string.notice_router, p.getOrElse(0) { "" }, p.getOrElse(1) { "" }, p.getOrElse(2) { "" })
-        } else stringResource(if (item.count == 1) R.string.notice_lesson_updated else R.string.notice_lesson_new, item.text)
+    // v0.18: an attached skill is a quiet pill too (the audit log keeps the full reason)
+    if (item.kind == ChatItem.Notice.Kind.ROUTER || item.kind == ChatItem.Notice.Kind.LESSON || item.kind == ChatItem.Notice.Kind.SKILL) {
+        val text = when (item.kind) {
+            ChatItem.Notice.Kind.ROUTER -> {
+                val p = item.text.split('|')
+                stringResource(R.string.notice_router, p.getOrElse(0) { "" }, p.getOrElse(1) { "" }, p.getOrElse(2) { "" })
+            }
+            ChatItem.Notice.Kind.SKILL -> {
+                val p = item.text.split('|')
+                stringResource(if (item.count == 1) R.string.notice_skill_named else R.string.notice_skill_auto,
+                    p.getOrElse(0) { "" }, p.getOrElse(1) { "" })
+            }
+            else -> stringResource(if (item.count == 1) R.string.notice_lesson_updated else R.string.notice_lesson_new, item.text)
+        }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             Row(Modifier.clip(RoundedCornerShape(Radius.lg)).background(c.surface2).border(1.dp, c.border, RoundedCornerShape(Radius.lg))
                 .padding(horizontal = Sp.md, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                SIcon(if (item.kind == ChatItem.Notice.Kind.ROUTER) Lucide.Route else Lucide.BookMarked, size = 12.dp, tint = c.text2)
+                SIcon(when (item.kind) {
+                    ChatItem.Notice.Kind.ROUTER -> Lucide.Route
+                    ChatItem.Notice.Kind.SKILL -> Lucide.Sparkles
+                    else -> Lucide.BookMarked
+                }, size = 12.dp, tint = c.text2)
                 Spacer(Modifier.width(6.dp))
                 Text(text, style = Saqr.type.caption.copy(textDirection = TextDirection.Content), color = c.text2)
             }

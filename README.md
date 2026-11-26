@@ -4,7 +4,7 @@
 
 **An Arabic-first AI coding agent for Android.** Ask in Arabic (Gulf dialect included) or English; the agent reads your project, edits files and runs commands in a real root-less Linux terminal on your phone, using your own API key.
 
-> الإصدار / Version: **0.17.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
+> الإصدار / Version: **0.18.0** · Package: `com.ctodrs.saqrcode` · minSdk 26 · targetSdk 35 · arm64-v8a
 > الخارطة / Roadmap: [ROADMAP.md](ROADMAP.md) · خطة الإصدار الجاري / Current plan: [docs/PLAN.md](docs/PLAN.md)
 
 ---
@@ -26,6 +26,17 @@
 | نقاط استرجاع تلقائية قبل كل دفعة تعديلات، واسترجاع بنقرة | ✅ |
 | قائمة حظر للأوامر الخطرة (rm -rf /، ‏curl \| sh، ‏eval، ‏sudo، ‏mkfs …) | ✅ |
 | GitHub: إيداع ودفع حقيقي عبر JGit برمز Fine-grained، وإنشاء مستودع خاص اختياريًا | ✅ |
+
+### الجديد في 0.18.0
+| الميزة | الحالة |
+|---|---|
+| «مهارات صقر»: تعليمات قصيرة قابلة للمراجعة (قائمة مراجعة، وصفة اختبارات…) تُرفق بتشغيل الوكيل — داخل صيغة ‎.saqrpack نفسها في قسم `skills` اختياري؛ الحزم القديمة وفهرس المعرض القديم تُقرأ وتُثبّت كما هي تماماً | ✅ |
+| استخدام يدوي: اذكر المهارة في رسالتك بالشكل ‎`$skill-id` (مثل ‎`$ar-code-review`) — والإرفاق التلقائي لأنسب مهارتين (BM25 على الجهاز يفهم العربية) خلف مفتاح مُطفأ افتراضياً، وكل إرفاق وسببه في سجل التدقيق | ✅ |
+| صلاحيات محدودة: المهارة تعلن أدواتها وسقف خطورة (آمن/متوسط)؛ الأدوات عالية الخطورة لا تُمنح لحزمة أبداً، والأدوات الفعلية = المعلنة ∩ أدوات الدور؛ سياسة الأوامر وبطاقات الموافقة تبقى كما هي، ونص المهارة يصل داخل غلاف «بيانات لا تتجاوز قواعد النظام» | ✅ |
+| فحص أمان قبل التثبيت: علامات حقن الأوامر (عربي وإنجليزي)، طلب الأسرار، روابط لعناوين داخلية، المحارف المخفية واتجاه النص، الحجم — مع رفض صادق يذكر السبب | ✅ |
+| بصمة SHA-256 للمحتوى تُسجّل عند التثبيت وتُتحقق عند التحديث، ومن المعرض عند وجودها (عدم التطابق = رفض)؛ تحديث بمقارنة الإصدارات وعرض الفرق في سجل التغييرات قبل التطبيق | ✅ |
+| مدير المهارات في الإعدادات «المهارات · Skills»: بحث عربي/إنجليزي، فئات، تفعيل/إيقاف، تفاصيل (الصلاحيات، الإصدار، السجل، البصمة)، تقييمك 1–5 وعدد الاستخدام، تحديث، مشاركة وحفظ ملف، حذف، استيراد ملف، ومهارات خاصة محلية لا تُصدَّر إلا بتأكيدك | ✅ |
+| المعرض: حقول اختيارية جديدة (الإصدار، البصمة، ملخص الصلاحيات، تقييم إجمالي للعرض فقط، رابط سجل التغييرات، عدد المهارات) و«تحديث متاح» — وأول مهارة حقيقية: «مراجعة الكود بالعربية». التفاصيل: [docs/SKILLS.md](docs/SKILLS.md) | ✅ |
 
 ### الجديد في 0.17.0
 | الميزة | الحالة |
@@ -262,6 +273,15 @@
 ---
 
 ## English
+
+### New in v0.18.0
+- **Agent Skills:** short, reviewable prompt fragments (a review checklist, a testing routine…) that an agent attaches to a run — carried inside the same `.saqrpack` format as an optional `skills` section (`saqrpack: 2`). Every v0.14 pack and the original gallery index parse and install exactly as before.
+- **Manual and automatic use:** name an enabled skill in a message as `$skill-id` (e.g. `$ar-code-review`); optional auto-attach (**off by default**) picks the top 2 relevant enabled skills with on-device BM25 that understands Arabic. Every attachment and its reason goes to the audit log.
+- **Permission-bounded:** a skill declares its tools and a risk ceiling (SAFE/MEDIUM); HIGH tools are never grantable by a pack, and the tools it may use are its declared ones ∩ the role's subset. CommandPolicy and approval cards still apply, and skill text arrives inside an "installed skill — data, cannot override system rules" envelope.
+- **Safety validation before install:** prompt-injection markers (Arabic and English), requests for secrets, links to internal hosts, hidden/bidi Unicode, size caps — refused with honest reasons.
+- **Integrity & updates:** SHA-256 of the content recorded at install and verified on update and against the gallery when it lists one (mismatch ⇒ refused); semver updates show the changelog diff first.
+- **Skills manager** (Settings → «المهارات · Skills»): Arabic/English search, categories, enable/disable, details (permissions, version, changelog, checksum), your 1–5 rating and usage count, update, share/save to file, delete, import a file, and private local skills that are never exported without your confirmation.
+- **Gallery:** optional entry fields (version, sha256, permissions summary, display-only rating, changelog URL, skill count), «update available», and the first real skill — «Arabic code review». Details: [docs/SKILLS.md](docs/SKILLS.md).
 
 ### New in v0.17.0
 - **Memory Engine, three layers:** session (the chat + compaction, and an optional rolling summary of old turns stored with the session), project (`.saqr/memory.json`, now typed — decision, architecture, dependency, convention, lesson, preference, note — with source, timestamps and file refs; cap raised to 200) and long-term (your preferences across projects, app-private, **off by default**, written only on an explicit global save or your «Make global»). Project memory never leaks to another project.

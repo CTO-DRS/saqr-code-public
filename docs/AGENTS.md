@@ -92,3 +92,6 @@ Each role has a bilingual name, a focused system-prompt fragment, an allowed too
 | `teamMaxConcurrent` | 1 | 1 = sequential; 2 = two independent read-only roles side by side |
 | `teamCostEstimate` | on | estimate notice before a Chief-mode run |
 | `teamDisabledRoles` | none | per-role switches (Chief and Developer cannot be switched off) |
+
+## Skills in the team (v0.18) · المهارات في الفريق
+Installed skills ([docs/SKILLS.md](SKILLS.md)) are chosen once per run — the ones the user named as `$skill-id`, plus (opt-in `autoAttachSkills`) the top-N relevant ones by BM25 — and each choice is written to the audit log with its reason. In Chief mode a role-bound skill (`role: "reviewer"`) joins only that role's prompt (worker, reader and verdict calls); an unbound skill joins every working role. The tools a skill may use in a role are its declared permissions ∩ the role's subset (never HIGH, never above its ceiling) — skills never widen a role's tool list, and approvals and the command policy apply unchanged.

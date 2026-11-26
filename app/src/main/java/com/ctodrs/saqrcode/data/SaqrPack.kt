@@ -2,6 +2,10 @@ package com.ctodrs.saqrcode.data
 
 import com.ctodrs.saqrcode.agent.SlashCommand
 import com.ctodrs.saqrcode.agent.SlashCommands
+import com.ctodrs.saqrcode.agent.skills.SemVer
+import com.ctodrs.saqrcode.agent.skills.Skill
+import com.ctodrs.saqrcode.agent.skills.SkillCodec
+import com.ctodrs.saqrcode.agent.skills.SkillSafety
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -30,11 +34,22 @@ data class SaqrPack(
     /** Preferred tools, rendered as one AGENTS.md line. */
     val tools: List<String> = emptyList(),
     val installedAt: Long = 0L,
+    /** v0.18 (optional): the pack's semantic version — compared against the gallery for «update available». */
+    val version: String = "",
+    /** v0.18 (optional): the pack's author. */
+    val author: String = "",
+    /** v0.18 (optional): agent skills carried by the pack (schema `saqrpack: 2`). */
+    val skills: List<Skill> = emptyList(),
 )
 
 object SaqrPackCodec {
 
     const val VERSION = 1
+    /** v0.18: a pack with a `skills` section. Additive — a pack without skills is still written as v1. */
+    const val VERSION_SKILLS = 2
+    const val MAX_SKILLS = 12
+    const val MAX_VERSION = 32
+    const val MAX_AUTHOR = 40
 
     // Hard limits keep a hostile pack from ballooning the editor, the prompt or the disk.
     const val MAX_FILES = 40
@@ -59,7 +74,7 @@ object SaqrPackCodec {
     // ------------------------------------------------------------ codec
 
     fun toJson(p: SaqrPack): String = JSONObject()
-        .put("saqrpack", VERSION)
+        .put("saqrpack", if (p.skills.isEmpty()) VERSION else VERSION_SKILLS)
         .put("id", p.id)
         .put("name", p.name)
         .put("nameAr", p.nameAr)
@@ -72,12 +87,32 @@ object SaqrPackCodec {
         .put("rules", p.rules)
         .put("tools", JSONArray(p.tools))
         .put("installedAt", p.installedAt)
+        .apply {
+            // v0.18 optional fields: only written when set, so a v0.14 pack serializes exactly as before
+            if (p.version.isNotBlank()) put("version", p.version)
+            if (p.author.isNotBlank()) put("author", p.author)
+            if (p.skills.isNotEmpty()) put("skills", JSONArray().apply { p.skills.forEach { put(SkillCodec.toJsonObject(it)) } })
+        }
         .toString()
 
     /** Strict parse: null on garbage, wrong version or missing id/name — never throws. */
     fun fromJson(json: String?): SaqrPack? = runCatching {
         val o = JSONObject(json ?: return@runCatching null)
-        if (o.optInt("saqrpack", 0) != VERSION) return@runCatching null
+        val v = o.optInt("saqrpack", 0)
+        // v1 = the v0.14 pack (any "skills" key is ignored); v2 = a pack WITH a skills section
+        val skills = ArrayList<Skill>()
+        when (v) {
+            VERSION -> Unit
+            VERSION_SKILLS -> {
+                val arr = o.optJSONArray("skills") ?: return@runCatching null
+                for (i in 0 until minOf(arr.length(), MAX_SKILLS * 2)) {
+                    // a malformed skill makes the whole pack malformed — never install half of it silently
+                    skills += SkillCodec.fromJsonObject(arr.optJSONObject(i)) ?: return@runCatching null
+                }
+                if (skills.isEmpty()) return@runCatching null
+            }
+            else -> return@runCatching null
+        }
         val id = o.optString("id").trim().take(MAX_ID)
         val name = o.optString("name").trim().take(MAX_NAME)
         if (id.isBlank() || name.isBlank()) return@runCatching null
@@ -103,6 +138,9 @@ object SaqrPackCodec {
             rules = o.optString("rules").take(MAX_RULES),
             tools = tools.filter { it.isNotBlank() },
             installedAt = o.optLong("installedAt", 0L),
+            version = o.optString("version").trim().take(MAX_VERSION),
+            author = o.optString("author").trim().take(MAX_AUTHOR),
+            skills = skills,
         )
     }.getOrNull()
 
@@ -117,9 +155,13 @@ object SaqrPackCodec {
 
     // ------------------------------------------------------------ validation
 
-    /** Returns an error key ("path"/"size"/"template"/"command"/"duplicate"/"empty") or null when valid. */
+    /**
+     * Returns an error key ("path"/"size"/"template"/"command"/"duplicate"/"empty", v0.18:
+     * "version"/"skill") or null when valid. A skills-only pack (no template, no files) is
+     * valid since v0.18; every skill must pass [SkillSafety.check].
+     */
     fun validate(p: SaqrPack): String? {
-        if (p.templateRef.isBlank() && p.files.isEmpty()) return "empty"
+        if (p.templateRef.isBlank() && p.files.isEmpty() && p.skills.isEmpty()) return "empty"
         if (p.templateRef.isNotBlank() && Template.entries.none { it.name == p.templateRef }) return "template"
         var total = 0
         if (p.files.size > MAX_FILES) return "size"
@@ -138,6 +180,12 @@ object SaqrPackCodec {
         }
         if (p.rules.length > MAX_RULES) return "size"
         if (p.tools.size > MAX_TOOLS || p.tools.any { it.length > MAX_TOOL_LEN }) return "size"
+        // v0.18: optional version + skills
+        if (p.version.isNotBlank() && !SemVer.isValid(p.version)) return "version"
+        if (p.skills.size > MAX_SKILLS) return "size"
+        val skillIds = HashSet<String>()
+        for (s in p.skills) if (!skillIds.add(s.id)) return "duplicate"
+        if (p.skills.any { SkillSafety.check(it).isNotEmpty() }) return "skill"
         return null
     }
 

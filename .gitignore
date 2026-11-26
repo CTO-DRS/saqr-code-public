@@ -9,3 +9,10 @@ keystore.properties
 captures/
 .kotlin/
 dist/
+
+# signing material must never be committed (rotated 2026-11; encrypted bundle lives in release/)
+*.jks
+*.p12
+*.keystore
+*.pfx
+!release/keys.tar.enc

@@ -255,6 +255,33 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("monthly_spend_cap", null)?.toDoubleOrNull()?.takeIf { it > 0.0 } ?: 0.0
         set(v) { prefs.edit().putString("monthly_spend_cap", v.takeIf { it > 0.0 }?.toString()).apply(); bump() }
 
+    // ------------------------------------------------ v0.18 Agent skills (مهارات صقر)
+
+    /** v0.18: installed skills (JSON, [com.ctodrs.saqrcode.agent.skills.SkillManager.encode]) with their local state. */
+    var skillsJson: String
+        get() = prefs.getString("saqr_skills", null) ?: ""
+        set(v) { prefs.edit().putString("saqr_skills", v).apply(); bump() }
+
+    var installedSkills: List<com.ctodrs.saqrcode.agent.skills.InstalledSkill>
+        get() = com.ctodrs.saqrcode.agent.skills.SkillManager.decode(skillsJson)
+        set(v) { skillsJson = com.ctodrs.saqrcode.agent.skills.SkillManager.encode(v) }
+
+    /** v0.18: installed skills may be used — by naming them as `$id` in a message (on by default; nothing is attached unless named). */
+    var skillsEnabled: Boolean
+        get() = prefs.getBoolean("skills_enabled", true)
+        set(v) { prefs.edit().putBoolean("skills_enabled", v).apply(); bump() }
+
+    /** v0.18: attach the most relevant enabled skills automatically (BM25 on the request). Off by default. */
+    var autoAttachSkills: Boolean
+        get() = prefs.getBoolean("auto_attach_skills", false)
+        set(v) { prefs.edit().putBoolean("auto_attach_skills", v).apply(); bump() }
+
+    /** v0.18: how many skills auto-attach may add per run (1–4, default 2). */
+    var skillsTopN: Int
+        get() = prefs.getInt("skills_top_n", com.ctodrs.saqrcode.agent.skills.SkillRuntime.DEFAULT_TOP_N)
+            .coerceIn(com.ctodrs.saqrcode.agent.skills.SkillRuntime.MIN_TOP_N, com.ctodrs.saqrcode.agent.skills.SkillRuntime.MAX_TOP_N)
+        set(v) { prefs.edit().putInt("skills_top_n", v.coerceIn(com.ctodrs.saqrcode.agent.skills.SkillRuntime.MIN_TOP_N, com.ctodrs.saqrcode.agent.skills.SkillRuntime.MAX_TOP_N)).apply(); bump() }
+
     /**
      * v0.17: providers the router may use — a saved key, or a keyless custom endpoint with a
      * real base URL and a model. The active provider is always included (it is the user's choice).

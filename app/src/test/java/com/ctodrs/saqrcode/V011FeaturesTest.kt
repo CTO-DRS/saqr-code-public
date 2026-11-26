@@ -24,7 +24,7 @@ import org.robolectric.RuntimeEnvironment
 @org.robolectric.annotation.Config(sdk = [35], application = android.app.Application::class)
 class V011FeaturesTest {
 
-    private val key = LicenseCodec.decodeKey("7f637a5e79e49160fa5e7c278a40782cd55479684292a24af06dd634ed5d0b6b".repeat(1))!!
+    private val key = LicenseCodec.decodeKey("0c7a677da4949c450afa398bf4aebb5d094540e9e67a3df9a431b723534ef1ec".repeat(1))!!
     private val now = 1_900_000_000_000L // fixed epoch (2030) — must stay ahead of the wall clock
 
     // ------------------------------------------------------------ plans & limits
@@ -298,7 +298,7 @@ class V011FeaturesTest {
     fun `paywall activation rejects bad tokens and accepts good ones`() {
         val app = RuntimeEnvironment.getApplication() as android.app.Application
         val settings = com.ctodrs.saqrcode.data.SettingsStore(app, com.ctodrs.saqrcode.data.SecureStore(app))
-        val token = LicenseCodec.sign(LicenseCodec.TIER_PRO, null, "inv_act", now + DAY, now, key)
+        val token = LicenseCodec.sign(LicenseCodec.TIER_PRO, null, "inv_act", now + DAY, now, com.ctodrs.saqrcode.billing.Paywall.licenseKey()!!) // the build's own key, so the test holds with or without a local keystore.properties
         assertNull(com.ctodrs.saqrcode.billing.Paywall.activate(settings, token, now))
         assertEquals(PlanTier.PRO, settings.planTier())
         // any malformed token must fail without throwing or granting a tier

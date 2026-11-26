@@ -130,6 +130,25 @@ Extends the memory bank (v0.13) and Falcon Router (v0.13.2) without rebuilding t
 
 **المتبقي · Remaining:** optional provider embeddings (not built — BM25 only); on-device QA of the router, failover, session summary and lesson capture with real providers (unit-tested with synthetic data and a fake client only); adding the new settings to the sync whitelist; CI confirmation once GitHub Actions minutes are available.
 
+## المرحلة 5 · Phase 5: 0.18.0 «مهارات صقر والمعرض · Agent Skills & Gallery»
+
+امتداد لحزم المهارات (v0.14) ومعرض المجتمع (v0.14.3) دون إعادة بنائهما: قسم `skills` اختياري في الصيغة نفسها، ومسار تثبيت واحد لكل المصادر، وكل ما يغيّر ما يراه النموذج تلقائياً خلف مفتاح مُطفأ افتراضياً. التفاصيل: [docs/SKILLS.md](SKILLS.md).
+
+Extends skill packs (v0.14) and the community gallery (v0.14.3) without rebuilding them: an optional `skills` section in the same format, one install pipeline for every source, and anything that changes what the model sees automatically behind a switch that is off by default.
+
+| # | البند · Item | الملف · File | المفتاح · Setting (default) | الحالة |
+|---|---|---|---|---|
+| 1 | صيغة المهارة · Skill format in .saqrpack (v2 only with skills), semver, changelog | `agent/skills/SkillModel.kt`, `data/SaqrPack.kt` | — | ✅ |
+| 2 | المدير · Install/update/uninstall/enable/private/rate/usage/export/import/search | `agent/skills/SkillManager.kt` | — | ✅ |
+| 3 | الأمان · Static checks, permission ceiling, SHA-256 install/update | `agent/skills/SkillSafety.kt`, `CanonicalJson` | — | ✅ |
+| 4 | التشغيل · `$id` mentions, BM25 auto-attach, envelope, role intersection, audit | `agent/skills/SkillRuntime.kt`, `AgentSession`, `SystemPrompt` | `skillsEnabled` (on), `autoAttachSkills` (off), `skillsTopN` (2) | ✅ |
+| 5 | المعرض · Optional entry fields, integrity, update available | `data/Gallery.kt` | — | ✅ |
+| 6 | الواجهة · «المهارات · Skills» section + manager sheet; gallery card | `ui/SkillsSettings.kt`, `ui/SettingsScreen.kt` | — | ✅ |
+| 7 | الاختبارات · V018FeaturesTest + V018SettingsTest incl. acceptance 11 | `app/src/test/…` | — | ✅ |
+| 8 | مستودع المعرض · LICENSE (MIT), CI validator, first real skill (PR) | `CTO-DRS/saqr-gallery` | — | ✅ (PR, not merged) |
+
+**المتبقي · Remaining:** skills in the encrypted sync whitelist; on-device QA of the manager sheet and of skills in real runs (unit-tested; the gallery fetch is tested against MockWebServer only); CI confirmation once GitHub Actions minutes are available (the gallery workflow included).
+
 ## معايير الجودة لكل إصدار · Quality bar for every release
 - كل ميزة جديدة باختبارات وحدة (ملف `V0xFeaturesTest.kt` مكانه القائمة).
 - Every feature ships with unit tests (keep the `V0xFeaturesTest.kt` pattern).
