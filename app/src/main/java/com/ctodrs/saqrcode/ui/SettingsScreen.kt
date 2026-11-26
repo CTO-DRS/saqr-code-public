@@ -801,6 +801,8 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             SectionLabel(stringResource(R.string.about_developer), Modifier.padding(top = Sp.md))
             val dctx = androidx.compose.ui.platform.LocalContext.current
             val ver = remember { runCatching { dctx.packageManager.getPackageInfo(dctx.packageName, 0).versionName }.getOrNull().orEmpty() }
+            val banners = remember { DeveloperBanners.load(dctx) }
+            DeveloperBannerCarousel(banners, Modifier.padding(bottom = Sp.md)) { url -> runCatching { dctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))) } }
             DeveloperCard(versionName = ver)
             Spacer(Modifier.height(Sp.xxl))
         }

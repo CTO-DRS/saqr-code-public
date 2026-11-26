@@ -1,0 +1,16 @@
+[
+  {
+    "id": "majlis",
+    "title": {"ar": "صقر كود، وكيل برمجة عربي", "en": "Saqr Code, an Arabic coding agent"},
+    "body": {"ar": "مجلس المحادثة، مكتبة الأوامر، واقتراحات ذكية. جرّبها الآن.", "en": "Majlis chat, prompt library and smart suggestions. Try them now."},
+    "url": "https://github.com/CTO-DRS/saqr-code-public/releases",
+    "colors": ["#4F46E5", "#7C3AED"]
+  },
+  {
+    "id": "hire",
+    "title": {"ar": "عندك فكرة تطبيق؟", "en": "Have an app idea?"},
+    "body": {"ar": "راسلني على واتساب ونحوّلها إلى منتج حقيقي.", "en": "Message me on WhatsApp and we will turn it into a real product."},
+    "url": "https://wa.me/message/MVTVWPOPFOVFF1",
+    "colors": ["#0EA5A4", "#2563EB"]
+  }
+]

@@ -1,5 +1,14 @@
 # Changelog · سجل التغييرات
 
+## [0.1.7] — 2026-11-26 — Developer system · منظومة المطور
+
+- **QR sheet sharing:** Share link (native share sheet with the URL) and Share QR image (PNG rendered on the device, shared through the app's FileProvider; no network).
+- **Share the app** (invitation text with the releases page) and **Share all accounts** (one message listing all 8).
+- **Banner carousel** above the card, auto-advancing every 5 seconds with dots. Content is data: edit `app/src/main/assets/developer_banners.json` (id, title and body as ar/en, optional https url, two gradient colours) to announce a new app or an offer. Bad items are skipped.
+- **Version and update check:** shows the installed version and a "Check for updates" button that reads the newest release of the public project; it says up to date, or offers the release page. Versions restarted at 0.1.x, so it compares the newest published release with the installed one by equality.
+- **Tests:** `V0107DeveloperShareTest` (3), `V0108DeveloperExtrasTest` (6), `V0105DeveloperCardTest` (3 + share buttons).
+- versionName 0.1.7, versionCode 46.
+
 ## [0.1.6] — 2026-11-26 — Developer links QR sheet · نافذة الرمز
 
 - Tapping an account in the developer card opens a glass sheet with an on-device QR code, Open and Copy link (see 0.1.5 notes). versionName 0.1.6, versionCode 45.

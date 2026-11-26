@@ -48,6 +48,26 @@ class ScreenshotTestDeveloper {
         File(outDir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    private fun fullShot(name: String) {
+        val banners = com.ctodrs.saqrcode.ui.DeveloperBanners.parse(File("src/main/assets/developer_banners.json").readText())
+        rule.setContent {
+            SaqrTheme("dark") {
+                androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().background(Saqr.colors.surface1).padding(top = 60.dp, start = 16.dp, end = 16.dp)) {
+                    com.ctodrs.saqrcode.ui.DeveloperBannerCarousel(banners, Modifier.padding(bottom = 12.dp), autoAdvance = false) {}
+                    DeveloperCard(versionName = "0.1.6", initialUpdate = com.ctodrs.saqrcode.ui.UpdateCheck.State.Available("0.1.7", "https://example.com"))
+                }
+            }
+        }
+        rule.waitForIdle(); rule.mainClock.advanceTimeBy(500)
+        val root = rule.activity.window.decorView
+        val bmp = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
+        root.draw(Canvas(bmp))
+        File(outDir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-night-xxhdpi") @Test fun fullAr() = fullShot("dev-full-ar")
+    @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi") @Test fun fullEn() = fullShot("dev-full-en")
+
     private fun sheetShot(name: String) {
         rule.setContent {
             SaqrTheme("dark") {

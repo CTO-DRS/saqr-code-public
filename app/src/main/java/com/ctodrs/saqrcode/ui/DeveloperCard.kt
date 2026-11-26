@@ -32,6 +32,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -100,12 +103,27 @@ private fun labelFor(id: String): String = stringResource(when (id) {
     else -> R.string.dev_l_whatsapp
 })
 
+private fun labelOf(id: String, ctx: android.content.Context): String = ctx.getString(when (id) {
+    "website" -> R.string.dev_l_website
+    "github" -> R.string.dev_l_github
+    "x" -> R.string.dev_l_x
+    "instagram" -> R.string.dev_l_instagram
+    "tiktok" -> R.string.dev_l_tiktok
+    "youtube" -> R.string.dev_l_youtube
+    "telegram" -> R.string.dev_l_telegram
+    else -> R.string.dev_l_whatsapp
+})
+
 private val Ring = Brush.linearGradient(listOf(Color(0xFF6366F1), Color(0xFF06B6D4), Color(0xFFA855F7)))
 private val Rim = Brush.linearGradient(listOf(Color(0x5C8E5BD0), Color(0x5C5558C2), Color(0x5C2FA9C0)))
 
 /** "About the developer": glass panel, ringed photo with verified badge, name, role, brand-coloured link grid, footer. */
 @Composable
-fun DeveloperCard(modifier: Modifier = Modifier, versionName: String = "", onOpen: ((String) -> Unit)? = null) {
+fun DeveloperCard(
+    modifier: Modifier = Modifier, versionName: String = "", onOpen: ((String) -> Unit)? = null,
+    initialUpdate: UpdateCheck.State = UpdateCheck.State.Idle,
+    fetchReleases: suspend () -> String = { withContext(Dispatchers.IO) { UpdateCheck.fetch() } },
+) {
     val ctx = LocalContext.current
     val open = onOpen ?: { url -> runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }; Unit }
     var viewer by remember { mutableStateOf(false) }
@@ -155,6 +173,44 @@ fun DeveloperCard(modifier: Modifier = Modifier, versionName: String = "", onOpe
                 }
             }
         }
+        Spacer(Modifier.height(8.dp))
+        val appMsg = stringResource(R.string.dev_share_app_msg, UpdateCheck.RELEASES_PAGE)
+        val allHeader = stringResource(R.string.dev_share_all_header)
+        val names = DeveloperLinks.all.map { labelFor(it.id) }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            SheetButton(stringResource(R.string.dev_share_app), Lucide.Share2, true, Modifier.weight(1f)) { DeveloperShare.shareApp(ctx, appMsg) }
+            SheetButton(stringResource(R.string.dev_share_all), Lucide.Users, false, Modifier.weight(1f)) {
+                DeveloperShare.shareLink(ctx, DeveloperShare.allAccountsText(allHeader, DeveloperLinks.all.mapIndexed { i, l -> names[i] to l.url }))
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        var update by remember { mutableStateOf(initialUpdate) }
+        val scope = androidx.compose.runtime.rememberCoroutineScope()
+        val ver = versionName
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.dev_version_line, ver), style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold, textDirection = TextDirection.Content), color = Color.White)
+                val statusText = when (val u = update) {
+                    UpdateCheck.State.Idle -> null
+                    UpdateCheck.State.Checking -> stringResource(R.string.dev_checking)
+                    UpdateCheck.State.UpToDate -> stringResource(R.string.dev_up_to_date)
+                    is UpdateCheck.State.Available -> stringResource(R.string.dev_update_available, u.version)
+                    UpdateCheck.State.Failed -> stringResource(R.string.dev_update_failed)
+                }
+                if (statusText != null) Text(statusText, style = TextStyle(fontSize = 12.sp, textDirection = TextDirection.Content), color = if (update is UpdateCheck.State.Available) Color(0xFF86EFAC) else if (update == UpdateCheck.State.Failed) Color(0xFFFCA5A5) else Color(0xFFA5B4FC))
+            }
+            val avail = update as? UpdateCheck.State.Available
+            SheetButton(
+                if (avail != null) stringResource(R.string.dev_get_update) else stringResource(R.string.dev_check_update),
+                if (avail != null) Lucide.CloudDownload else Lucide.RefreshCw, avail != null, Modifier.width(168.dp),
+            ) {
+                if (avail != null) open(avail.url)
+                else if (update != UpdateCheck.State.Checking) {
+                    update = UpdateCheck.State.Checking
+                    scope.launch { update = runCatching { UpdateCheck.parse(fetchReleases(), ver) }.getOrDefault(UpdateCheck.State.Failed) }
+                }
+            }
+        }
         Spacer(Modifier.height(10.dp))
         Text(stringResource(R.string.dev_footer, versionName), style = TextStyle(fontSize = 11.sp, textDirection = TextDirection.Content), color = Color(0xFF64748B))
     }
@@ -182,13 +238,15 @@ fun DeveloperLinkSheet(link: DeveloperLinks.Link, onDismiss: () -> Unit, onOpen:
         DeveloperLinkSheetContent(
             link,
             onOpen = { onOpen(); onDismiss() },
+            onShareLink = { DeveloperShare.shareLink(toastCtx, link.url) },
+            onShareQr = { DeveloperShare.shareQr(toastCtx, link.url, labelOf(link.id, toastCtx)) },
             onCopy = { clip.setText(androidx.compose.ui.text.AnnotatedString(link.url)); android.widget.Toast.makeText(toastCtx, copied, android.widget.Toast.LENGTH_SHORT).show() },
         )
     }
 }
 
 @Composable
-fun DeveloperLinkSheetContent(link: DeveloperLinks.Link, onOpen: () -> Unit, onCopy: () -> Unit) {
+fun DeveloperLinkSheetContent(link: DeveloperLinks.Link, onOpen: () -> Unit, onCopy: () -> Unit, onShareLink: () -> Unit = {}, onShareQr: () -> Unit = {}) {
     val label = labelFor(link.id)
     Column(
         Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
@@ -215,6 +273,11 @@ fun DeveloperLinkSheetContent(link: DeveloperLinks.Link, onOpen: () -> Unit, onC
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SheetButton(stringResource(R.string.dev_qr_open), Lucide.ExternalLink, true, Modifier.weight(1f), onOpen)
             SheetButton(stringResource(R.string.dev_qr_copy), Lucide.Copy, false, Modifier.weight(1f), onCopy)
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SheetButton(stringResource(R.string.dev_qr_share_link), Lucide.Share2, false, Modifier.weight(1f), onShareLink)
+            SheetButton(stringResource(R.string.dev_qr_share_img), Lucide.Image, false, Modifier.weight(1f), onShareQr)
         }
     }
 }
@@ -243,5 +306,51 @@ fun QrImage(text: String, modifier: Modifier = Modifier) {
         val cell = size.minDimension / n
         for (y in matrix.indices) for (x in matrix.indices) if (matrix[y][x])
             drawRect(Color(0xFF0B0C24), Offset((x + 2) * cell, (y + 2) * cell), Size(cell + 0.5f, cell + 0.5f))
+    }
+}
+
+/** Auto-advancing banner carousel above the card. Content comes from `DeveloperBanners` (assets JSON). */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun DeveloperBannerCarousel(
+    banners: List<DeveloperBanners.Banner>, modifier: Modifier = Modifier, autoAdvance: Boolean = true,
+    onOpen: (String) -> Unit,
+) {
+    if (banners.isEmpty()) return
+    val ar = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "ar"
+    val pager = androidx.compose.foundation.pager.rememberPagerState { banners.size }
+    if (autoAdvance && banners.size > 1) androidx.compose.runtime.LaunchedEffect(banners) {
+        while (true) {
+            kotlinx.coroutines.delay(5000)
+            pager.animateScrollToPage((pager.currentPage + 1) % banners.size)
+        }
+    }
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.fillMaxWidth(), pageSpacing = 12.dp) { i ->
+            val b = banners[i]
+            val shape = RoundedCornerShape(20.dp)
+            val desc = b.title(ar) + ". " + b.body(ar)
+            Column(
+                Modifier.fillMaxWidth().height(112.dp).clip(shape)
+                    .background(Brush.linearGradient(listOf(Color(b.colorA), Color(b.colorB))))
+                    .border(1.dp, Color(0x40FFFFFF), shape)
+                    .then(if (b.url != null) Modifier.pressable { onOpen(b.url) } else Modifier)
+                    .semantics(mergeDescendants = true) { contentDescription = desc; if (b.url != null) role = Role.Button }
+                    .padding(horizontal = 18.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(b.title(ar), style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold, textDirection = TextDirection.Content), color = Color.White, maxLines = 2)
+                Spacer(Modifier.height(4.dp))
+                Text(b.body(ar), style = TextStyle(fontSize = 13.sp, textDirection = TextDirection.Content), color = Color(0xE6FFFFFF), maxLines = 3)
+            }
+        }
+        if (banners.size > 1) {
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                repeat(banners.size) { i ->
+                    Box(Modifier.size(if (i == pager.currentPage) 18.dp else 6.dp, 6.dp).clip(CircleShape).background(if (i == pager.currentPage) Color(0xFFA5B4FC) else Color(0x40FFFFFF)))
+                }
+            }
+        }
     }
 }

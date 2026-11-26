@@ -50,8 +50,11 @@ class V0105DeveloperCardTest {
     }
 
     @Test fun `sheet buttons fire open and copy`() {
-        var open = 0; var copy = 0
-        rule.setContent { SaqrTheme("dark") { DeveloperLinkSheetContent(DeveloperLinks.all[1], { open++ }, { copy++ }) } }
+        var open = 0; var copy = 0; var sl = 0; var sq = 0
+        rule.setContent { SaqrTheme("dark") { DeveloperLinkSheetContent(DeveloperLinks.all[1], { open++ }, { copy++ }, { sl++ }, { sq++ }) } }
+        rule.onNodeWithContentDescription("مشاركة الرابط").assertHeightIsAtLeast(48.dp).performClick()
+        rule.onNodeWithContentDescription("مشاركة صورة الرمز").assertHeightIsAtLeast(48.dp).performClick()
+        assertEquals(1, sl); assertEquals(1, sq)
         rule.onNodeWithContentDescription("فتح").assertHeightIsAtLeast(48.dp).performClick()
         rule.onNodeWithContentDescription("نسخ الرابط").assertHeightIsAtLeast(48.dp).performClick()
         assertEquals(1, open); assertEquals(1, copy)

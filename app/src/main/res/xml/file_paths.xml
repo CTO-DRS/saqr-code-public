@@ -4,6 +4,7 @@
 <paths>
     <cache-path name="camera" path="camera/" />
     <cache-path name="apk" path="apk/" />
+    <cache-path name="qr" path="qr/" />
     <!-- v0.19.5 Majlis: files the agent produced in a project, for the chat file card. -->
     <files-path name="projects" path="projects/" />
 </paths>
