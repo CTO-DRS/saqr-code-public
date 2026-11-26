@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -233,18 +234,24 @@ private fun AskUserSummary(item: ChatItem.AskUser) {
 
 /** Suggestion chips shown above the composer when the last reply ends with a numbered list. */
 @Composable
-fun QuickReplyChips(replies: List<String>, onPick: (String) -> Unit) {
+fun QuickReplyChips(replies: List<String>, onPick: (String) -> Unit) = ReplyChips(replies.map { it to it }, onPick)
+
+/** Chips showing a short label and inserting [Pair.second] when tapped. */
+@Composable
+fun ReplyChips(chips: List<Pair<String, String>>, onPick: (String) -> Unit) {
     val c = Saqr.colors
     Row(
         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = Sp.md, vertical = Sp.xs),
         horizontalArrangement = Arrangement.spacedBy(Sp.sm),
     ) {
-        replies.forEach { r ->
-            Text(
-                r, style = Saqr.type.label.copy(textDirection = TextDirection.Content), color = c.text1, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.pressable { onPick(r) }.clip(CircleShape).background(c.surface2)
-                    .border(1.dp, c.accent.copy(alpha = 0.45f), CircleShape).padding(horizontal = Sp.md, vertical = 7.dp),
-            )
+        chips.forEach { (label, text) ->
+            Box(Modifier.minimumInteractiveComponentSize().pressable { onPick(text) }, contentAlignment = Alignment.Center) {
+                Text(
+                    label, style = Saqr.type.label.copy(textDirection = TextDirection.Content), color = c.text1, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.clip(CircleShape).background(c.surface2)
+                        .border(1.dp, c.accent.copy(alpha = 0.45f), CircleShape).padding(horizontal = Sp.md, vertical = 7.dp),
+                )
+            }
         }
     }
 }

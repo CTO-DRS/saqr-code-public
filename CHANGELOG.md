@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.4] — 2026-11-26 — Majlis 7: smart suggestions · الاقتراحات الذكية
+
+- **Next-step chips** appear under a finished reply, chosen from what the turn did: a failed command, test or lint run offers "Fix the error"; edited files offer "Run tests" (only if none ran after the last edit), "Review changes" and "Commit" (not after a commit); a long answer (500+ characters) with no edits offers "Summarize" and "Next steps". Tapping a chip puts the text in the message box (review and commit use the existing `/review` and `/commit`), so you can edit before sending.
+- Rule based on purpose: no extra model call, no cost, instant. `FollowUps` is pure and tested. Numbered-option chips from the reply (existing) win over these.
+- All chips (old and new) now have a 48dp touch target. EN + AR.
+- **Tests:** `V0104FollowUpsTest` (5).
+- versionName 0.1.4, versionCode 43.
+
 ## [0.1.3] — 2026-11-26 — Majlis 6: prompt library · مكتبة الأوامر
 
 - **Prompt library:** the + menu in the chat has a new "Prompt library" item. It opens a searchable sheet of every prompt command, built-in and your own; tapping one puts `/name ` in the message box so you add the details. Search matches name, Arabic alias and description, ignoring Arabic diacritics and alef forms.

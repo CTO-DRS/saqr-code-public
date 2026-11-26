@@ -44,11 +44,14 @@ class ScreenshotTestMajlis {
     private val outDir = File(System.getProperty("saqr.screens.dir") ?: "build/screens")
     @Before fun gate() { assumeTrue(System.getProperty("saqr.screens") == "1"); outDir.mkdirs() }
 
+    private var withEdit = false
+
     private fun items(ar: Boolean): List<ChatItem> {
         fun tool(n: String, s: String) = ChatItem.Tool(n, s).apply { result = "ok"; ok = true; durationMs = 300 }
         return listOf(
             ChatItem.User(if (ar) "أين الحزمة" else "Where is the package?"),
             tool(Tools.READ, "AGENTS.md"), tool(Tools.RUN, "zip -r android_app_package.zip app"), tool(Tools.WEB_FETCH, "https://developer.android.com"),
+            *(if (withEdit) arrayOf(tool(Tools.EDIT, "app/src/Main.kt")) else emptyArray()),
             ChatItem.Assistant().apply {
                 streaming = false
                 text = if (ar) "تم إنشاء الحزمة بنجاح! يمكنك الآن تحميل **[android_app_package.zip](sandbox:/workspace/android_app_package.zip)** الذي يحتوي على جميع ملفات التطبيق."
@@ -130,4 +133,10 @@ class ScreenshotTestMajlis {
 
     @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi")
     @Test fun libraryEn() = libShot("majlis4-en", false)
+
+    @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-night-xxhdpi")
+    @Test fun chipsAr() { withEdit = true; shot("majlis5-ar", true) }
+
+    @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi")
+    @Test fun chipsEn() { withEdit = true; shot("majlis5-en", false) }
 }

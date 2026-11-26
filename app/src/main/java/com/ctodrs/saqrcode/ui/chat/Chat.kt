@@ -76,6 +76,7 @@ import com.ctodrs.saqrcode.agent.AgentRole
 import com.ctodrs.saqrcode.agent.AgentRoles
 import com.ctodrs.saqrcode.agent.ChatItem
 import com.ctodrs.saqrcode.agent.TeamCost
+import com.ctodrs.saqrcode.agent.FollowUps
 import com.ctodrs.saqrcode.agent.PromptLibrary
 import com.ctodrs.saqrcode.agent.SlashCommand
 import com.ctodrs.saqrcode.agent.SlashCommands
@@ -240,6 +241,22 @@ fun ChatContent(
             if (cmd.action == SlashCommand.Action.MODEL) { onInput(""); modelMenu = true } else onInput("/" + cmd.name + " ")
         }
         else if (quick.isNotEmpty() && state.ready) QuickReplyChips(quick) { onInput(it) }
+        else if (state.ready && input.isBlank()) {
+            val kinds = remember(state.items.size, lastLen, state.running, last) { FollowUps.suggest(shown, state.running) }
+            if (kinds.isNotEmpty()) {
+                val chips = kinds.map { k ->
+                    when (k) {
+                        FollowUps.Kind.FIX_ERROR -> R.string.followup_label_fix to R.string.followup_fix
+                        FollowUps.Kind.RUN_TESTS -> R.string.followup_label_tests to R.string.followup_tests
+                        FollowUps.Kind.REVIEW -> R.string.followup_label_review to R.string.followup_review
+                        FollowUps.Kind.COMMIT -> R.string.followup_label_commit to R.string.followup_commit
+                        FollowUps.Kind.SUMMARIZE -> R.string.followup_label_summarize to R.string.followup_summarize
+                        FollowUps.Kind.NEXT_STEPS -> R.string.followup_label_next to R.string.followup_next
+                    }
+                }.map { (l, t) -> stringResource(l) to stringResource(t) }
+                ReplyChips(chips) { onInput(it) }
+            }
+        }
         val send = {
             if (SlashCommands.parse(input, state.customCommands)?.command?.action == SlashCommand.Action.MODEL) { onInput(""); modelMenu = true }
             else onSend()
