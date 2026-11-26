@@ -1043,4 +1043,5 @@
     <string name="skill_err_internal_url">عنوان داخلي</string>
     <string name="skill_err_hidden_unicode">محارف مخفية</string>
     <string name="skill_err_changelog">سجل تغييرات غير صالح</string>
+    <string name="skills_rate_n">قيّم %1$d من 5</string>
 </resources>

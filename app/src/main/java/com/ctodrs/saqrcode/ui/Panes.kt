@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui
 
+import androidx.compose.ui.semantics.Role
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -207,7 +208,7 @@ fun FilesPaneContent(
                             FileTypeIcon(t.path.substringAfterLast('/'), 16.dp)
                             Spacer(Modifier.width(6.dp))
                             Text(t.path.substringAfterLast('/'), style = Saqr.type.monoSmall, color = if (sel) c.text1 else c.text2, maxLines = 1)
-                            Box(Modifier.size(26.dp).clip(CircleShape).clickable { onClose(i) }, contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(26.dp).clip(CircleShape).clickable(role = Role.Button) { onClose(i) }, contentAlignment = Alignment.Center) {
                                 if (t.dirty) Box(Modifier.size(7.dp).clip(CircleShape).background(c.accent))
                                 else SIcon(Lucide.X, size = 13.dp, tint = c.text3, contentDescription = stringResource(R.string.close))
                             }
@@ -231,7 +232,7 @@ fun FilesPaneContent(
                 GhostButton(stringResource(R.string.new_file), onNewFile, icon = Lucide.FilePlus)
                 GhostButton(stringResource(R.string.new_folder), onNewFolder, icon = Lucide.FolderPlus)
                 Spacer(Modifier.weight(1f))
-                Box(Modifier.size(38.dp).clip(CircleShape).clickable(onClick = onRefresh), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(38.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onRefresh), contentAlignment = Alignment.Center) {
                     SIcon(Lucide.RefreshCw, size = 17.dp)
                 }
             }

@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui
 
+import androidx.compose.ui.semantics.Role
 import android.text.format.DateUtils
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -381,7 +382,7 @@ private fun ProjectRow(p: ProjectCard, now: Long, onOpen: () -> Unit, onDelete: 
                     }
                 }
             }
-            Box(Modifier.size(40.dp).clip(RoundedCornerShape(50)).clickable(onClick = onDelete), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(50)).clickable(role = Role.Button, onClick = onDelete), contentAlignment = Alignment.Center) {
                 SIcon(Lucide.Trash2, size = 17.dp, tint = c.text3, contentDescription = stringResource(R.string.delete))
             }
         }

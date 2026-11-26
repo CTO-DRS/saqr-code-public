@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui.chat
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
@@ -284,7 +285,7 @@ private fun ReadAloud(speaking: Boolean, onClick: () -> Unit) {
     val c = Saqr.colors
     Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
         Row(
-            Modifier.heightIn(min = 32.dp).clip(CircleShape).clickable(onClick = onClick).padding(horizontal = Sp.sm),
+            Modifier.heightIn(min = 32.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClick).padding(horizontal = Sp.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SIcon(if (speaking) Lucide.Square else Lucide.Volume2, size = 14.dp, tint = if (speaking) c.accentText else c.text3)
@@ -381,7 +382,7 @@ private fun RestoreHere(onClick: () -> Unit) {
     val c = Saqr.colors
     Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.End) {
         Row(
-            Modifier.heightIn(min = 32.dp).clip(CircleShape).clickable(onClick = onClick).padding(horizontal = Sp.sm),
+            Modifier.heightIn(min = 32.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClick).padding(horizontal = Sp.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SIcon(Lucide.RotateCcw, size = 13.dp, tint = c.accentText)
@@ -1118,7 +1119,7 @@ fun PlanPillContent(plan: List<PlanItem>, running: Boolean, onPause: () -> Unit,
                 }
             } else Spacer(Modifier.width(Sp.sm))
             Row(
-                Modifier.clip(CircleShape).clickable(enabled = plan.isNotEmpty()) { open = true }.padding(start = Sp.xs, end = Sp.sm, top = 6.dp, bottom = 6.dp),
+                Modifier.clip(CircleShape).clickable(role = Role.Button, enabled = plan.isNotEmpty()) { open = true }.padding(start = Sp.xs, end = Sp.sm, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (plan.isNotEmpty()) {

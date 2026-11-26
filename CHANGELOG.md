@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.19.3] — 2026-11-26 — Accessibility roles · أدوار إمكانية الوصول
+
+- UI/UX pass 1: every icon-only click target (about 30 across Git, Accounts, Skills, Home, Terminal, Panes, Settings, Sessions, Chat, Element picker) now declares a semantic Role, so TalkBack announces button / checkbox / radio / switch. Star rating announces "Rate N of 5" (EN + AR). Remove-host button gained a label.
+- **Tests:** `V0193A11yTest` (2): EN/AR key parity and a source guard that fails if a new icon-only clickable has no role.
+- versionName 0.19.3, versionCode 32.
+
 ## [0.19.2] — 2026-11-26 — Skills in Sync · المهارات في المزامنة
 
 - Installed **public** skills now travel in the encrypted snapshot (private skills never leave the device). Capped at 200,000 chars (dropped from the end). On apply they go through `SkillManager.plan/apply`, so `SkillSafety` re-checks every skill (injection markers, HIGH-risk permissions are refused); merge only, local skills are never deleted, `MAX_INSTALLED` respected. Older snapshots without skills change nothing.

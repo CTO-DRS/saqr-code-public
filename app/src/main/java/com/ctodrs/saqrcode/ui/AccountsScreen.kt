@@ -1,5 +1,6 @@
 package com.ctodrs.saqrcode.ui
 
+import androidx.compose.ui.semantics.Role
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -408,8 +409,8 @@ private fun OtherHostsCard(ui: AccountsUi) {
                     Text(h.host, style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1, modifier = Modifier.weight(1f))
                     auto?.let { Tag(it.name.lowercase(), color = c.success, dot = false) }
                     Text(h.username, style = Saqr.type.monoSmall, color = c.text3)
-                    Box(Modifier.size(34.dp).clip(CircleShape).clickable { ui.onRemoveHost(h.host) }, contentAlignment = Alignment.Center) {
-                        SIcon(Lucide.Trash2, size = 15.dp, tint = c.danger)
+                    Box(Modifier.size(34.dp).clip(CircleShape).clickable(role = Role.Button) { ui.onRemoveHost(h.host) }, contentAlignment = Alignment.Center) {
+                        SIcon(Lucide.Trash2, size = 15.dp, tint = c.danger, contentDescription = stringResource(R.string.delete))
                     }
                 }
                 Text(stringResource(R.string.other_hosts_kind), style = Saqr.type.caption, color = c.text3)

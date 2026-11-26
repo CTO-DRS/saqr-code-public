@@ -1043,4 +1043,5 @@
     <string name="skill_err_internal_url">Internal address</string>
     <string name="skill_err_hidden_unicode">Hidden characters</string>
     <string name="skill_err_changelog">Invalid changelog</string>
+    <string name="skills_rate_n">Rate %1$d of 5</string>
 </resources>
