@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.19.1] — 2026-11-26 — Remove API key · حذف المفتاح
+
+- **Buried feature surfaced:** `SettingsStore.clearKey` existed with no caller, so a saved API key could only be overwritten. Each provider card in Settings now shows «حذف المفتاح · Remove key» when a key is saved; it drops only that provider's key and keeps its URL and model (EN + AR strings).
+- **Tests:** `V0191KeyRemovalTest` (2).
+- versionName 0.19.1, versionCode 30.
+
 ## [0.19.0] — 2026-11-26 — Full Sync · المزامنة الكاملة (Phase 6)
 
 - **Sync whitelist (`data/Sync.kt`):** 27 new keys so a second device gets the v0.15–v0.18 behaviour: parallel tools, risky-command confirmation, loop guard, verify-before-done, LLM retry + fallback model, task journal, audit log, untrusted marking, step/minute/cost budgets, Chief mode, team concurrency/cost estimate/disabled roles, memory relevance/top-K/session summary/lessons/global memory, smart router, daily/monthly spend caps, skills on/off and auto-attach. Still no API keys, tokens, entitlement or installed-skill bodies.

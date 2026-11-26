@@ -28,6 +28,8 @@
     <string name="fetch_models">جلب النماذج</string>
     <string name="save">حفظ</string>
     <string name="saved">تم الحفظ</string>
+    <string name="remove_key">حذف المفتاح</string>
+    <string name="key_removed">حُذف المفتاح من هذا الجهاز</string>
     <string name="key_set">المفتاح محفوظ (مشفّر)</string>
     <string name="key_not_set">لا يوجد مفتاح</string>
     <string name="active_provider">المزوّد النشط</string>

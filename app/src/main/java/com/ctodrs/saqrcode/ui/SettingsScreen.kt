@@ -107,6 +107,8 @@ class SettingsUi(
     val onSaveProvider: (id: String, baseUrl: String, model: String, key: String?) -> Unit,
     val fetchModels: suspend (def: ProviderDef, baseUrl: String, model: String, key: String?) -> Result<List<String>>,
     val onApproveAll: (Boolean) -> Unit,
+    /** v0.19.1: remove a provider's stored API key (was in SettingsStore.clearKey with no UI). */
+    val onClearKey: (id: String) -> Unit = {},
     val onAccounts: () -> Unit = {},
     val customCommands: List<SlashCommand> = emptyList(),
     /** Returns an error key from [SlashCommands.validate], or null when added. */
@@ -247,6 +249,7 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
         onSaveProvider = { id, b, m, k -> settings.saveProvider(id, b, m, k) },
         fetchModels = { def, b, m, k -> runCatching { LlmClient(def, b, m, k ?: settings.apiKey(def.id)).listModels() } },
         onApproveAll = { settings.approveAll = it },
+        onClearKey = { settings.clearKey(it) },
         onAccounts = onAccounts,
         customCommands = settings.customCommands,
         onAddCommand = { n, t ->
@@ -1238,6 +1241,7 @@ private fun ProviderItem(def: ProviderDef, cfg: ProviderConfig, active: Boolean,
     val scope = rememberCoroutineScope()
     val savedText = stringResource(R.string.saved)
     val modelsFmt = stringResource(R.string.n_models)
+    val keyRemovedText = stringResource(R.string.key_removed)
 
     Column {
         ListRow(
@@ -1280,6 +1284,7 @@ private fun ProviderItem(def: ProviderDef, cfg: ProviderConfig, active: Boolean,
                         }
                     }, icon = Lucide.RefreshCw)
                     if (!active) GhostButton(stringResource(R.string.use_this), { ui.onActivate(def.id) }, icon = Lucide.Check)
+                    if (cfg.hasKey) GhostButton(stringResource(R.string.remove_key), { ui.onClearKey(def.id); key = ""; status = keyRemovedText }, icon = Lucide.Trash2, tint = c.danger)
                 }
                 status?.let { Text(it, style = Saqr.type.caption, color = c.text2, maxLines = 2, overflow = TextOverflow.Ellipsis) }
             }

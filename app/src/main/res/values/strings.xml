@@ -28,6 +28,8 @@
     <string name="fetch_models">Fetch models</string>
     <string name="save">Save</string>
     <string name="saved">Saved</string>
+    <string name="remove_key">Remove key</string>
+    <string name="key_removed">Key removed from this device</string>
     <string name="key_set">Key saved (encrypted)</string>
     <string name="key_not_set">No key</string>
     <string name="active_provider">Active provider</string>
