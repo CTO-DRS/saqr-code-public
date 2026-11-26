@@ -798,6 +798,10 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     }
                 }
             }
+            SectionLabel(stringResource(R.string.about_developer), Modifier.padding(top = Sp.md))
+            val dctx = androidx.compose.ui.platform.LocalContext.current
+            val ver = remember { runCatching { dctx.packageManager.getPackageInfo(dctx.packageName, 0).versionName }.getOrNull().orEmpty() }
+            DeveloperCard(versionName = ver)
             Spacer(Modifier.height(Sp.xxl))
         }
     }

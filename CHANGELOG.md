@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.5] — 2026-11-26 — About the developer · عن المطور
+
+- **About the developer card** in Settings, under About: circular photo, name "CTO.DRS" with a verified badge, a role line, a footer with the app version, and eight brand-coloured icon links with labels (WhatsApp, Telegram, TikTok, Instagram, X, YouTube, GitHub, website). Tapping the photo opens it large. Each is labelled for screen readers and opens in the browser or the app. EN + AR, RTL, dark and light.
+- New filled brand glyphs (`Brands`, Simple Icons, CC0). `DeveloperLinks` holds the URLs as plain data.
+- **Tests:** `V0105DeveloperCardTest` (2): exact URLs, 48dp labelled buttons, taps open the right link.
+- versionName 0.1.5, versionCode 44.
+
 ## [0.1.4] — 2026-11-26 — Majlis 7: smart suggestions · الاقتراحات الذكية
 
 - **Next-step chips** appear under a finished reply, chosen from what the turn did: a failed command, test or lint run offers "Fix the error"; edited files offer "Run tests" (only if none ran after the last edit), "Review changes" and "Commit" (not after a commit); a long answer (500+ characters) with no edits offers "Summarize" and "Next steps". Tapping a chip puts the text in the message box (review and commit use the existing `/review` and `/commit`), so you can edit before sending.
