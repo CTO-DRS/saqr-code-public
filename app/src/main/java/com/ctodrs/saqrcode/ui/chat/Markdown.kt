@@ -115,6 +115,11 @@ object MarkdownParser {
     private val inline = Regex("""(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(__[^_\n]+__)|(~~[^~\n]+~~)|(\[[^\]\n]+]\([^)\s]+\))|(\*[^*\n]+\*)|((?<![\w])_[^_\n]+_(?![\w]))""")
 
     fun inline(text: String, codeBg: Color, codeFg: Color, link: Color): AnnotatedString = buildAnnotatedString {
+        appendInline(text, codeBg, codeFg, link)
+    }
+
+    /** Recursive so `**[label](url)**` (bold around a link) is a bold link, not raw bracket text that the bidi algorithm scrambles in Arabic. */
+    private fun AnnotatedString.Builder.appendInline(text: String, codeBg: Color, codeFg: Color, link: Color) {
         var last = 0
         for (m in inline.findAll(text)) {
             append(text.substring(last, m.range.first))
@@ -126,14 +131,14 @@ object MarkdownParser {
                 )) {
                     append("\u2009"); append(v.trim('`')); append("\u2009")
                 }
-                v.startsWith("**") || v.startsWith("__") -> withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(v.substring(2, v.length - 2)) }
-                v.startsWith("~~") -> withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { append(v.substring(2, v.length - 2)) }
+                v.startsWith("**") || v.startsWith("__") -> withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { appendInline(v.substring(2, v.length - 2), codeBg, codeFg, link) }
+                v.startsWith("~~") -> withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { appendInline(v.substring(2, v.length - 2), codeBg, codeFg, link) }
                 v.startsWith("[") -> {
                     val label = v.substringAfter('[').substringBefore("](")
                     val url = v.substringAfter("](").dropLast(1)
                     withLink(LinkAnnotation.Url(url, TextLinkStyles(SpanStyle(color = link, textDecoration = TextDecoration.Underline)))) { append(label) }
                 }
-                else -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(v.substring(1, v.length - 1)) }
+                else -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { appendInline(v.substring(1, v.length - 1), codeBg, codeFg, link) }
             }
             last = m.range.last + 1
         }

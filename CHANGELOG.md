@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.19.4] — 2026-11-26 — Majlis 1: markdown link fix · إصلاح الروابط داخل التنسيق
+
+- **Bug (user report):** `**[file.zip](sandbox:/workspace/file.zip)**` (a link inside bold) printed raw bracket text, which Arabic bidi reordered into `sandbox:/workspace/)[file.zip](...`. Bold, italic and strike now parse their content recursively, so the link is a real bold link showing only its label.
+- **Tests:** `V0194MarkdownLinkTest` (2).
+- versionName 0.19.4, versionCode 33.
+
 ## [0.19.3] — 2026-11-26 — Accessibility roles · أدوار إمكانية الوصول
 
 - UI/UX pass 1: every icon-only click target (about 30 across Git, Accounts, Skills, Home, Terminal, Panes, Settings, Sessions, Chat, Element picker) now declares a semantic Role, so TalkBack announces button / checkbox / radio / switch. Star rating announces "Rate N of 5" (EN + AR). Remove-host button gained a label.
