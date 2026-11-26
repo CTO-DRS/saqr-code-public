@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.19.9] — 2026-11-26 — Render audit 1: streaming cost · تدقيق الأداء
+
+- **Streaming:** Markdown for a streaming reply is re-parsed at most every 90 ms instead of on every token (`StreamThrottle`); the final text always renders immediately when the reply ends.
+- **Recomposition:** inline spans are cached per paragraph, so unrelated recompositions (scroll, action bar state) no longer re-parse every paragraph.
+- Measured: parsing a 15k-char mixed Arabic reply takes about 4 ms on the build box, so the parser is not the bottleneck; the gain is fewer parse and layout passes per second of streaming.
+- **Tests:** `V0199PerfTest` (2). 539 tests green. Real frame timing needs a device (device-QA list).
+- versionName 0.19.9, versionCode 38.
+
 ## [0.19.8] — 2026-11-26 — Majlis 5: search + export · البحث والتصدير
 
 - **Search in chat:** a search icon on the chat opens a bar with match counter, next and close; it jumps to each matching message. Matching ignores case, Arabic diacritics and tatweel, and folds alef/ya forms (minimum 2 characters).

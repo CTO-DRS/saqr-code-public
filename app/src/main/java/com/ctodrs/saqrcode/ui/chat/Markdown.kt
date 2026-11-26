@@ -150,13 +150,23 @@ object MarkdownParser {
 
 /** Renders assistant Markdown with per-paragraph text direction (Arabic RTL, English LTR). */
 @Composable
-fun MarkdownText(text: String, modifier: Modifier = Modifier) {
+fun MarkdownText(text: String, modifier: Modifier = Modifier, streaming: Boolean = false) {
     val c = Saqr.colors
     val type = Saqr.type
-    val blocks = remember(text) { MarkdownParser.parse(text) }
+    // while tokens stream in, re-parse at most every StreamThrottle.INTERVAL_MS instead of on every token
+    var live by remember { mutableStateOf(text) }
+    var lastAt by remember { mutableStateOf(0L) }
+    LaunchedEffect(text, streaming) {
+        val wait = if (streaming) StreamThrottle.waitMs(System.currentTimeMillis(), lastAt) else 0L
+        if (wait > 0) kotlinx.coroutines.delay(wait)
+        live = text; lastAt = System.currentTimeMillis()
+    }
+    val shownText = if (streaming) live else text
+    val blocks = remember(shownText) { MarkdownParser.parse(shownText) }
     val codeBg = c.surface3
     val base = type.body.copy(color = c.text1, textDirection = TextDirection.Content)
-    fun ann(s: String) = MarkdownParser.inline(s, codeBg, c.accentText, c.info)
+    val annCache = remember(blocks, codeBg, c.accentText, c.info) { HashMap<String, androidx.compose.ui.text.AnnotatedString>() }
+    fun ann(s: String) = annCache.getOrPut(s) { MarkdownParser.inline(s, codeBg, c.accentText, c.info) }
     SelectionContainer(modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
             blocks.forEach { b ->
@@ -246,4 +256,10 @@ fun OutputBox(text: String, command: String? = null, maxHeight: Int = 280) {
             }
         }
     }
+}
+
+/** Decides how long a streaming Markdown render waits before re-parsing. */
+object StreamThrottle {
+    const val INTERVAL_MS = 90L
+    fun waitMs(now: Long, lastUpdate: Long, interval: Long = INTERVAL_MS): Long = (lastUpdate + interval - now).coerceIn(0L, interval)
 }

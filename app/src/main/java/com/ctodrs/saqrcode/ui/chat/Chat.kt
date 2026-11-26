@@ -276,7 +276,7 @@ fun ChatRow(
             if (item.checkpointId != null && onRestore != null) RestoreHere { onRestore(item) }
         }
         is ChatItem.Assistant -> if (item.text.isBlank() && item.streaming) WorkingRow() else Column(Modifier.fillMaxWidth()) {
-            MarkdownText(item.text)
+            MarkdownText(item.text, streaming = item.streaming)
             if (!item.streaming && workspaceDir != null) {
                 val files = androidx.compose.runtime.remember(item.text, workspaceDir) { Deliverables.find(item.text, workspaceDir) }
                 files.forEach { FileCard(it, Modifier.padding(top = Sp.sm)) }
