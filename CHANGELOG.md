@@ -1,5 +1,14 @@
 # Changelog · سجل التغييرات
 
+## [0.19.7] — 2026-11-26 — Majlis 4: regenerate · edit and resend · إعادة التوليد والتعديل
+
+- **Regenerate:** a button in the action bar of the last reply (hidden while a turn runs) re-runs the last user message; the old reply, tool rows and approvals are dropped from the conversation.
+- **Edit and resend:** a pencil under each of your messages opens a dialog; sending replaces that message and continues from it, dropping everything after it.
+- Files the discarded attempt already changed stay on disk; the model is told so (and to re-read files before editing) through the existing one-shot note.
+- `AgentSession.regenerate()` / `editAndResend()` and the pure `Rewind` helpers. Both buttons are 48dp with role and label, EN + AR.
+- **Tests:** `V0197RewindTest` (5). Branch-preserving edit (keeping the old branch) is the later "chat branching" item.
+- versionName 0.19.7, versionCode 36.
+
 ## [0.19.6] — 2026-11-26 — Majlis 3: action bar + sources · شريط الإجراءات والمصادر
 
 - **Per-message action bar** under the reply that ends a turn: copy, good answer, bad answer (toggle, announced as selected), read aloud (existing speaker), share. Each button is 48dp with a role and a label, EN + AR.

@@ -36,6 +36,14 @@ data class FileChange(val path: String, val before: String?, val after: String?)
     val isNew get() = before == null
 }
 
+/** Majlis: pure helpers for regenerate / edit-and-resend. */
+object Rewind {
+    const val NOTE_REGENERATE = "Note: the user asked for this reply to be regenerated. Files changed by the discarded attempt are still on disk. Re-read files before editing them."
+    const val NOTE_EDIT = "Note: the user edited their earlier message and the conversation continues from it. Files changed after that message are still on disk. Re-read files before editing them."
+    fun lastUserIndex(items: List<ChatItem>): Int = items.indexOfLast { it is ChatItem.User }
+    fun indexOfUser(items: List<ChatItem>, target: ChatItem.User): Int = items.indexOfFirst { it === target }
+}
+
 /** One entry of the agent's live plan (maintained by the model through `update_plan`). */
 data class PlanItem(val title: String, val status: String) {
     val done get() = status == "done"
@@ -439,6 +447,35 @@ class AgentSession(
         currentUser = user
         history += Msg.User(user.prompt, images)
         startTurn()
+    }
+
+    /**
+     * Majlis: run the last user message again. Everything after it (the reply, tool rows, approvals) is dropped
+     * from the conversation; files already changed on disk stay, and the model is told so.
+     */
+    fun regenerate(): Boolean {
+        if (running) return false
+        val idx = Rewind.lastUserIndex(items)
+        if (idx < 0) return false
+        val user = items[idx] as ChatItem.User
+        return rewindAndSend(idx, user.prompt, user.text, user.images, Rewind.NOTE_REGENERATE)
+    }
+
+    /** Majlis: replace an earlier user message with [newText] and continue from it; the old branch is dropped from the conversation. */
+    fun editAndResend(target: ChatItem.User, newText: String): Boolean {
+        if (running || newText.isBlank()) return false
+        val idx = Rewind.indexOfUser(items, target)
+        if (idx < 0) return false
+        return rewindAndSend(idx, newText.trim(), newText.trim(), target.images, Rewind.NOTE_EDIT)
+    }
+
+    private fun rewindAndSend(idx: Int, prompt: String, display: String, images: List<ImagePart>, note: String): Boolean {
+        while (items.size > idx) items.removeAt(items.size - 1)
+        pendingAsk.clear(); plan.clear()
+        pendingNote = note
+        markDirty()
+        send(prompt, display, images)
+        return true
     }
 
     /** Continue the turn that a restart cut off (from the saved items). */

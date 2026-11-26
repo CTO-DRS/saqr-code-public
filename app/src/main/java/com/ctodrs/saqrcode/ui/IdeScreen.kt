@@ -443,6 +443,8 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                                 onSpeak = { a -> speaker.toggle(a.key, a.text) },
                                 onResumeTask = { beforeFirstBackgroundRun(); ws.agent.resumeInterrupted() },
                                 workspaceDir = ws.dir,
+                                onRegenerate = { beforeFirstBackgroundRun(); ws.agent.regenerate() },
+                                onEditResend = { u, txt -> beforeFirstBackgroundRun(); ws.agent.editAndResend(u, txt) },
                             )
                         }
                     }

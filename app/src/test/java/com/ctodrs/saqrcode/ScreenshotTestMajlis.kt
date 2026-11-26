@@ -66,14 +66,14 @@ class ScreenshotTestMajlis {
             ChatContent(
                 ChatUiState(list, false, step = 3, maxSteps = 40, contextTokens = 4_700, contextWindow = 128_000,
                     providerId = "anthropic", model = "claude-opus-4-1", models = listOf("claude-opus-4-1"), ready = true),
-                "", {}, {}, {}, { _, _ -> }, {}, {}, topInset = top, autoScroll = false, onSpeak = {}, workspaceDir = dir,
+                "", {}, {}, {}, { _, _ -> }, {}, {}, topInset = top, autoScroll = false, onSpeak = {}, workspaceDir = dir, onRegenerate = {}, onEditResend = { _, _ -> },
             )
         }
     }
 
     @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-night-xxhdpi")
-    @Test fun majlisAr() = shot("majlis-ar", true)
+    @Test fun majlisAr() = shot("majlis2-ar", true)
 
     @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi")
-    @Test fun majlisEn() = shot("majlis-en", false)
+    @Test fun majlisEn() = shot("majlis2-en", false)
 }

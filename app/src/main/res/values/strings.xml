@@ -1054,4 +1054,7 @@
     <string name="src_git">Git</string>
     <string name="src_memory">Memory</string>
     <string name="src_tests">Checks</string>
+    <string name="msg_regenerate">Regenerate</string>
+    <string name="msg_edit">Edit and resend</string>
+    <string name="msg_edit_title">Edit message</string>
 </resources>

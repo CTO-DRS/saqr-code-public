@@ -164,12 +164,15 @@ fun ChatContent(
     onSpeak: ((ChatItem.Assistant) -> Unit)? = null,
     onResumeTask: () -> Unit = {},
     workspaceDir: java.io.File? = null,
+    onRegenerate: (() -> Unit)? = null,
+    onEditResend: ((ChatItem.User, String) -> Unit)? = null,
 ) {
     val c = Saqr.colors
     var modelMenu by remember { mutableStateOf(false) }
     // turns that only called tools have no text: they stay in the session but are not shown
     val shown = state.items.filter { it !is ChatItem.Assistant || it.visible }
     val last = shown.lastOrNull()
+    val lastAssistantIdx = shown.indexOfLast { it is ChatItem.Assistant }
     val lastLen = (last as? ChatItem.Assistant)?.text?.length ?: 0
     if (autoScroll) LaunchedEffect(shown.size, lastLen) {
         if (shown.isNotEmpty()) listState.scrollToItem(shown.size, Int.MAX_VALUE / 2)
@@ -198,7 +201,9 @@ fun ChatContent(
                             ChatRow(item, onDecide, onAnswer, onRestore = if (state.running) null else onRestore,
                                 onSpeak = if (endsTurn) onSpeak else null, speaking = item.key == state.speakingKey,
                                 showActions = endsTurn, sources = if (endsTurn) Sources.forTurn(shown, i) else emptyList(),
-                                onResumeTask = if (state.running) null else onResumeTask, workspaceDir = workspaceDir)
+                                onResumeTask = if (state.running) null else onResumeTask, workspaceDir = workspaceDir,
+                                onRegenerate = if (state.running || i != lastAssistantIdx) null else onRegenerate,
+                                onEditResend = if (state.running) null else onEditResend)
                         }
                     }
                     val showWorking = state.running && when (last) {
@@ -259,11 +264,14 @@ fun ChatRow(
     workspaceDir: java.io.File? = null,
     showActions: Boolean = false,
     sources: List<SourceRef> = emptyList(),
+    onRegenerate: (() -> Unit)? = null,
+    onEditResend: ((ChatItem.User, String) -> Unit)? = null,
 ) {
     when (item) {
         is ChatItem.User -> Column(Modifier.fillMaxWidth()) {
             if (item.images.isNotEmpty()) UserImages(item.images)
             if (item.text.isNotBlank()) UserBubble(item.text)
+            if (onEditResend != null && item.text.isNotBlank()) EditResend(item.text) { onEditResend(item, it) }
             if (item.checkpointId != null && onRestore != null) RestoreHere { onRestore(item) }
         }
         is ChatItem.Assistant -> if (item.text.isBlank() && item.streaming) WorkingRow() else Column(Modifier.fillMaxWidth()) {
@@ -274,7 +282,7 @@ fun ChatRow(
             }
             if (showActions && item.text.isNotBlank()) {
                 if (sources.isNotEmpty()) SourcesRow(sources, Modifier.padding(top = Sp.sm))
-                MessageActionBar(item.text, item.feedback, { item.feedback = it }, speaking, onSpeak?.let { s -> { s(item) } })
+                MessageActionBar(item.text, item.feedback, { item.feedback = it }, speaking, onSpeak?.let { s -> { s(item) } }, onRegenerate = onRegenerate)
             }
         }
         is ChatItem.Tool -> ToolRow(item)
@@ -1164,4 +1172,34 @@ fun PlanPillContent(plan: List<PlanItem>, running: Boolean, onPause: () -> Unit,
             }
         }
     }
+}
+
+
+/** Majlis: "edit" under a user bubble; opens a dialog and resends from that message (the old branch is dropped). */
+@Composable
+private fun EditResend(original: String, onSubmit: (String) -> Unit) {
+    val c = Saqr.colors
+    var open by remember { mutableStateOf(false) }
+    var draft by remember(original) { mutableStateOf(original) }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Box(
+            Modifier.size(48.dp).clip(CircleShape)
+                .clickable(role = Role.Button, onClickLabel = stringResource(R.string.msg_edit)) { draft = original; open = true },
+            contentAlignment = Alignment.Center,
+        ) { SIcon(Lucide.Pencil, size = 15.dp, tint = c.text3, contentDescription = stringResource(R.string.msg_edit)) }
+    }
+    if (open) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { open = false },
+        title = { Text(stringResource(R.string.msg_edit_title)) },
+        text = {
+            androidx.compose.material3.OutlinedTextField(
+                draft, { draft = it }, Modifier.fillMaxWidth(), minLines = 2, maxLines = 8,
+                textStyle = Saqr.type.body.copy(textDirection = TextDirection.Content),
+            )
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = { open = false; onSubmit(draft) }, enabled = draft.isNotBlank()) { Text(stringResource(R.string.send)) }
+        },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = { open = false }) { Text(stringResource(R.string.cancel)) } },
+    )
 }

@@ -66,6 +66,7 @@ private fun BarButton(icon: ImageVector, label: String, tint: androidx.compose.u
 fun MessageActionBar(
     text: String, feedback: Int, onFeedback: (Int) -> Unit,
     speaking: Boolean, onSpeak: (() -> Unit)?, modifier: Modifier = Modifier,
+    onRegenerate: (() -> Unit)? = null,
 ) {
     val c = Saqr.colors
     val clipboard = LocalClipboardManager.current
@@ -86,6 +87,7 @@ fun MessageActionBar(
             BarButton(if (speaking) Lucide.Square else Lucide.Volume2, stringResource(if (speaking) R.string.stop_reading else R.string.read_aloud),
                 if (speaking) c.accentText else c.text3, speaking) { onSpeak() }
         }
+        if (onRegenerate != null) BarButton(Lucide.RotateCcw, stringResource(R.string.msg_regenerate), c.text3) { onRegenerate() }
         BarButton(Lucide.Share2, stringResource(R.string.skills_share), c.text3) {
             runCatching {
                 ctx.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null)
