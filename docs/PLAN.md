@@ -145,9 +145,21 @@ Extends skill packs (v0.14) and the community gallery (v0.14.3) without rebuildi
 | 5 | المعرض · Optional entry fields, integrity, update available | `data/Gallery.kt` | — | ✅ |
 | 6 | الواجهة · «المهارات · Skills» section + manager sheet; gallery card | `ui/SkillsSettings.kt`, `ui/SettingsScreen.kt` | — | ✅ |
 | 7 | الاختبارات · V018FeaturesTest + V018SettingsTest incl. acceptance 11 | `app/src/test/…` | — | ✅ |
-| 8 | مستودع المعرض · LICENSE (MIT), CI validator, first real skill (PR) | `CTO-DRS/saqr-gallery` | — | ✅ (PR, not merged) |
+| 8 | مستودع المعرض · LICENSE (MIT), CI validator, first real skill (PR) | `CTO-DRS/saqr-gallery` | — | ✅ (merged; 4 more Arabic skills added) |
 
 **المتبقي · Remaining:** skills in the encrypted sync whitelist; on-device QA of the manager sheet and of skills in real runs (unit-tested; the gallery fetch is tested against MockWebServer only); CI confirmation once GitHub Actions minutes are available (the gallery workflow included).
+
+## المرحلة 6 · Phase 6: 0.19.0 «المزامنة الكاملة والتحقق الميداني · Full Sync & Field Proof»
+
+| # | البند · Item | الملف · File | الحالة |
+|---|---|---|---|
+| 1 | مزامنة مفاتيح v0.15–v0.18 (27 مفتاحًا سلوكيًا وحدّيًا؛ لا أسرار ولا نصوص مهارات) · Sync the v0.15–v0.18 behaviour switches and limits (27 keys; no secrets, no skill bodies) | `data/Sync.kt` | ✅ |
+| 2 | اختبارات المزامنة · round trip, older-snapshot safety, broken values, secret probe | `V019SyncTest.kt` | ✅ |
+| 3 | مهارات المزامنة المشفّرة · skills in the encrypted snapshot (needs a size cap and a safety re-check on apply) | `data/Sync.kt`, `agent/skills/SkillSafety.kt` | ☐ |
+| 4 | تضمينات المزوّد الاختيارية للاسترجاع · optional provider embeddings for memory retrieval | `agent/memory/` | ☐ |
+| 5 | توجيه حسب الأداء الفعلي · routing by measured model performance | `agent/ModelRouter.kt` | ☐ |
+| 6 | اختبار ميداني على جهاز · on-device QA of memory, router and skills with real providers | — | ☐ (needs a device) |
+| 7 | فحص lint لـ 0.18/0.19 · lint run (needs a build machine with more RAM than 2 GB) | — | ☐ |
 
 ## معايير الجودة لكل إصدار · Quality bar for every release
 - كل ميزة جديدة باختبارات وحدة (ملف `V0xFeaturesTest.kt` مكانه القائمة).

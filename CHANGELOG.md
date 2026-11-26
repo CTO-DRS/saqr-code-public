@@ -1,5 +1,14 @@
 # Changelog · سجل التغييرات
 
+## [0.19.0] — 2026-11-26 — Full Sync · المزامنة الكاملة (Phase 6)
+
+- **Sync whitelist (`data/Sync.kt`):** 27 new keys so a second device gets the v0.15–v0.18 behaviour: parallel tools, risky-command confirmation, loop guard, verify-before-done, LLM retry + fallback model, task journal, audit log, untrusted marking, step/minute/cost budgets, Chief mode, team concurrency/cost estimate/disabled roles, memory relevance/top-K/session summary/lessons/global memory, smart router, daily/monthly spend caps, skills on/off and auto-attach. Still no API keys, tokens, entitlement or installed-skill bodies.
+  27 مفتاحًا جديدًا في المزامنة المشفّرة (إعدادات سلوكية وحدود فقط).
+- Older snapshots without the new keys leave this device's values untouched; broken numbers are ignored and every setter still clamps.
+- **Tests:** `V019SyncTest` (4): round trip, older snapshot, broken values, secret/skill-body probe.
+- **Security hygiene (earlier today):** release signing key and license key rotated, `keystore/` and `keystore.properties` scrubbed from git history; see `docs/RELEASE_KEYS.md`. The V011 paywall test now signs with the build's own key.
+- versionName 0.19.0, versionCode 29.
+
 ## [0.18.0] — 2026-11-25 — Agent Skills & Gallery · مهارات صقر والمعرض (Phase 5)
 
 ### Skills · المهارات
