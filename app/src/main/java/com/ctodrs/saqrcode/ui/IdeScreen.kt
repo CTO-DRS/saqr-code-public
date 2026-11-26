@@ -442,6 +442,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                                 onMic = { onMic() }, onMicLongPress = { onMicLongPress() },
                                 onSpeak = { a -> speaker.toggle(a.key, a.text) },
                                 onResumeTask = { beforeFirstBackgroundRun(); ws.agent.resumeInterrupted() },
+                                workspaceDir = ws.dir,
                             )
                         }
                     }

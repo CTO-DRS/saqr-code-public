@@ -15,10 +15,11 @@ class V0194MarkdownLinkTest {
     @Test fun `bold around a link becomes a bold link with only the label visible`() {
         val a = ann("يمكنك الآن تحميل **[android_app_package.zip](sandbox:/workspace/android_app_package.zip)** الآن")
         assertEquals("يمكنك الآن تحميل android_app_package.zip الآن", a.text)
-        val links = a.getLinkAnnotations(0, a.length)
-        assertEquals(1, links.size)
-        assertEquals("sandbox:/workspace/android_app_package.zip", (links[0].item as LinkAnnotation.Url).url)
-        assertTrue(a.spanStyles.any { it.item.fontWeight == FontWeight.SemiBold })
+        // sandbox: paths are files, not web links: no clickable annotation (a file card opens them)
+        assertEquals(0, a.getLinkAnnotations(0, a.length).size)
+        val web = ann("**[docs](https://a.b/c)**")
+        assertEquals("https://a.b/c", (web.getLinkAnnotations(0, web.length)[0].item as LinkAnnotation.Url).url)
+        assertTrue(web.spanStyles.any { it.item.fontWeight == FontWeight.SemiBold })
         assertTrue(!a.text.contains("](") && !a.text.contains("["))
     }
 

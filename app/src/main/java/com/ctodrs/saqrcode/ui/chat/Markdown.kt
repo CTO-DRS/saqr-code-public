@@ -136,7 +136,9 @@ object MarkdownParser {
                 v.startsWith("[") -> {
                     val label = v.substringAfter('[').substringBefore("](")
                     val url = v.substringAfter("](").dropLast(1)
-                    withLink(LinkAnnotation.Url(url, TextLinkStyles(SpanStyle(color = link, textDecoration = TextDecoration.Underline)))) { append(label) }
+                    // sandbox:/ paths are files in the project, not web addresses: a file card opens them, so no dead link
+                    if (url.startsWith("sandbox:") || !url.contains(':')) withStyle(SpanStyle(color = codeFg, fontFamily = JetBrainsMono, fontSize = 13.sp)) { append(label) }
+                    else withLink(LinkAnnotation.Url(url, TextLinkStyles(SpanStyle(color = link, textDecoration = TextDecoration.Underline)))) { append(label) }
                 }
                 else -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { appendInline(v.substring(1, v.length - 1), codeBg, codeFg, link) }
             }

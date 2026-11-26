@@ -163,6 +163,7 @@ fun ChatContent(
     onMicLongPress: () -> Unit = {},
     onSpeak: ((ChatItem.Assistant) -> Unit)? = null,
     onResumeTask: () -> Unit = {},
+    workspaceDir: java.io.File? = null,
 ) {
     val c = Saqr.colors
     var modelMenu by remember { mutableStateOf(false) }
@@ -196,7 +197,7 @@ fun ChatContent(
                                 !(state.running && i == shown.lastIndex)
                             ChatRow(item, onDecide, onAnswer, onRestore = if (state.running) null else onRestore,
                                 onSpeak = if (endsTurn) onSpeak else null, speaking = item.key == state.speakingKey,
-                                onResumeTask = if (state.running) null else onResumeTask)
+                                onResumeTask = if (state.running) null else onResumeTask, workspaceDir = workspaceDir)
                         }
                     }
                     val showWorking = state.running && when (last) {
@@ -254,6 +255,7 @@ fun ChatRow(
     onSpeak: ((ChatItem.Assistant) -> Unit)? = null,
     speaking: Boolean = false,
     onResumeTask: (() -> Unit)? = null,
+    workspaceDir: java.io.File? = null,
 ) {
     when (item) {
         is ChatItem.User -> Column(Modifier.fillMaxWidth()) {
@@ -263,6 +265,10 @@ fun ChatRow(
         }
         is ChatItem.Assistant -> if (item.text.isBlank() && item.streaming) WorkingRow() else Column(Modifier.fillMaxWidth()) {
             MarkdownText(item.text)
+            if (!item.streaming && workspaceDir != null) {
+                val files = androidx.compose.runtime.remember(item.text, workspaceDir) { Deliverables.find(item.text, workspaceDir) }
+                files.forEach { FileCard(it, Modifier.padding(top = Sp.sm)) }
+            }
             if (onSpeak != null && item.text.isNotBlank()) ReadAloud(speaking) { onSpeak(item) }
         }
         is ChatItem.Tool -> ToolRow(item)

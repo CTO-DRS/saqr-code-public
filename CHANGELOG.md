@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.19.5] — 2026-11-26 — Majlis 2: file cards · بطاقات الملفات
+
+- **Bug (user report):** files the agent made (zip, apk, ...) were only mentioned as a sandbox path. Now an assistant reply that names a file existing in the project shows a **file card** under the message (icon, name, size, Open, Share) through the FileProvider (`projects/` added to file_paths).
+- `Deliverables.find/resolve` is pure: it never leaves the project folder (no `..`, no outside absolute paths), maps `sandbox:/workspace/...` and Linux paths by name, dedupes, caps at 5 cards.
+- `sandbox:` links no longer become dead web links; they render as a file label and the card opens the file.
+- **Tests:** `V0195FileCardTest` (5), `V0194MarkdownLinkTest` updated.
+- versionName 0.19.5, versionCode 34.
+
 ## [0.19.4] — 2026-11-26 — Majlis 1: markdown link fix · إصلاح الروابط داخل التنسيق
 
 - **Bug (user report):** `**[file.zip](sandbox:/workspace/file.zip)**` (a link inside bold) printed raw bracket text, which Arabic bidi reordered into `sandbox:/workspace/)[file.zip](...`. Bold, italic and strike now parse their content recursively, so the link is a real bold link showing only its label.
