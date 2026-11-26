@@ -53,6 +53,8 @@ data class SyncPayload(
     val commandsJson: String,
     /** Raw SaqrPackCodec packs JSON. */
     val packsJson: String,
+    /** v0.19.2: non-private installed skills as one .saqrpack bundle ("" = none). Re-checked by SkillSafety on apply. */
+    val skillsJson: String = "",
 )
 
 data class SyncApplied(
@@ -60,6 +62,10 @@ data class SyncApplied(
     val themes: Int,
     val commands: Int,
     val packs: Int,
+    /** Skills added or updated from the payload (merge, never delete). */
+    val skills: Int = 0,
+    /** Skills in the payload that SkillSafety or the installer refused. */
+    val skillsRefused: Int = 0,
 )
 
 class SyncException(val reason: String) : Exception(reason)
@@ -166,7 +172,22 @@ object SyncKit {
             themes = themes,
             commandsJson = com.ctodrs.saqrcode.agent.SlashCommands.encode(settings.customCommands),
             packsJson = settings.packsJson,
+            skillsJson = skillsForSync(settings.installedSkills),
         )
+    }
+
+    /** Max characters of skill JSON in a snapshot (the whole container stays a small file). */
+    const val MAX_SKILLS_CHARS = 200_000
+
+    /** Non-private skills as a bundle, dropping the newest-listed ones until it fits [MAX_SKILLS_CHARS]. */
+    fun skillsForSync(installed: List<com.ctodrs.saqrcode.agent.skills.InstalledSkill>): String {
+        var list = installed.filter { !it.private }
+        while (list.isNotEmpty()) {
+            val json = com.ctodrs.saqrcode.agent.skills.SkillManager.exportBundle(list)?.json ?: return ""
+            if (json.length <= MAX_SKILLS_CHARS) return json
+            list = list.dropLast(1)
+        }
+        return ""
     }
 
     // ------------------------------------------------------------ codec (pure)
@@ -177,6 +198,7 @@ object SyncKit {
         data.put("themes", JSONObject(p.themes))
         data.put("commands", p.commandsJson)
         data.put("packs", p.packsJson)
+        if (p.skillsJson.isNotBlank()) data.put("skills", p.skillsJson)
         return JSONObject()
             .put("saqrsync", p.version)
             .put("app", p.app)
@@ -212,6 +234,7 @@ object SyncKit {
             themes = flatten(themesObj),
             commandsJson = data.optString("commands"),
             packsJson = data.optString("packs"),
+            skillsJson = data.optString("skills"),
         )
     }.getOrNull()
 
@@ -233,7 +256,27 @@ object SyncKit {
         val nCommands = com.ctodrs.saqrcode.agent.SlashCommands.decode(p.commandsJson).size
         settings.packsJson = p.packsJson
         val nPacks = SaqrPackCodec.decodePacks(p.packsJson).size
-        return SyncApplied(nSettings, nThemes, nCommands, nPacks)
+        val (nSkills, nRefused) = applySkills(p.skillsJson, settings)
+        return SyncApplied(nSettings, nThemes, nCommands, nPacks, nSkills, nRefused)
+    }
+
+    /**
+     * Skills merge in through the same installer as every other source (format caps, SkillSafety,
+     * permission ceiling, SHA-256, version rules) — a synced skill is never trusted more than a pasted
+     * one. Nothing local is deleted. Returns (added or updated, refused).
+     */
+    private fun applySkills(json: String, settings: SettingsStore): Pair<Int, Int> {
+        if (json.isBlank() || json.length > MAX_SKILLS_CHARS + 2_000) return 0 to (if (json.isBlank()) 0 else 1)
+        val installed = settings.installedSkills
+        return when (val plan = com.ctodrs.saqrcode.agent.skills.SkillManager.plan(json, com.ctodrs.saqrcode.agent.skills.SkillSource.FILE, installed)) {
+            is com.ctodrs.saqrcode.agent.skills.InstallPlan.Refused -> 0 to plan.reasons.size.coerceAtLeast(1)
+            is com.ctodrs.saqrcode.agent.skills.InstallPlan.Ready -> {
+                val next = com.ctodrs.saqrcode.agent.skills.SkillManager.apply(plan, installed, System.currentTimeMillis())
+                    .take(com.ctodrs.saqrcode.agent.skills.SkillManager.MAX_INSTALLED)
+                settings.installedSkills = next
+                (plan.news.size + plan.updates.size) to 0
+            }
+        }
     }
 
     // ------------------------------------------------------------ vault (pure crypto)

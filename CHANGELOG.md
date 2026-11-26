@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.19.2] — 2026-11-26 — Skills in Sync · المهارات في المزامنة
+
+- Installed **public** skills now travel in the encrypted snapshot (private skills never leave the device). Capped at 200,000 chars (dropped from the end). On apply they go through `SkillManager.plan/apply`, so `SkillSafety` re-checks every skill (injection markers, HIGH-risk permissions are refused); merge only, local skills are never deleted, `MAX_INSTALLED` respected. Older snapshots without skills change nothing.
+- **Tests:** `V0192SkillSyncTest` (5).
+- versionName 0.19.2, versionCode 31.
+
 ## [0.19.1] — 2026-11-26 — Remove API key · حذف المفتاح
 
 - **Buried feature surfaced:** `SettingsStore.clearKey` existed with no caller, so a saved API key could only be overwritten. Each provider card in Settings now shows «حذف المفتاح · Remove key» when a key is saved; it drops only that provider's key and keeps its URL and model (EN + AR strings).

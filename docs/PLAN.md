@@ -155,7 +155,7 @@ Extends skill packs (v0.14) and the community gallery (v0.14.3) without rebuildi
 |---|---|---|---|
 | 1 | مزامنة مفاتيح v0.15–v0.18 (27 مفتاحًا سلوكيًا وحدّيًا؛ لا أسرار ولا نصوص مهارات) · Sync the v0.15–v0.18 behaviour switches and limits (27 keys; no secrets, no skill bodies) | `data/Sync.kt` | ✅ |
 | 2 | اختبارات المزامنة · round trip, older-snapshot safety, broken values, secret probe | `V019SyncTest.kt` | ✅ |
-| 3 | مهارات المزامنة المشفّرة · skills in the encrypted snapshot (needs a size cap and a safety re-check on apply) | `data/Sync.kt`, `agent/skills/SkillSafety.kt` | ☐ |
+| 3 | مهارات المزامنة المشفّرة · skills in the encrypted snapshot (needs a size cap and a safety re-check on apply) | `data/Sync.kt`, `agent/skills/SkillSafety.kt` | ✅ v0.19.2 |
 | 4 | تضمينات المزوّد الاختيارية للاسترجاع · optional provider embeddings for memory retrieval | `agent/memory/` | ☐ |
 | 5 | توجيه حسب الأداء الفعلي · routing by measured model performance | `agent/ModelRouter.kt` | ☐ |
 | 6 | اختبار ميداني على جهاز · on-device QA of memory, router and skills with real providers | — | ☐ (needs a device) |
