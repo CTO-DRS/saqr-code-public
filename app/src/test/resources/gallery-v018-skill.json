@@ -1,0 +1,234 @@
+{
+  "saqrgallery": 1,
+  "updated": 1795598130306,
+  "entries": [
+    {
+      "id": "flask",
+      "name": "Flask",
+      "nameAr": "فلاسك",
+      "description": "قالب Flask جاهز بأوامر عربية للتشغيل والاختبار",
+      "author": "فريق صقر كود",
+      "tags": [
+        "بايثون",
+        "ويب",
+        "بداية سريعة"
+      ],
+      "pack": {
+        "saqrpack": 1,
+        "id": "flask",
+        "name": "Flask",
+        "nameAr": "فلاسك",
+        "description": "قالب Flask جاهز بأوامر عربية للتشغيل والاختبار",
+        "template": "PYTHON",
+        "files": {
+          "app.py": "from flask import Flask\n\napp = Flask(__name__)\n\n@app.route(\"/\")\ndef home():\n    return \"مرحبا من صقر كود — Flask يعمل على هاتفك!\"\n\n@app.route(\"/about\")\ndef about():\n    return \"Flask sample by Saqr Code\"\n\nif __name__ == \"__main__\":\n    app.run(host=\"127.0.0.1\", port=5000)\n",
+          "requirements.txt": "flask>=3.0\n"
+        },
+        "commands": [
+          {
+            "name": "flask-run",
+            "template": "شغّل تطبيق Flask: ثبّت المتطلبات أولًا `pip3 install -r requirements.txt` ثم نفّذ `python3 app.py` في الطرفية، وأخبرني بالرابط المحلي للمعاينة. {args}"
+          },
+          {
+            "name": "flask-test",
+            "template": "اكتب اختبارات pytest لمسارات app.py باستخدام `app.test_client()` وضعها في tests/test_app.py، ثم نفّذ `python3 -m pytest -q` وأصلح ما فشل. {args}"
+          },
+          {
+            "name": "flask-route",
+            "template": "أضف مسارًا جديدًا إلى app.py باسم {args} يعيد JSON مع دالة صغيرة نظيفة، وحدّث README بمثال نداء curl له. {args}"
+          }
+        ],
+        "rules": "- Flask بلا امتدادات ثقيلة؛ انتقل إلى Blueprints عندما يتجاوز الملف 150 سطرًا.\n- المسارات دوال صغيرة تعيد JSON أو نصًا فقط، ولا منطق أعمال داخلها.\n- كل مسار جديد يأتي باختبار pytest مكافئ في tests/.",
+        "tools": [
+          "python3",
+          "pip3",
+          "pytest"
+        ],
+        "installedAt": 0
+      },
+      "sha256": "e649a2f41eb442351e94d8430dbe673c41a2d12bdaf187c190e9185ed8a8ebc3"
+    },
+    {
+      "id": "node-api",
+      "name": "Node API",
+      "nameAr": "خدمة Node",
+      "description": "قالب خدمة HTTP خفيفة على Node.js بلا اعتماديات، بأوامر تشغيل ومسارات",
+      "author": "فريق صقر كود",
+      "tags": [
+        "نود",
+        "خدمات",
+        "بداية سريعة"
+      ],
+      "pack": {
+        "saqrpack": 1,
+        "id": "node-api",
+        "name": "Node API",
+        "nameAr": "خدمة Node",
+        "description": "قالب خدمة HTTP خفيفة على Node.js بلا اعتماديات، بأوامر تشغيل ومسارات",
+        "template": "NODE",
+        "files": {
+          "server.js": "// خدمة HTTP خفيفة بلا اعتماديات — كافية للتعلم والنماذج الأولية\nconst http = require(\"http\");\n\nconst routes = {\n  \"/\": () => ({ ok: true, message: \"مرحبا من صقر كود — خدمة Node تعمل على هاتفك!\" }),\n  \"/about\": () => ({ ok: true, service: \"node-api\", by: \"Saqr Code\" }),\n};\n\nhttp.createServer((req, res) => {\n  const handler = routes[req.url] || (() => ({ ok: false, error: \"not found\" }));\n  res.writeHead(req.url in routes ? 200 : 404, { \"Content-Type\": \"application/json; charset=utf-8\" });\n  res.end(JSON.stringify(handler()));\n}).listen(3000, \"127.0.0.1\", () => console.log(\"الخدمة تعمل على http://127.0.0.1:3000\"));\n"
+        },
+        "commands": [
+          {
+            "name": "api-run",
+            "template": "شغّل الخدمة: نفّذ `node server.js` في الطرفية وأخبرني بالمنفذ والرابط المحلي، ثم اختبر المسار الجذري بأمر curl وأظهر الرد. {args}"
+          },
+          {
+            "name": "api-route",
+            "template": "أضف مسارًا جديدًا إلى server.js باسم {args} يعيد JSON عبر دالة صغيرة نظيفة، وحدّث README بمثال نداء له. {args}"
+          }
+        ],
+        "rules": "- الخدمة بلا اعتماديات خارجية؛ وحدة http القياسية تكفي حتى تجاوز الملف 150 سطرًا.\n- المسارات دوال صغيرة تعيد JSON فقط.\n- كل مسار جديد يُوثّق في README بمثال نداء.",
+        "tools": [
+          "node"
+        ],
+        "installedAt": 0
+      },
+      "sha256": "bb796db4bb7f23cb1ead16cfe38358e9e0c1fc9bb6dc830807a6d00889e4304d"
+    },
+    {
+      "id": "static-web",
+      "name": "Static Site",
+      "nameAr": "موقع ستاتيكي عربي",
+      "description": "قالب HTML/CSS عربي RTL جاهز مع أمر لإضافة صفحات وتلميع التنسيق",
+      "author": "فريق صقر كود",
+      "tags": [
+        "ويب",
+        "عربي",
+        "RTL"
+      ],
+      "pack": {
+        "saqrpack": 1,
+        "id": "static-web",
+        "name": "Static Site",
+        "nameAr": "موقع ستاتيكي عربي",
+        "description": "قالب HTML/CSS عربي RTL جاهز مع أمر لإضافة صفحات وتلميع التنسيق",
+        "template": "WEB",
+        "files": {
+          "pages/about.html": "<!doctype html>\n<html lang=\"ar\" dir=\"rtl\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>عن الموقع</title>\n  <link rel=\"stylesheet\" href=\"../styles.css\">\n</head>\n<body>\n  <main>\n    <h1>عن الموقع</h1>\n    <p>صفحة تجريبية من قالب «موقع ستاتيكي عربي» — عدّلها كما تشاء.</p>\n    <p><a href=\"../index.html\">العودة للرئيسية</a></p>\n  </main>\n</body>\n</html>\n"
+        },
+        "commands": [
+          {
+            "name": "add-page",
+            "template": "أضف صفحة HTML جديدة باسم {args} إلى الموقع بنفس نمط index.html (عربي وRTL) واربطها في قائمة التنقل بالصفحات الأخرى، ثم أخبرني بمسارها. {args}"
+          },
+          {
+            "name": "polish",
+            "template": "راجع صفحات الموقع: حسّن العناوين والمسافات والتباين اللوني، واقترح ثلاثة تحسينات ملموسة ثم نفّذها واحدًا واحدًا. {args}"
+          }
+        ],
+        "rules": "- الصفحات عربية RTL أولًا، والنصوص الظاهرة في مكان واحد يسهل تعديله.\n- CSS بلا أطر ثقيلة؛ التخطيط Flexbox/Grid فقط.\n- كل صفحة جديدة تُربط في قائمة التنقل فورًا.",
+        "tools": [],
+        "installedAt": 0
+      },
+      "sha256": "942e0191e90e4fc04370282f75c842e465bf89bf77b1c7cd62f6c8eeb1f82c86"
+    },
+    {
+      "id": "lite-web",
+      "name": "Lite Web",
+      "nameAr": "ويب خفيف",
+      "description": "أخف قالب للهواتف الضعيفة: ملف HTML واحد بلا اعتماديات يُعاين فورًا",
+      "author": "فريق صقر كود",
+      "tags": [
+        "خفيف",
+        "ويب",
+        "أجهزة ضعيفة"
+      ],
+      "pack": {
+        "saqrpack": 1,
+        "id": "lite-web",
+        "name": "Lite Web",
+        "nameAr": "ويب خفيف",
+        "description": "أخف قالب للهواتف الضعيفة: ملف HTML واحد بلا اعتماديات يُعاين فورًا",
+        "template": "LITE_WEB",
+        "files": {},
+        "commands": [
+          {
+            "name": "lite-add",
+            "template": "أضف قسمًا جديدًا إلى index.html بعنوان {args} بنفس البنية البسيطة، وأبقِ الموقع ملفًا واحدًا دون ملفات إضافية. {args}"
+          }
+        ],
+        "rules": "- أبقِ الملفات قليلة جدًا؛ هذا القالب لأضعف الأجهزة.\n- لا صور كبيرة ولا خطوط خارجية ولا مكتبات.",
+        "tools": [],
+        "installedAt": 0
+      },
+      "sha256": "b5119965f35c58b7430bd138c4292a4656607264e839f46809275a20f7e9cd5e"
+    },
+    {
+      "id": "ar-code-review",
+      "name": "Arabic code review",
+      "nameAr": "مراجعة الكود بالعربية",
+      "description": "مهارة وكيل: قائمة مراجعة عربية من سبعة محاور تنتهي بحكم «جاهز للدمج» أو «يحتاج تعديلات»",
+      "author": "فريق صقر كود",
+      "tags": [
+        "مهارة",
+        "مراجعة",
+        "جودة"
+      ],
+      "version": "1.0.0",
+      "skills": 1,
+      "permissions": [
+        "list_files",
+        "read_file",
+        "search",
+        "project_search",
+        "git_status",
+        "git_diff",
+        "git_log"
+      ],
+      "changelogUrl": "https://github.com/CTO-DRS/saqr-gallery/blob/main/CHANGELOG.md",
+      "sha256": "f64ae4f0d2642dab7e394921abd58138570d66ed1c31df467b4c1a82efa4d6fd",
+      "pack": {
+        "saqrpack": 2,
+        "id": "ar-code-review",
+        "name": "Arabic code review",
+        "nameAr": "مراجعة الكود بالعربية",
+        "description": "مهارة مراجعة كود عربية: سبعة محاور وحكم نهائي",
+        "template": "",
+        "files": {},
+        "commands": [],
+        "rules": "",
+        "tools": [],
+        "installedAt": 0,
+        "version": "1.0.0",
+        "author": "فريق صقر كود",
+        "skills": [
+          {
+            "id": "ar-code-review",
+            "name": "Arabic code review",
+            "nameAr": "مراجعة الكود بالعربية",
+            "description": "قائمة مراجعة من سبعة محاور (الصحة، الأمان، الأداء، الوضوح، الاختبارات، RTL، التوافق) تنتهي بحكم واضح",
+            "category": "code-review",
+            "tags": [
+              "مراجعة",
+              "جودة",
+              "عربي",
+              "review"
+            ],
+            "version": "1.0.0",
+            "author": "فريق صقر كود",
+            "instructions": "قائمة مراجعة الكود من صقر — اتبعها خطوة خطوة قبل إصدار الحكم.\n\nابدأ بقراءة الفرق (git_diff) ثم اقرأ كل ملف معدَّل كاملًا. رتّب الملاحظات حسب الخطورة: حرِجة ثم مهمة ثم تحسين، واذكر لكل ملاحظة الملف والسطر (file:line) وسبب المشكلة واقتراح إصلاح محددًا.\n\n1) الصحة: هل يحقق التغيير ما طُلب فعلًا؟ افحص حالات الحدود: قائمة فارغة، قيمة null، صفر وأرقام سالبة، نص عربي طويل، أرقام عربية-هندية (٠١٢)، تواريخ ومناطق زمنية. ابحث عن الشروط المعكوسة وأخطاء الفهرس (off-by-one) والاستثناءات غير المعالجة.\n2) الأمان: مدخلات المستخدم التي تصل إلى أوامر الطرفية أو SQL أو HTML دون تهريب؛ مفاتيح أو كلمات مرور مكتوبة مباشرة في الكود أو مطبوعة في السجلات؛ اتصالات http بدل https؛ تعطيل التحقق من الشهادات؛ صلاحيات أوسع من حاجة الميزة.\n3) الأداء على الهواتف الضعيفة: تحميل ملف كبير كاملًا في الذاكرة، حلقات متداخلة على بيانات كبيرة، عمل ثقيل على الخيط الرئيسي، موارد لا تُغلق (streams وcursors)، ومستمعون لا يُلغى تسجيلهم.\n4) الوضوح: أسماء معبّرة بالإنجليزية، دوال قصيرة بمسؤولية واحدة، لا كود ميت أو معلّق، وتعليقات تشرح «لماذا» لا «ماذا».\n5) الاختبارات: هل يوجد اختبار يغطي السلوك الجديد وحالة فشل واحدة على الأقل؟ إن لم يوجد فاقترح اسم الاختبار وما يتحقق منه.\n6) العربية واتجاه RTL في الواجهات: النصوص في ملفات الموارد لا داخل الكود، الاتجاه يتبع لغة الواجهة، الأرقام والتواريخ بتنسيق اللغة، ولا قص للنص العربي.\n7) التوافق: لا كسر لواجهة عامة أو لصيغة ملف محفوظ دون ترحيل، وأي حقل جديد اختياري بقيمة افتراضية آمنة.\n\nاختم بسطر حكم واحد: «جاهز للدمج» أو «يحتاج تعديلات»، مع أهم ثلاثة إصلاحات مرتبة. المراجعة قراءة فقط: لا تعدّل الملفات بنفسك، واترك التنفيذ للمطوّر.",
+            "role": "reviewer",
+            "permissions": [
+              "list_files",
+              "read_file",
+              "search",
+              "project_search",
+              "git_status",
+              "git_diff",
+              "git_log"
+            ],
+            "risk": "SAFE",
+            "changelog": [
+              {
+                "version": "1.0.0",
+                "notes": "الإصدار الأول: قائمة من سبعة محاور مع مراجع file:line وحكم نهائي."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
