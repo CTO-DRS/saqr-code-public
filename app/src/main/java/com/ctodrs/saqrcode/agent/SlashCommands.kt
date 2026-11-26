@@ -40,6 +40,11 @@ object SlashCommands {
     const val CLEAR = "clear"
     const val MODEL = "model"
     const val COMMIT = "commit"
+    const val REFACTOR = "refactor"
+    const val DOCS = "document"
+    const val PERF = "perf"
+    const val SECURE = "secure"
+    const val DEBUG = "debug"
 
     private const val MAX_SELECTION = 6000
 
@@ -56,6 +61,16 @@ object SlashCommands {
             listOf("خطة"), builtin = true),
         SlashCommand(COMMIT, "Commit the current changes. Call git_status and git_diff first, write a concise conventional commit message (imperative subject of at most 72 characters, optional short body), then call git_commit with it. The user approves the commit before it is made.{args}",
             builtin = true),
+        SlashCommand(REFACTOR, "Refactor {target} for readability and maintainability without changing behavior. Read it first, list the problems you will fix (duplication, long functions, unclear names, dead code), make small safe edits, then run the build or tests to confirm nothing changed.{args}",
+            listOf("حسن"), builtin = true),
+        SlashCommand(DOCS, "Write documentation for {target}. Add clear doc comments to public functions and classes, and update or create a short README section if one is missing. Match the project's existing comment style. Do not change any logic.{args}",
+            listOf("وثق"), builtin = true),
+        SlashCommand(PERF, "Find performance problems in {target}. Read the code, point out the slowest or most wasteful parts (loops, repeated work, blocking calls, memory), fix the safe ones with minimal edits, and explain the expected gain of each.{args}",
+            listOf("اداء"), builtin = true),
+        SlashCommand(SECURE, "Do a security review of {target}. Look for hard-coded secrets, injection, unsafe file or network access, missing input checks and weak storage. List findings by severity with file:line, then fix the clear ones with minimal edits and say what is left for me to decide.{args}",
+            listOf("امن"), builtin = true),
+        SlashCommand(DEBUG, "Help me debug: {task}. Reproduce or locate the problem first (read the code, run the tests or the app's build, check logs), state the most likely cause with evidence, then fix it with a minimal edit and verify.{args}",
+            listOf("تتبع"), builtin = true),
         SlashCommand(CLEAR, "", action = SlashCommand.Action.CLEAR, builtin = true),
         SlashCommand(MODEL, "", action = SlashCommand.Action.MODEL, builtin = true),
     )
@@ -154,4 +169,23 @@ object SlashCommands {
             if (!NAME.matches(n) || t.isBlank()) null else SlashCommand(n, t)
         }
     }.getOrDefault(emptyList())
+}
+
+/** Prompt library: the searchable list behind the "Prompt library" sheet. */
+object PromptLibrary {
+    /** Commands that fill the composer; the local actions (/clear, /model) are not prompts. */
+    fun prompts(custom: List<SlashCommand>): List<SlashCommand> =
+        SlashCommands.all(custom).filter { it.action == SlashCommand.Action.PROMPT }
+
+    /** Name, alias and description match, Arabic-insensitive; blank query returns everything. */
+    fun filter(cmds: List<SlashCommand>, query: String, describe: (SlashCommand) -> String): List<SlashCommand> {
+        val q = SlashCommands.normalize(query.trim().removePrefix("/"))
+        if (q.isEmpty()) return cmds
+        return cmds.filter { c ->
+            (listOf(c.name) + c.aliases + describe(c)).any { SlashCommands.normalize(it).contains(q) }
+        }
+    }
+
+    /** Text placed in the composer when a prompt is picked: the command, ready for arguments. */
+    fun insertion(c: SlashCommand) = "/${c.name} "
 }

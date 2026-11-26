@@ -5,6 +5,10 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.hasSetTextAction
@@ -51,6 +55,22 @@ class ScreenshotTestMajlis {
                 else "The package is ready. Download **[android_app_package.zip](sandbox:/workspace/android_app_package.zip)** with all the app files."
             },
         )
+    }
+
+    private fun libShot(name: String, ar: Boolean) {
+        rule.setContent {
+            SaqrTheme("dark") {
+                androidx.compose.foundation.layout.Column(
+                    androidx.compose.ui.Modifier.fillMaxSize().background(com.ctodrs.saqrcode.ui.theme.Saqr.colors.surface1)
+                        .padding(top = 48.dp, start = 16.dp, end = 16.dp),
+                ) { com.ctodrs.saqrcode.ui.chat.PromptLibraryContent(listOf(com.ctodrs.saqrcode.agent.SlashCommand("ship", if (ar) "انشر التطبيق على المتجر" else "Release the app to the store"))) {} }
+            }
+        }
+        rule.waitForIdle(); rule.mainClock.advanceTimeBy(700)
+        val root = rule.activity.window.decorView
+        val bmp = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
+        root.draw(Canvas(bmp))
+        File(outDir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
     private fun shot(name: String, ar: Boolean, q: String? = null) {
@@ -104,4 +124,10 @@ class ScreenshotTestMajlis {
 
     @Config(qualifiers = "en-rUS-ldltr-w800dp-h1280dp-night-xhdpi")
     @Test fun tabletEn() = shot("sizes-tablet-en", false)
+
+    @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-night-xxhdpi")
+    @Test fun libraryAr() = libShot("majlis4-ar", true)
+
+    @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi")
+    @Test fun libraryEn() = libShot("majlis4-en", false)
 }

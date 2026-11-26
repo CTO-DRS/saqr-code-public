@@ -76,6 +76,7 @@ import com.ctodrs.saqrcode.agent.AgentRole
 import com.ctodrs.saqrcode.agent.AgentRoles
 import com.ctodrs.saqrcode.agent.ChatItem
 import com.ctodrs.saqrcode.agent.TeamCost
+import com.ctodrs.saqrcode.agent.PromptLibrary
 import com.ctodrs.saqrcode.agent.SlashCommand
 import com.ctodrs.saqrcode.agent.SlashCommands
 import com.ctodrs.saqrcode.agent.Diff
@@ -971,6 +972,11 @@ fun slashDescription(cmd: SlashCommand): String = if (!cmd.builtin) cmd.template
     SlashCommands.CLEAR -> R.string.slash_clear
     SlashCommands.MODEL -> R.string.slash_model
     SlashCommands.COMMIT -> R.string.slash_commit
+    SlashCommands.REFACTOR -> R.string.slash_refactor
+    SlashCommands.DOCS -> R.string.slash_docs
+    SlashCommands.PERF -> R.string.slash_perf
+    SlashCommands.SECURE -> R.string.slash_secure
+    SlashCommands.DEBUG -> R.string.slash_debug
     else -> R.string.slash_custom
 })
 
@@ -983,6 +989,8 @@ private fun Composer(
     onMic: () -> Unit = {}, onMicLongPress: () -> Unit = {},
 ) {
     val c = Saqr.colors
+    var library by remember { mutableStateOf(false) }
+    if (library) PromptLibrarySheet(state.customCommands, { cmd -> library = false; onInput(PromptLibrary.insertion(cmd)) }, { library = false })
     val shape = RoundedCornerShape(Radius.xxl)
     var attach by remember { mutableStateOf(false) }
     Column(
@@ -1008,6 +1016,11 @@ private fun Composer(
                 Box(Modifier.minimumInteractiveComponentSize().size(40.dp).pressable { attach = true }.clip(CircleShape).background(c.surface2).border(1.dp, c.border, CircleShape),
                     contentAlignment = Alignment.Center) { SIcon(Lucide.Plus, size = 20.dp, tint = c.text1, contentDescription = stringResource(R.string.attach_file)) }
                 DropdownMenu(attach, { attach = false }, Modifier.heightIn(max = 420.dp).background(c.surface2)) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.prompt_library), style = Saqr.type.label, color = c.text1) },
+                        leadingIcon = { SIcon(Lucide.Sparkles, size = 18.dp, tint = c.accentText) },
+                        onClick = { attach = false; library = true },
+                    )
                     DropdownMenuItem(
                         text = {
                             Column {

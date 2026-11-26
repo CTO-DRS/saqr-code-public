@@ -205,15 +205,15 @@ class SlashCommandsTest {
 
     @Test fun suggestions() {
         assertEquals(SlashCommands.builtins.size, SlashCommands.suggestions("/").size)
-        assertEquals(listOf(SlashCommands.REVIEW), SlashCommands.suggestions("/re").map { it.name })
-        assertEquals(setOf(SlashCommands.FIX, SlashCommands.EXPLAIN, SlashCommands.TEST), SlashCommands.suggestions("/ا").map { it.name }.toSet())
+        assertEquals(listOf(SlashCommands.REVIEW, SlashCommands.REFACTOR), SlashCommands.suggestions("/re").map { it.name })
+        assertEquals(setOf(SlashCommands.FIX, SlashCommands.EXPLAIN, SlashCommands.TEST, SlashCommands.PERF, SlashCommands.SECURE), SlashCommands.suggestions("/ا").map { it.name }.toSet())
         assertTrue(SlashCommands.suggestions("/fix ").isEmpty())
         assertTrue(SlashCommands.suggestions("hello").isEmpty())
     }
 
     @Test fun customCommands() {
         val custom = listOf(SlashCommand("deploy", "Deploy {file} to staging. {args}"), SlashCommand("docs", "Write KDoc for {file}"))
-        assertEquals(listOf("deploy", "docs"), SlashCommands.suggestions("/d", custom).map { it.name })
+        assertEquals(listOf("document", "debug", "deploy", "docs"), SlashCommands.suggestions("/d", custom).map { it.name })
         val inv = SlashCommands.parse("/deploy now", custom)!!
         assertEquals("Deploy @src/Main.kt to staging. now", SlashCommands.expand(inv, ctx))
         // args are appended when the template has no {args}

@@ -323,6 +323,15 @@
     <string name="slash_clear">Start a new chat</string>
     <string name="slash_model">Choose the model</string>
     <string name="slash_commit">Write a commit message and commit (with approval)</string>
+    <string name="slash_refactor">Refactor for readability, same behavior</string>
+    <string name="slash_docs">Write doc comments and README notes</string>
+    <string name="slash_perf">Find and fix performance problems</string>
+    <string name="slash_secure">Security review and safe fixes</string>
+    <string name="slash_debug">Find the cause of a bug and fix it</string>
+    <string name="prompt_library">Prompt library</string>
+    <string name="prompt_library_desc">Tap a prompt to put it in the message box, then add details.</string>
+    <string name="prompt_library_search">Search prompts</string>
+    <string name="prompt_library_none">No matching prompts</string>
     <string name="slash_custom">Custom command</string>
     <string name="commit_review_title">Approve commit</string>
     <string name="commit_review_sub">The agent wants to commit with this message.</string>

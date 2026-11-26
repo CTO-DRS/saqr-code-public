@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.3] — 2026-11-26 — Majlis 6: prompt library · مكتبة الأوامر
+
+- **Prompt library:** the + menu in the chat has a new "Prompt library" item. It opens a searchable sheet of every prompt command, built-in and your own; tapping one puts `/name ` in the message box so you add the details. Search matches name, Arabic alias and description, ignoring Arabic diacritics and alef forms.
+- **Five new built-in prompts:** `/refactor` (حسن), `/document` (وثق), `/perf` (اداء), `/secure` (امن), `/debug` (تتبع). The documentation one is `/document`, not `/docs`, so it cannot shadow a custom `/docs` command you already made.
+- Command names stay left-to-right inside Arabic screens (found in the AR render and fixed). Rows are 56dp, labelled, EN + AR.
+- **Tests:** `V0103PromptLibraryTest` (4); slash-command expectations updated for the new built-ins.
+- versionName 0.1.3, versionCode 42.
+
 ## [0.1.2] — 2026-11-26 — Touch targets + haptics · أهداف اللمس والاهتزاز
 
 - **48dp:** every clickable box under 48dp (tab close in Panes and Terminal, terminal direct-mode switch, Git toast and row actions, skill rating, remove-host and others, 36 sites) now keeps its look but gets a 48dp minimum touch target. `V0102TouchTargetGuardTest` fails the build if a new one is added without it.

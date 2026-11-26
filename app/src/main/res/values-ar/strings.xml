@@ -323,6 +323,15 @@
     <string name="slash_clear">بدء محادثة جديدة</string>
     <string name="slash_model">اختيار النموذج</string>
     <string name="slash_commit">كتابة رسالة إيداع والإيداع (بموافقتك)</string>
+    <string name="slash_refactor">إعادة هيكلة للوضوح بنفس السلوك</string>
+    <string name="slash_docs">كتابة تعليقات التوثيق وملاحظات README</string>
+    <string name="slash_perf">البحث عن مشاكل الأداء وإصلاحها</string>
+    <string name="slash_secure">مراجعة أمنية وإصلاحات آمنة</string>
+    <string name="slash_debug">تحديد سبب خطأ وإصلاحه</string>
+    <string name="prompt_library">مكتبة الأوامر</string>
+    <string name="prompt_library_desc">اضغط على أمر لوضعه في خانة الرسالة ثم أضف التفاصيل.</string>
+    <string name="prompt_library_search">ابحث في الأوامر</string>
+    <string name="prompt_library_none">لا توجد أوامر مطابقة</string>
     <string name="slash_custom">أمر مخصص</string>
     <string name="commit_review_title">الموافقة على الإيداع</string>
     <string name="commit_review_sub">يريد الوكيل الإيداع بهذه الرسالة.</string>
