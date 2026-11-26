@@ -219,6 +219,7 @@ fun ChatContent(
                     item(key = "end") { Spacer(Modifier.height(1.dp)) }
                 }
             }
+            if (shown.isNotEmpty()) ChatSearchOverlay(shown, listState, stringResource(R.string.app_name), Modifier.align(Alignment.TopEnd).padding(top = topInset))
             // soft fade above the composer
             Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(16.dp)
                 .background(Brush.verticalGradient(listOf(Color.Transparent, c.bg))))

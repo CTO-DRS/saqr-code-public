@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.19.8] — 2026-11-26 — Majlis 5: search + export · البحث والتصدير
+
+- **Search in chat:** a search icon on the chat opens a bar with match counter, next and close; it jumps to each matching message. Matching ignores case, Arabic diacritics and tatweel, and folds alef/ya forms (minimum 2 characters).
+- **Export:** a share button sends the whole conversation as Markdown.
+- `Transcript` helper (search, normalize, toMarkdown). Buttons are 48dp with role and label, EN + AR.
+- **Tests:** `V0198TranscriptTest` (3), `V0198SearchUiTest` (2). 537 tests green.
+- versionName 0.19.8, versionCode 37.
+
 ## [0.19.7] — 2026-11-26 — Majlis 4: regenerate · edit and resend · إعادة التوليد والتعديل
 
 - **Regenerate:** a button in the action bar of the last reply (hidden while a turn runs) re-runs the last user message; the old reply, tool rows and approvals are dropped from the conversation.

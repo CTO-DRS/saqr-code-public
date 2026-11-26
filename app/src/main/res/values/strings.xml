@@ -1057,4 +1057,10 @@
     <string name="msg_regenerate">Regenerate</string>
     <string name="msg_edit">Edit and resend</string>
     <string name="msg_edit_title">Edit message</string>
+    <string name="chat_search">Search in chat</string>
+    <string name="chat_search_hint">Search this chat…</string>
+    <string name="chat_search_none">No results</string>
+    <string name="chat_search_next">Next result</string>
+    <string name="chat_export">Export chat</string>
+    <string name="msg_you">You</string>
 </resources>

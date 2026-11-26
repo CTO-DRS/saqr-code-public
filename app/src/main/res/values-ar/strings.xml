@@ -1057,4 +1057,10 @@
     <string name="msg_regenerate">إعادة التوليد</string>
     <string name="msg_edit">تعديل وإعادة الإرسال</string>
     <string name="msg_edit_title">تعديل الرسالة</string>
+    <string name="chat_search">بحث في المحادثة</string>
+    <string name="chat_search_hint">ابحث في هذه المحادثة…</string>
+    <string name="chat_search_none">لا نتائج</string>
+    <string name="chat_search_next">النتيجة التالية</string>
+    <string name="chat_export">تصدير المحادثة</string>
+    <string name="msg_you">أنت</string>
 </resources>

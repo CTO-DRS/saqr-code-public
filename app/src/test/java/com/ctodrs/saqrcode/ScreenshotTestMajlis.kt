@@ -7,6 +7,11 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.ctodrs.saqrcode.agent.ChatItem
 import com.ctodrs.saqrcode.agent.Tools
@@ -48,11 +53,16 @@ class ScreenshotTestMajlis {
         )
     }
 
-    private fun shot(name: String, ar: Boolean) {
+    private fun shot(name: String, ar: Boolean, q: String? = null) {
         val dir = File(outDir, "proj").apply { mkdirs() }
         File(dir, "android_app_package.zip").writeBytes(ByteArray(48_300))
         rule.setContent { SaqrTheme("dark") { Screen(ar, dir) } }
-        rule.waitForIdle(); rule.mainClock.advanceTimeBy(700)
+        rule.waitForIdle()
+        if (q != null) {
+            rule.onNodeWithContentDescription(if (ar) "بحث في المحادثة" else "Search in chat").performClick()
+            rule.onNode(hasSetTextAction() and hasText(if (ar) "ابحث في هذه المحادثة…" else "Search this chat…")).performTextInput(q)
+        }
+        rule.mainClock.advanceTimeBy(700)
         val root = rule.activity.window.decorView
         val bmp = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
         root.draw(Canvas(bmp))
@@ -76,4 +86,10 @@ class ScreenshotTestMajlis {
 
     @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi")
     @Test fun majlisEn() = shot("majlis2-en", false)
+
+    @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-night-xxhdpi")
+    @Test fun searchAr() = shot("majlis3-ar", true, "الحزمة")
+
+    @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi")
+    @Test fun searchEn() = shot("majlis3-en", false, "package")
 }
