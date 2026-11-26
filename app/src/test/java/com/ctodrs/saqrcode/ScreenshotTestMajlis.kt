@@ -92,4 +92,16 @@ class ScreenshotTestMajlis {
 
     @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi")
     @Test fun searchEn() = shot("majlis3-en", false, "package")
+
+    @Config(qualifiers = "ar-rSA-ldrtl-w320dp-h568dp-night-xhdpi")
+    @Test fun smallAr() = shot("sizes-small-ar", true)
+
+    @Config(qualifiers = "en-rUS-ldltr-w320dp-h568dp-night-xhdpi")
+    @Test fun smallEn() = shot("sizes-small-en", false)
+
+    @Config(qualifiers = "ar-rSA-ldrtl-w800dp-h1280dp-night-xhdpi")
+    @Test fun tabletAr() = shot("sizes-tablet-ar", true)
+
+    @Config(qualifiers = "en-rUS-ldltr-w800dp-h1280dp-night-xhdpi")
+    @Test fun tabletEn() = shot("sizes-tablet-en", false)
 }

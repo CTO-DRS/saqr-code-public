@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.0] — 2026-11-26 — Version numbering reset · إعادة ترقيم الإصدارات
+
+- By the owner's decision, the project is numbered from v0.1.0 going forward. Entries below (0.19.x and older) are the pre-reset history and their tags and releases stay as they were.
+- versionName 0.1.0. versionCode continues upward (39) because Android refuses to install an update with a lower versionCode over an existing install.
+- Includes the unreleased screen-size render checks (small 320dp and tablet 800dp, AR + EN) in the screenshot harness.
+
 ## [0.19.9] — 2026-11-26 — Render audit 1: streaming cost · تدقيق الأداء
 
 - **Streaming:** Markdown for a streaming reply is re-parsed at most every 90 ms instead of on every token (`StreamThrottle`); the final text always renders immediately when the reply ends.
