@@ -1,5 +1,9 @@
 # Changelog · سجل التغييرات
 
+## [0.1.6] — 2026-11-26 — Developer links QR sheet · نافذة الرمز
+
+- Tapping an account in the developer card opens a glass sheet with an on-device QR code, Open and Copy link (see 0.1.5 notes). versionName 0.1.6, versionCode 45.
+
 ## [0.1.5] — 2026-11-26 — About the developer · عن المطور
 
 - **About the developer card** in Settings, under About: circular photo, name "CTO.DRS" with a verified badge, a role line, a footer with the app version, and eight brand-coloured icon links with labels (WhatsApp, Telegram, TikTok, Instagram, X, YouTube, GitHub, website). Tapping the photo opens it large. Tapping an account opens a glass sheet with a QR code generated on the device (own encoder, `QrCode`, byte mode, level M, best-of-8 masks) plus Open and Copy link buttons. Each is labelled for screen readers and opens in the browser or the app. EN + AR, RTL, dark and light.
