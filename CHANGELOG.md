@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.1] — 2026-11-26 — Render audit 2: sizes · تدقيق الأحجام
+
+- **Fix:** the floating search/export pill covered the first message at the top of the chat on every size; the list now starts below it.
+- **Tablets:** the conversation and composer keep a 780dp readable column, centered, instead of stretching edge to edge.
+- Render checks at 320dp (small phone) and tablet width in AR + EN added to the screenshot harness. The harness window stays about 847px wide, so the tablet column cap is verified by code, not by a wide render (device-QA).
+- versionName 0.1.1, versionCode 40.
+
 ## [0.1.0] — 2026-11-26 — Version numbering reset · إعادة ترقيم الإصدارات
 
 - By the owner's decision, the project is numbered from v0.1.0 going forward. Entries below (0.19.x and older) are the pre-reset history and their tags and releases stay as they were.

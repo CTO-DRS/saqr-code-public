@@ -177,7 +177,9 @@ fun ChatContent(
     if (autoScroll) LaunchedEffect(shown.size, lastLen) {
         if (shown.isNotEmpty()) listState.scrollToItem(shown.size, Int.MAX_VALUE / 2)
     }
-    Column(Modifier.fillMaxSize()) {
+    // on tablets the conversation keeps a readable column instead of stretching edge to edge
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+    Column(Modifier.widthIn(max = 780.dp).fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (shown.isEmpty()) {
                 Box(Modifier.fillMaxSize().padding(top = topInset), contentAlignment = Alignment.Center) {
@@ -190,7 +192,7 @@ fun ChatContent(
             } else {
                 LazyColumn(
                     Modifier.fillMaxSize(), state = listState,
-                    contentPadding = PaddingValues(start = Sp.lg, end = Sp.lg, top = topInset + Sp.sm, bottom = Sp.lg),
+                    contentPadding = PaddingValues(start = Sp.lg, end = Sp.lg, top = topInset + Sp.sm + 52.dp, bottom = Sp.lg),
                 ) {
                     itemsIndexed(shown, key = { _, it -> it.key }) { i, item ->
                         Box(Modifier.padding(vertical = spacingFor(item))) {
@@ -242,6 +244,7 @@ fun ChatContent(
         }
         Composer(state, input, onInput, send, onStop, onPickModel, onManageProviders, modelMenu, { modelMenu = it }, onImageAction, onRemoveImage,
             onMic, onMicLongPress)
+    }
     }
 }
 
