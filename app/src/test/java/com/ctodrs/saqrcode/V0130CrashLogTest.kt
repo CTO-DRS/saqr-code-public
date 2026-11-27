@@ -52,4 +52,13 @@ class V0130CrashLogTest {
         CrashLog.clear(dir)
         assertNull(CrashLog.latest(dir))
     }
+
+    @Test fun reportScrubsProviderKeysAndBearerTokens() {
+        val t = RuntimeException("HTTP 401 for sk-proj-ABCDEFGH12345678abcd with Authorization: Bearer abcdef1234567890 and api_key=zzTOPSECRET99")
+        val r = CrashLog.format("main", t, "0.1.56", "Pixel 8", 34, 0L)
+        assertFalse(r.contains("sk-proj-ABCDEFGH12345678abcd"))
+        assertFalse(r.contains("abcdef1234567890"))
+        assertFalse(r.contains("zzTOPSECRET99"))
+        assertTrue(r.contains("HTTP 401"))
+    }
 }
