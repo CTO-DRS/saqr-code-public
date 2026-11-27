@@ -133,6 +133,8 @@
     <string name="onb2_title">Your keys, your models</string>
     <string name="onb3_body">Alpine Linux runs root-less on your phone. Install Node, Python or Git and let the agent run and test your code.</string>
     <string name="onb3_title">A real Linux terminal</string>
+    <string name="onb4_body">Try one clear sentence, in Arabic or English: build a page, fix a bug, explain code. The agent shows a plan and asks before risky steps.</string>
+    <string name="onb4_title">Start with a small ask</string>
     <string name="onb_start">Connect a model</string>
     <string name="open_settings">Open settings</string>
     <string name="plan_header">Plan</string>

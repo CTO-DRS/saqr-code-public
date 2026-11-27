@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.26] — 2026-11-27 — First-run tips + FAQ · نصائح البداية والأسئلة الشائعة
+
+- **Onboarding page 4 "Start with a small ask":** example prompts in Arabic and English and a note that the agent shows a plan and asks before risky steps.
+- **docs/FAQ.md:** bilingual answers on keys and privacy, models, the terminal, approvals, sync and releases.
+- EN + AR strings. versionName 0.1.26, versionCode 65.
+
 ## [0.1.25] — 2026-11-27 — Home-screen widget · ويدجت الشاشة الرئيسية
 
 - **Saqr widget:** long-press the home screen, Widgets, Saqr Code. A compact card shows Idle / Running: project / Needs you: project and updates the moment a run starts, waits for you or ends. Tap opens the app (on the waiting project when a turn needs you). Same wording as the Quick Settings tile.
