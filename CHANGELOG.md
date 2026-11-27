@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.31] — 2026-11-27 — Prompt-injection hardening · تحصين ضد حقن الأوامر
+
+- **New approval rule:** shell commands that upload a local file to a server (`curl -d @file`, `-F file=@`, `--upload-file`, `wget --post-file`, `nc host port < file`) now need your explicit yes. This closes the one exfiltration route a hostile web page or tool result could try that the old rules let through.
+- Normal commands (`npm install`, `curl` downloads, JSON posts to localhost) still run without a prompt.
+- **Tests:** `V0131InjectionCorpusTest`, a corpus of remote-script, secret-upload, persistence and escape commands that must be gated, plus ordinary commands that must not.
+- versionName 0.1.31, versionCode 70.
+
 ## [0.1.30] — 2026-11-27 — Local crash report · تقرير التعطّل المحلي
 
 - **Crash recorder, on this phone only:** if the app crashes, a short report (version, device, Android version, trimmed stack trace) is saved locally. Keys, tokens and passwords are scrubbed. Nothing is uploaded.
