@@ -66,9 +66,14 @@ class LlmClient(
 
     override suspend fun complete(system: String, messages: List<Msg>, tools: List<ToolSpec>, l: StreamListener): Turn =
         withContext(Dispatchers.IO) {
-            when (def.kind) {
-                ProviderKind.OPENAI_COMPAT -> openAi(system, messages, tools, l)
-                ProviderKind.ANTHROPIC -> anthropic(system, messages, tools, l)
+            try {
+                when (def.kind) {
+                    ProviderKind.OPENAI_COMPAT -> openAi(system, messages, tools, l)
+                    ProviderKind.ANTHROPIC -> anthropic(system, messages, tools, l)
+                }
+            } catch (e: LlmException) {
+                // Errors raised inside the stream parsers have no key in scope; scrub every one here.
+                throw llmError(e.message.orEmpty())
             }
         }
 
@@ -220,7 +225,7 @@ object OpenAiFormat {
         fun onData(data: String) {
             if (data.trim() == "[DONE]") return
             val o = try { JSONObject(data) } catch (_: Exception) { return }
-            o.optJSONObject("error")?.let { throw llmError(it.optString("message", data)) }
+            o.optJSONObject("error")?.let { throw LlmException(it.optString("message", data)) }
             UsageParser.any(o)?.let { usage = it }
             val choices = o.optJSONArray("choices") ?: return
             for (i in 0 until choices.length()) {
@@ -317,7 +322,7 @@ object AnthropicFormat {
                 if (u.output > 0 || outTokens < 0) outTokens = u.output
             }
             when (o.optString("type", event ?: "")) {
-                "error" -> throw llmError(o.optJSONObject("error")?.optString("message") ?: data)
+                "error" -> throw LlmException(o.optJSONObject("error")?.optString("message") ?: data)
                 "content_block_start" -> {
                     val idx = o.optInt("index")
                     val cb = o.optJSONObject("content_block") ?: return
