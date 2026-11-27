@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.48] — 2026-11-27 — Template checks · فحص القوالب
+
+- **Web template now includes a README**, like the other starters.
+- **Template integrity tests:** every starter (web, Python, Node, Compose, keyboard, lite web, empty) is checked for a README, agent rules, its entry file, no empty files, no leftover placeholders and safe paths, for Latin, Arabic and digit-first project names.
+- versionName 0.1.48, versionCode 87.
+
 ## [0.1.47] — 2026-11-27 — Resume test · اختبار الاستئناف
 
 - **Internal, no visible change:** a whole-loop test now kills a turn mid-call, reopens the saved chat as a new session, checks the "interrupted" state, resumes, and checks the model sees the original request again. This finishes the agent-loop scenario set: reply, tool call, failure, stop, reject, approve, resume.

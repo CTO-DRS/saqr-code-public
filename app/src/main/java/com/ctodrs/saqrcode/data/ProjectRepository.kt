@@ -77,6 +77,7 @@ button { background: #d9a441; border: 0; padding: 12px 20px; border-radius: 12px
   document.getElementById('msg').textContent = 'يا هلا! 👋';
 });
 """,
+            "README.md" to "# $name\n\nA small RTL web page. Open index.html in the preview.\n",
             "AGENTS.md" to AGENTS_MD,
         )
         PYTHON -> mapOf(
