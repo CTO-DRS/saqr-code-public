@@ -259,6 +259,7 @@ class AgentSession(
     private val roleUsage = HashMap<AgentRole, HashMap<String, Usage>>()
     /** Model steps of the whole run (all roles) — the step budget applies to the team as a whole. */
     private var runSteps = 0
+    private var runCommands = 0 // v0.1.10: commands this run actually executed (for the completion report)
     /** The team's task graph of this run (persisted in the task file; restored on resume). */
     private var teamGraph: TaskGraph? = null
     /** Chief mode decided "no team" (a question): the classic single loop answers. */
@@ -543,7 +544,7 @@ class AgentSession(
                 running = false
                 pendingReview = null
                 saveNow()
-                hooks.onTurnEnd(projectName, outcome)
+                hooks.onTurnEnd(projectName, outcome.withStats(runStats()))
             }
         }
     }
@@ -582,7 +583,7 @@ class AgentSession(
     /** A new task for this run — or, on resume, the cut-off task with its plan, step and spend. */
     private fun beginTask(resume: Boolean) {
         failPrints.clear(); stepOk.clear(); turnTouched.clear(); gateRounds = 0; verification = null
-        turnUsage.clear(); costWarned = false; waitMs = 0L
+        turnUsage.clear(); costWarned = false; waitMs = 0L; runCommands = 0
         roleUsage.clear(); teamGraph = null; chiefSolo = false; currentRole = null; roleChanges = null; runSkills = null
         gateFail = null; fixFiles.clear(); capHit = SpendCap.Hit.NONE; routeProviders.clear(); lastRouteNotice = ""
         val now = System.currentTimeMillis()
@@ -606,6 +607,12 @@ class AgentSession(
 
     /** Active run time: this segment minus the time spent waiting on the user, plus earlier segments. */
     private fun activeMs(): Long = activeBefore + (System.currentTimeMillis() - runStartedAt - waitMs).coerceAtLeast(0)
+
+    /** v0.1.10: the completion-report numbers of this run (earlier resume segments included). */
+    private fun runStats(): RunStats {
+        val u = runTokens()
+        return RunStats(activeMs(), runSteps, turnTouched.size, runCommands, u.total, u.estimated, runCost())
+    }
 
     /** Priced spend of this run (earlier segments included); null when no price is known. */
     private fun runCost(): Double? {
@@ -1140,6 +1147,7 @@ class AgentSession(
                 c.name == Tools.GIT_COMMIT -> gitCommit(args).also { if (!it.startsWith("Error")) decision = approvalDecision(it) }
                 c.name == Tools.RUN -> {
                     val (o, d) = runCommandGated(args)
+                    if (d != AuditEntry.Decision.REJECTED && d != AuditEntry.Decision.BLOCKED) runCommands++
                     decision = d; o
                 }
                 settings.parallelTools && def.parallelSafe -> timedReadOnly(c.name, args, def)

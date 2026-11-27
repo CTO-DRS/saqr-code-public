@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.10] — 2026-11-27 — Background completion report · تقرير الإنجاز
+
+- **The completion notification now carries the run's report.** When a task you started finishes while the app is closed, the notification expands to a second line: active time, steps, files changed, commands run, tokens and priced cost — e.g. "3:12 · 14 steps · 3 files · 2 commands · 12.4k tokens · $0.03". Unknown prices and empty parts drop out; estimated token counts show "~".
+- Proper Arabic counts (1 «خطوة», 2 «خطوتان», 5 «خطوات», 14 «خطوة»; «12.4 ألف رمز», «2.3 مليون رمز»), western digits everywhere, LRM-wrapped so numbers and "$" keep their order inside Arabic text.
+- The background machinery itself (foreground service, wake/Wi-Fi locks, stop/open actions, resume after kill or reboot) is unchanged from v0.6; this closes the "report on completion" half of the background-agents item.
+- **Tests:** `V0111CompletionReportTest` (6).
+- versionName 0.1.10, versionCode 49.
+
 ## [0.1.9] — 2026-11-27 — Plan mode · وضع الخطة
 
 - **Plan first (Settings → Team).** When on, the agent drafts its plan and shows it as an editable card before touching anything: edit a step, reorder, remove, add, then "Run plan" or Cancel. The coder gets the plan you approved.

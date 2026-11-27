@@ -58,6 +58,18 @@ data class RunWait(
     }
 }
 
+/** v0.1.10: what a finished run did, shown as the report line of the completion notification. */
+data class RunStats(
+    val activeMs: Long = 0,
+    val steps: Int = 0,
+    val files: Int = 0,
+    val commands: Int = 0,
+    val tokens: Long = 0,
+    val estimatedTokens: Boolean = false,
+    /** Priced spend of the run; null when no price is known for a model it used. */
+    val cost: Double? = null,
+)
+
 /** How a turn ended. */
 data class RunOutcome(
     val kind: Kind,
@@ -66,9 +78,13 @@ data class RunOutcome(
     val verification: CompletionGate.Status? = null,
     /** v0.16 Chief mode: tokens and priced spend per team role (empty outside Chief mode). */
     val roles: List<TeamCost.RoleCost> = emptyList(),
+    /** v0.1.10: the run's report numbers (null only in tests that build an outcome by hand). */
+    val stats: RunStats? = null,
 ) {
     /** v0.15: BUDGET = stopped cleanly at the run's time or cost limit. */
     enum class Kind { DONE, ERROR, STOPPED, STEP_LIMIT, BUDGET }
+
+    fun withStats(s: RunStats) = copy(stats = s)
 }
 
 /** Callbacks from [AgentSession] into the background runtime. All default to no-ops (tests, previews). */
@@ -268,8 +284,62 @@ object NotifText {
         val s = o.summary.replace(Regex("\\s+"), " ").trim()
         // v0.15: the completion gate's honest verdict leads the body when it ran
         val verdict = o.verification?.let { verificationLine(it, lang) + " " }.orEmpty()
-        val body = (verdict + s).trim().ifEmpty { if (isArabic(lang)) "اضغط للعرض" else "Tap to view" }
-        return "$project · " + (if (body.length > 160) body.take(159) + "…" else body)
+        var body = (verdict + s).trim().ifEmpty { if (isArabic(lang)) "اضغط للعرض" else "Tap to view" }
+        if (body.length > 160) body = body.take(159) + "…"
+        // v0.1.10: the report line joins the expanded notification on its own line
+        val r = o.stats?.let { report(it, lang) }.orEmpty()
+        return "$project · " + body + (if (r.isEmpty()) "" else "\n" + r)
+    }
+
+    // ---- v0.1.10: completion report
+
+    /** Digits and "$" keep their order inside Arabic text (the same LRM trick as the chat). */
+    private fun ltr(s: String) = "\u200E" + s + "\u200E"
+
+    /** "12.4k" / "3M" / "812" — western digits everywhere, like the rest of the app. */
+    fun compactTokens(n: Long): String = when {
+        n >= 1_000_000 -> String.format(Locale.US, "%.1fM", n / 1_000_000.0).replace(".0M", "M")
+        n >= 1000 -> String.format(Locale.US, "%.1fk", n / 1000.0).replace(".0k", "k")
+        else -> n.toString()
+    }
+
+    /** "$0.42", "<$0.01" for tiny non-zero amounts. */
+    fun formatUsd(v: Double): String = when {
+        v > 0 && v < 0.01 -> "<$0.01"
+        v >= 1000 -> String.format(Locale.US, "$%,.0f", v)
+        else -> String.format(Locale.US, "$%.2f", v)
+    }
+
+    /** Arabic count: 1 «خطوة», 2 «خطوتان», 3–10 «5 خطوات», 11+ «14 خطوة». */
+    fun arCount(n: Int, one: String, two: String, few: String): String = when (n) {
+        1 -> one
+        2 -> two
+        in 3..10 -> "$n $few"
+        else -> "$n $one"
+    }
+
+    /** «812 رمز» · «12.4 ألف رمز» · «2.3 مليون رمز» (compact numbers keep western digits). */
+    fun arTokens(n: Long): String {
+        if (n >= 1_000_000) return String.format(Locale.US, "%.1f", n / 1_000_000.0).trimEnd('0').trimEnd('.') + " مليون رمز"
+        if (n >= 1000) return String.format(Locale.US, "%.1f", n / 1000.0).trimEnd('0').trimEnd('.') + " ألف رمز"
+        return arCount(n.toInt(), "رمز", "رمزان", "رموز")
+    }
+
+    /**
+     * The report line of the completion notification, most useful first:
+     * "3:12 · 14 steps · 3 files · 2 commands · 12.4k tokens · $0.03" — empty parts drop out.
+     */
+    fun report(s: RunStats, lang: String): String {
+        val ar = isArabic(lang)
+        val parts = ArrayList<String>(6)
+        parts += ltr(elapsed(s.activeMs))
+        if (s.steps > 0) parts += if (ar) arCount(s.steps, "خطوة", "خطوتان", "خطوات") else "${s.steps} " + (if (s.steps == 1) "step" else "steps")
+        if (s.files > 0) parts += if (ar) arCount(s.files, "ملف", "ملفان", "ملفات") else "${s.files} " + (if (s.files == 1) "file" else "files")
+        if (s.commands > 0) parts += if (ar) arCount(s.commands, "أمر", "أمران", "أوامر") else "${s.commands} " + (if (s.commands == 1) "command" else "commands")
+        if (s.tokens > 0) parts += (if (s.estimatedTokens) "~" else "") +
+            if (ar) arTokens(s.tokens) else compactTokens(s.tokens) + " tokens"
+        if (s.cost != null && s.cost > 0) parts += ltr(formatUsd(s.cost))
+        return parts.joinToString(" · ")
     }
 
     /** v0.15: one short line for the completion gate's verdict. */
