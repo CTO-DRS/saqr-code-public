@@ -1212,4 +1212,8 @@
     <string name="chat_backup_done">تم حفظ ملف النسخة الاحتياطية.</string>
     <string name="chat_backup_fail">تعذّرت كتابة ملف النسخة الاحتياطية.</string>
     <string name="chat_restore_done">تمت استعادة %1$d محادثة، وأُبقيت %2$d أحدث موجودة هنا.</string>
+    <string name="blame_action">من غيّر هذه الأسطر</string>
+    <string name="blame_title">من غيّر %1$s</string>
+    <string name="blame_loading">جارٍ قراءة السجل…</string>
+    <string name="blame_none">لا يوجد سجل لهذا الملف بعد. احفظه في commit أولًا ثم سيظهر من غيّر كل جزء.</string>
 </resources>

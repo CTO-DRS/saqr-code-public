@@ -124,6 +124,8 @@ fun FilesPane(ws: Workspace) {
     val expanded = remember { mutableStateListOf<String>() }
     var createDir by remember { mutableStateOf<Boolean?>(null) }
     var toDelete by remember { mutableStateOf<FsNode?>(null) }
+    var blameFile by remember { mutableStateOf<OpenFile?>(null) }
+    blameFile?.let { BlameSheet(ws.dir, it.path) { blameFile = null } }
     val nodes = remember(ws.fsVersion, expanded.toList()) { buildTree(ws.dir, expanded) }
 
     FilesPaneContent(
@@ -132,6 +134,7 @@ fun FilesPane(ws: Workspace) {
         onActivate = { ws.activeTab = it; showTree = false },
         onClose = { ws.close(it) },
         onSave = { ws.save(it) },
+        onBlame = { blameFile = it },
         onOpen = { ws.open(it); showTree = false },
         onLongPress = { toDelete = it },
         onNewFile = { createDir = false }, onNewFolder = { createDir = true }, onRefresh = { ws.fsVersion++ },
@@ -180,6 +183,7 @@ fun FilesPaneContent(
     nodes: List<FsNode>, expanded: SnapshotStateList<String>, tabs: List<OpenFile>, activeTab: Int, showTree: Boolean,
     onShowTree: (Boolean) -> Unit, onActivate: (Int) -> Unit, onClose: (Int) -> Unit, onSave: (OpenFile) -> Unit,
     onOpen: (String) -> Unit, onLongPress: (FsNode) -> Unit, onNewFile: () -> Unit, onNewFolder: () -> Unit, onRefresh: () -> Unit,
+    onBlame: ((OpenFile) -> Unit)? = null,
 ) {
     val haptics = com.ctodrs.saqrcode.ui.theme.rememberSaqrHaptics()
     val c = Saqr.colors
@@ -225,6 +229,14 @@ fun FilesPaneContent(
                             .background(if (cur.dirty) c.accent else c.surface2).border(1.dp, if (cur.dirty) c.accent else c.border, RoundedCornerShape(Radius.sm)),
                         contentAlignment = Alignment.Center,
                     ) { SIcon(Lucide.Save, size = 17.dp, tint = if (cur.dirty) c.onAccent else c.text3, contentDescription = stringResource(R.string.save)) }
+                    if (onBlame != null) {
+                        Spacer(Modifier.width(Sp.xs))
+                        Box(
+                            Modifier.minimumInteractiveComponentSize().size(38.dp).clip(RoundedCornerShape(Radius.sm)).background(c.surface2)
+                                .border(1.dp, c.border, RoundedCornerShape(Radius.sm)).clickable(role = Role.Button) { onBlame(cur) },
+                            contentAlignment = Alignment.Center,
+                        ) { SIcon(Lucide.History, size = 17.dp, tint = c.text1, contentDescription = stringResource(R.string.blame_action)) }
+                    }
                 }
             }
         }
