@@ -226,4 +226,32 @@ class V0142AgentLoopTest {
         assertTrue(n.text.contains("401"))
         assertTrue(!n.text.contains("test-key"))
     }
+
+    @Test fun `a stream that dies after partial text keeps the text and the next send works`() {
+        var calls = 0
+        val seen = mutableListOf<List<Msg>>()
+        val client = object : ModelClient {
+            override suspend fun complete(system: String, messages: List<Msg>, tools: List<ToolSpec>, l: StreamListener): Turn {
+                seen += messages.toList()
+                if (calls++ == 0) { l.onText("partial answer"); throw LlmException("connection reset mid-stream") }
+                l.onText("second ok")
+                return Turn("second ok", emptyList(), "stop")
+            }
+        }
+        val s = session(Fake(emptyList()), override = client)
+        s.send("first")
+        s.await()
+        assertTrue(!s.running)
+        val first = s.items.filterIsInstance<ChatItem.Assistant>().firstOrNull()
+        assertEquals("partial answer", first?.text)
+        assertTrue(s.items.filterIsInstance<ChatItem.Notice>().any { it.kind == ChatItem.Notice.Kind.ERROR })
+        s.send("again")
+        s.await()
+        assertEquals("second ok", s.items.filterIsInstance<ChatItem.Assistant>().last().text)
+        // the second request must be a valid conversation: starts with a user message, no dangling tool results
+        val second = seen.last()
+        assertTrue(second.first() is Msg.User)
+        assertTrue(second.none { it is Msg.ToolResult })
+        assertTrue(second.last() is Msg.User)
+    }
 }
