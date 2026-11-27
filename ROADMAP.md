@@ -104,6 +104,14 @@ Audit basis: Wave H found secrets reaching synced settings through free-text fie
 
 ---
 
+### الموجة ي · الصدق والمتانة / Wave J: honest failure states (autonomous, from the 0.1.57 audit)
+Audit basis: step, time, cost and concurrency settings are all clamped; GitHub error paths carry no tokens; the one silent degradation found is the plain-prefs fallback when the keystore fails.
+1. **(0.1.57, shipped) Unencrypted-keys notice** in Settings when the keystore fell back to plain prefs.
+2. **(next) Other silent fallbacks:** list every `runCatching { ... }.getOrNull()` that hides a user-visible failure (sync apply, backup restore, skill install) and surface a notice where the user would otherwise think it worked.
+3. **(device QA) Two-pane tablet project screen** (Wave F item 5).
+
+---
+
 ## 1 · الرؤية والمبادئ الحاكمة
 
 صقر كود ليس «تطبيق محادثة مع ذكاء اصطناعي»؛ هو **استوديو برمجة متنقل كامل**: وكيل يخطط ويبرمج ويراجع، يبني APK موقّعًا على الجهاز، ينشر على المستودعات، ويحترم مفاتيح المستخدم وبياناته. هذه الخارطة — مرسومة من جديد بالكامل — تجعله خلال أربعة إصدارات **أجمل مظهرًا، أعمق ذكاءً، أوسع تكاملًا، ومتجرًا حقيقيًا على Play**.

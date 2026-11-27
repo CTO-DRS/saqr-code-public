@@ -868,6 +868,14 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     }
                 }
             }
+            if (!SaqrApp.instance.settings.secretsEncrypted) {
+                Group {
+                    Column(Modifier.fillMaxWidth().padding(Sp.lg).semantics(mergeDescendants = true) {}) {
+                        Text(stringResource(R.string.secrets_plain_title), style = Saqr.type.body.copy(fontWeight = FontWeight.SemiBold), color = c.text1)
+                        Text(stringResource(R.string.secrets_plain_body), style = Saqr.type.caption, color = c.text2)
+                    }
+                }
+            }
             JumpLabel(jump, "about_developer", stringResource(R.string.about_developer), Modifier.padding(top = Sp.md))
             val dctx = androidx.compose.ui.platform.LocalContext.current
             val ver = remember { runCatching { dctx.packageManager.getPackageInfo(dctx.packageName, 0).versionName }.getOrNull().orEmpty() }

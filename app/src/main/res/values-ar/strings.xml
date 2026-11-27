@@ -184,6 +184,8 @@
     <string name="git_cherry_pick_tip">‏طبّق آخر Commit فيه هنا</string>
     <string name="crash_title">‏آخر تقرير تعطّل</string>
     <string name="crash_body">‏محفوظ على جوالك فقط. شاركه إذا تبي مساعدة؛ تُحذف منه المفاتيح والأسرار.</string>
+    <string name="secrets_plain_title">المفاتيح غير مشفّرة على هذا الجوال</string>
+    <string name="secrets_plain_body">التخزين الآمن في هذا الجوال غير متاح، فتُحفظ مفاتيحك ورموزك دون تشفير داخل مجلد التطبيق الخاص، ولا تغادر الجوال أبدًا. استخدم مفاتيح بحدود إنفاق، وأعد تشغيل الجوال إن استمر ذلك.</string>
     <string name="crash_share">‏شارك</string>
     <string name="crash_clear">‏امسح</string>
     <string name="git_fetch">جلب</string>

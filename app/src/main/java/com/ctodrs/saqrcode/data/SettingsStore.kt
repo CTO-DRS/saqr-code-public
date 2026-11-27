@@ -71,6 +71,9 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
     val accounts = AccountStore(secure).also { it.migrateLegacy(prefs.getString("github_user", null)) }
 
     /** Kept for the v0.2 Git pane code paths: the GitHub token, if linked. */
+    /** False only when the keystore failed and keys are stored unencrypted; Settings then says so. */
+    val secretsEncrypted: Boolean get() = secure.encrypted
+
     val githubToken: String? get() = accounts.githubToken()
 
     fun accountsChanged() = bump()
