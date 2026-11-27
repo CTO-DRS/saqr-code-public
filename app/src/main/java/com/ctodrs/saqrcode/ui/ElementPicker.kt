@@ -218,7 +218,8 @@ fun PreviewPane(ws: Workspace) {
                     contentAlignment = Alignment.Center,
                 ) { SIcon(Lucide.Crosshair, size = 16.dp, tint = if (picking) c.onAccent else c.text1, contentDescription = stringResource(R.string.pick_element)) }
                 Spacer(Modifier.width(2.dp))
-                Box(Modifier.minimumInteractiveComponentSize().size(32.dp).clip(CircleShape).clickable(role = Role.Button) { triggerReload() }, contentAlignment = Alignment.Center) { SIcon(Lucide.RefreshCw, size = 15.dp) }
+                val reloadLabel = stringResource(R.string.reload_preview)
+                Box(Modifier.minimumInteractiveComponentSize().size(32.dp).clip(CircleShape).clickable(onClickLabel = reloadLabel, role = Role.Button) { triggerReload() }, contentAlignment = Alignment.Center) { SIcon(Lucide.RefreshCw, size = 15.dp, contentDescription = reloadLabel) }
             }
         }
         if (picking) PickHint()

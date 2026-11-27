@@ -112,17 +112,20 @@ fun MemorySheetContent(
         Spacer(Modifier.width(Sp.sm))
         Tag(entries.size.toString(), color = c.text2)
         Spacer(Modifier.weight(1f))
+        val clearLabel = stringResource(R.string.memory_clear_all)
+        val addLabel = stringResource(R.string.memory_add)
         Box(
-            Modifier.size(34.dp).clip(RoundedCornerShape(Radius.sm)).background(c.surface2)
-                .border(1.dp, c.border, RoundedCornerShape(Radius.sm)).clickable(enabled = entries.isNotEmpty()) { confirmingClear = true },
+            Modifier.size(48.dp).padding(7.dp).clip(RoundedCornerShape(Radius.sm)).background(c.surface2)
+                .border(1.dp, c.border, RoundedCornerShape(Radius.sm))
+                .clickable(enabled = entries.isNotEmpty(), onClickLabel = clearLabel, role = androidx.compose.ui.semantics.Role.Button) { confirmingClear = true },
             contentAlignment = Alignment.Center,
-        ) { SIcon(Lucide.Trash2, size = 16.dp, tint = if (entries.isEmpty()) c.text3 else c.danger) }
+        ) { SIcon(Lucide.Trash2, size = 16.dp, tint = if (entries.isEmpty()) c.text3 else c.danger, contentDescription = clearLabel) }
         Spacer(Modifier.width(Sp.sm))
         Box(
-            Modifier.size(34.dp).clip(RoundedCornerShape(Radius.sm)).background(c.accent)
-                .clickable { adding = true },
+            Modifier.size(48.dp).padding(7.dp).clip(RoundedCornerShape(Radius.sm)).background(c.accent)
+                .clickable(onClickLabel = addLabel, role = androidx.compose.ui.semantics.Role.Button) { adding = true },
             contentAlignment = Alignment.Center,
-        ) { SIcon(Lucide.Plus, size = 18.dp, tint = c.onAccent) }
+        ) { SIcon(Lucide.Plus, size = 18.dp, tint = c.onAccent, contentDescription = addLabel) }
     }
     Text(stringResource(R.string.memory_hint), style = Saqr.type.caption, color = c.text2)
     if (onTab != null) {
@@ -208,10 +211,12 @@ fun MemorySheetContent(
                             style = Saqr.type.micro, color = c.text3,
                         )
                     }
+                    val deleteLabel = stringResource(R.string.delete)
                     Box(
-                        Modifier.size(30.dp).clip(RoundedCornerShape(Radius.sm)).clickable { onDelete(e) },
+                        Modifier.size(48.dp).clip(RoundedCornerShape(Radius.sm))
+                            .clickable(onClickLabel = deleteLabel, role = androidx.compose.ui.semantics.Role.Button) { onDelete(e) },
                         contentAlignment = Alignment.Center,
-                    ) { SIcon(Lucide.Trash2, size = 15.dp, tint = c.text3) }
+                    ) { SIcon(Lucide.Trash2, size = 18.dp, tint = c.text3, contentDescription = deleteLabel) }
                 }
             }
         }

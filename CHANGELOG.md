@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.20] — 2026-11-27 — Screen-reader fix in Memory · إصلاح قارئ الشاشة
+
+- **Accessibility:** the delete button on each memory entry had no label for TalkBack and was a 30dp target. It is now announced as "Delete" (button) with a 48dp target. The same scan found three more unlabeled icon-only controls, now fixed: the Memory "empty" and "add" buttons (also 48dp now) and the preview reload button.
+- **Tests:** `V0123IconA11yScanTest` scans the source so an unlabeled icon-only clickable cannot come back.
+- versionName 0.1.20, versionCode 59.
+
 ## [0.1.19] — 2026-11-27 — Readable light theme · الثيم الفاتح أوضح
 
 - **Contrast fix (accessibility):** an audit of all three built-in themes found two pairs under WCAG AA in the light theme: gold link/label text on the background (4.3:1) and tertiary text (3.0:1). Both are slightly darker now (4.8:1 and 3.8:1). Dark and night themes already passed.

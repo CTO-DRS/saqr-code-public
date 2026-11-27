@@ -1183,4 +1183,6 @@
     <string name="err_quota">رصيد أو حصة حسابك عند المزوّد خلصت. اشحنه أو بدّل المزوّد.</string>
     <string name="err_server">المزوّد عنده مشكلة من جهته. جرّب بعد شوي أو بدّل النموذج.</string>
     <string name="err_tls">تعذّر إنشاء اتصال آمن. تأكد من التاريخ والوقت أو الـVPN أو رابط المزوّد.</string>
+    <string name="reload_preview">أعد تحميل المعاينة</string>
+    <string name="memory_clear_all">فرّغ بنك الذاكرة</string>
 </resources>
