@@ -1,5 +1,14 @@
 # Changelog · سجل التغييرات
 
+## [0.1.36] — 2026-11-27 — Keyboard shortcuts · اختصارات لوحة المفاتيح
+
+- **Chat box with an external keyboard (tablets, foldables, Bluetooth):** **Ctrl+Enter** (Cmd+Enter) sends. **Esc** stops a running turn. Plain Enter and Shift+Enter still add a new line, so typing on the phone keyboard is unchanged.
+- Ctrl+Enter does nothing while a turn is running or when the box is empty, so it can never start a second turn by accident.
+- Editor shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+F, Ctrl+H, F3) were already there.
+- **Tests:** `V0136ChatKeysTest`.
+- Also in this wave: `docs/ARCHITECTURE.md`, a contributor map of the code.
+- versionName 0.1.36, versionCode 75.
+
 ## [0.1.35] — 2026-11-27 — Agent scenario tests · اختبارات سيناريو الوكيل
 
 - **Scripted-model scenarios:** the stream a provider sends is replayed in tests: a plain answer, tool arguments split across chunks, parallel tool calls interleaved, text before a tool call, junk chunks, provider errors, and Anthropic text plus tool use. The Turn the agent loop receives is checked each time.
