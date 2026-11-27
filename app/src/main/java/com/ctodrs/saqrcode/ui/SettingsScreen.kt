@@ -2,6 +2,8 @@ package com.ctodrs.saqrcode.ui
 
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -477,7 +479,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
         val results = SettingsSearch.match(sections, query)
         if (query.isNotBlank()) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Sp.lg).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
-                if (results.isEmpty()) Text(stringResource(R.string.settings_search_none), style = Saqr.type.body, color = c.text3, modifier = Modifier.padding(Sp.lg))
+                if (results.isEmpty()) Text(stringResource(R.string.settings_search_none), style = Saqr.type.body, color = c.text3, modifier = Modifier.padding(Sp.lg).polite())
                 else Group {
                     Column {
                         results.forEachIndexed { i, k ->
@@ -1852,7 +1854,7 @@ private fun GallerySection(ui: SettingsUi) {
                 style = Saqr.type.micro, color = c.text3,
             )
         }
-        errRes?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger) }
+        errRes?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger, modifier = Modifier.polite()) }
         GhostButton(stringResource(R.string.gallery_contribute), {
             runCatching {
                 ctx.startActivity(
@@ -2107,7 +2109,7 @@ private fun SyncSection(ui: SettingsUi) {
                 else { errRes = null; chatOpen.launch(arrayOf("*/*")) }
             }, icon = Lucide.HardDrive, enabled = busyKind == null)
         }
-        chatMsg?.let { Text(it, style = Saqr.type.micro, color = c.text2) }
+        chatMsg?.let { Text(it, style = Saqr.type.micro, color = c.text2, modifier = Modifier.polite()) }
         if (settings.accounts.github == null) {
             Text(stringResource(R.string.sync_needs_account), style = Saqr.type.micro, color = c.text3)
         }
@@ -2115,7 +2117,7 @@ private fun SyncSection(ui: SettingsUi) {
             Text(stringResource(R.string.sync_last, syncFmt(settings.syncAt)), style = Saqr.type.micro, color = c.text3)
         }
         pushedRepo?.let {
-            Text(stringResource(R.string.sync_pushed, it), style = Saqr.type.micro, color = c.success)
+            Text(stringResource(R.string.sync_pushed, it), style = Saqr.type.micro, color = c.success, modifier = Modifier.polite())
         }
 
         pending?.let { p ->
@@ -2148,7 +2150,7 @@ private fun SyncSection(ui: SettingsUi) {
         if (repoMissing) {
             GhostButton(stringResource(R.string.sync_create_repo), { createAndPush() }, icon = Lucide.ExternalLink, enabled = busyKind == null)
         }
-        errRes?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger) }
+        errRes?.let { Text(stringResource(it), style = Saqr.type.caption, color = c.danger, modifier = Modifier.polite()) }
     }
 }
 
@@ -2275,4 +2277,10 @@ private fun settingsSectionIndex(): List<SettingsSearch.Entry> {
         e("about_developer", R.string.about_developer),
     )
     return defs.map { (k, t, rows) -> SettingsSearch.Entry(k, stringResource(t), rows.map { stringResource(it) }) }
+}
+
+
+/** Wave E: TalkBack announces this text when it appears or changes (status and error messages). */
+internal fun Modifier.polite(): Modifier = this.semantics {
+    liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
 }

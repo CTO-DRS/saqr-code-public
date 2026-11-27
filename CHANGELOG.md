@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.39] — 2026-11-27 — Accessibility pass · تحسين إمكانية الوصول
+
+- **TalkBack now announces status messages:** the chat backup and restore result, sync errors, "pushed" confirmations and "no matching settings" are live regions, so they are read out when they appear.
+- **Option pickers (theme, language, font size and others) announce as radio buttons with their selected state,** and their touch target grew from 36dp to 48dp. Text fields grew from 46dp to 48dp.
+- **Audit result:** the settings search field and chat backup buttons already have visible labels; the section jump rows are plain list rows. No other gaps found in the newest screens.
+- **Tests:** `V0139A11yTest` (source-level checks, like the icon scan).
+- versionName 0.1.39, versionCode 78.
+
 ## [0.1.38] — 2026-11-27 — Git blame engine · محرّك من غيّر السطر
 
 - **Blame under the hood:** `GitService.blame` tells who last changed each line of a file and in which commit, using JGit on the committed content. Untracked files and paths that try to leave the project are refused with a clear message.
