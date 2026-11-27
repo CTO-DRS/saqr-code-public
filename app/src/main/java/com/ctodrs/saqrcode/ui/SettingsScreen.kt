@@ -802,6 +802,33 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     }
                 }
             }
+            val crashCtx = androidx.compose.ui.platform.LocalContext.current
+            var crash by remember { mutableStateOf(com.ctodrs.saqrcode.data.CrashLog.latest(crashCtx)) }
+            crash?.let { report ->
+                Group {
+                    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(Sp.lg), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.crash_title), style = Saqr.type.body.copy(fontWeight = FontWeight.SemiBold), color = c.text1)
+                            Text(stringResource(R.string.crash_body), style = Saqr.type.caption, color = c.text2)
+                        }
+                        Text(stringResource(R.string.crash_share), style = Saqr.type.caption.copy(fontWeight = FontWeight.SemiBold), color = c.accentText,
+                            modifier = Modifier.heightIn(min = 48.dp).clickable(role = Role.Button) {
+                                runCatching {
+                                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(android.content.Intent.EXTRA_SUBJECT, "Saqr Code crash report")
+                                        putExtra(android.content.Intent.EXTRA_TEXT, report)
+                                    }
+                                    crashCtx.startActivity(android.content.Intent.createChooser(send, null).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                                }
+                            }.padding(horizontal = Sp.sm, vertical = Sp.md))
+                        Text(stringResource(R.string.crash_clear), style = Saqr.type.caption, color = c.text3,
+                            modifier = Modifier.heightIn(min = 48.dp).clickable(role = Role.Button) {
+                                com.ctodrs.saqrcode.data.CrashLog.clear(crashCtx); crash = null
+                            }.padding(horizontal = Sp.sm, vertical = Sp.md))
+                    }
+                }
+            }
             SectionLabel(stringResource(R.string.about_developer), Modifier.padding(top = Sp.md))
             val dctx = androidx.compose.ui.platform.LocalContext.current
             val ver = remember { runCatching { dctx.packageManager.getPackageInfo(dctx.packageName, 0).versionName }.getOrNull().orEmpty() }

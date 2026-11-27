@@ -182,6 +182,10 @@
     <string name="git_stash">‏احفظ التغييرات مؤقتًا</string>
     <string name="git_stash_pop">‏أعد آخر حفظ مؤقت</string>
     <string name="git_cherry_pick_tip">‏طبّق آخر Commit فيه هنا</string>
+    <string name="crash_title">‏آخر تقرير تعطّل</string>
+    <string name="crash_body">‏محفوظ على جوالك فقط. شاركه إذا تبي مساعدة؛ تُحذف منه المفاتيح والأسرار.</string>
+    <string name="crash_share">‏شارك</string>
+    <string name="crash_clear">‏امسح</string>
     <string name="git_fetch">جلب</string>
     <string name="git_init">تهيئة المستودع</string>
     <string name="git_link_github">ربط GitHub</string>

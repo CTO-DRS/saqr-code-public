@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.30] — 2026-11-27 — Local crash report · تقرير التعطّل المحلي
+
+- **Crash recorder, on this phone only:** if the app crashes, a short report (version, device, Android version, trimmed stack trace) is saved locally. Keys, tokens and passwords are scrubbed. Nothing is uploaded.
+- **Settings, About:** after a crash a card offers **Share** (your own share sheet) or **Clear**. Last 5 reports are kept.
+- This is how the 1.0 crash-free gate can be measured without any telemetry.
+- **Tests:** `V0130CrashLogTest` (format, secret scrubbing, size cap, keep-5, clear).
+- EN + AR. versionName 0.1.30, versionCode 69.
+
 ## [0.1.29] — 2026-11-27 — Git cherry-pick · نقل Commit
 
 - **Cherry-pick from the branch list:** tap a branch, then "Apply its latest commit here". The newest commit of that branch is applied on top of the branch you are on. On a conflict nothing is left half-done: the pick is rolled back and the message names the conflicted files.

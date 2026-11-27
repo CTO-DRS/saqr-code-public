@@ -30,6 +30,7 @@ class SaqrApp : Application() {
         // v0.13.5 desert mode: the stored mode seeds the gate, then the network watcher keeps it honest.
         com.ctodrs.saqrcode.agent.DesertState.mode =
             com.ctodrs.saqrcode.agent.DesertMode.Mode.from(settings.desert)
+        com.ctodrs.saqrcode.data.CrashLog.install(this, BuildConfig.VERSION_NAME)
         registerConnectivityWatcher()
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityStarted(a: android.app.Activity) { com.ctodrs.saqrcode.service.AgentRuntime.visibleActivities++ }
