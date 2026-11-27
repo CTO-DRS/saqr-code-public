@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.12] — 2026-11-27 — Arabic voice commands (Gulf dialects) · أوامر صوتية خليجية
+
+- **Hands-free voice commands:** in wake mode, «يا صقر» followed by a command now runs it in the app instead of sending it as a prompt: stop «وقف / بس / خلاص / بطل», send «أرسل / ابعت», undo to the previous branch «تراجع / رجّع», regenerate «عيد / مرة ثانية», new chat «محادثة جديدة», sessions «المحادثات», read the last answer aloud «اقرأ / اسمعني», stop the reader «اسكت», clear the composer «امسح», and hands-free off «طفّي المايك / وقف الاستماع». A small English set (stop, send, undo, new chat…) works too.
+- **Dialect-tolerant:** every phrase matches after Arabic normalization (harakat stripped, alef forms unified), so recognizer spellings of the same Gulf words all land; only a whole utterance commands, so a prompt that merely contains «وقف» still reaches the agent untouched.
+- **State-aware:** stop needs a running turn, mute needs the reader speaking, undo/regenerate need history; anything else answers "not available now" with a toast. Typed text in the composer survives a command and «أرسل» sends it.
+- **Tests:** `V0113VoiceCommandsTest` (6): Gulf spellings, dialect variants, English set, no substring hijacking, harakat/alef normalization, state gating.
+- versionName 0.1.12, versionCode 51.
+
 ## [0.1.11] — 2026-11-27 — PR review, merge and undo from the phone · مراجعة ودمج الطلبات
 
 - **A new PRs tab in Git (ديوان)** when origin is a GitHub repo: every open pull request with its number, title, head → base, author and draft badge.

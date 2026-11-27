@@ -500,6 +500,12 @@
     <string name="hands_free_typing">Continuous</string>
     <string name="hands_free_wake">“Ya Saqr” wake</string>
     <string name="hands_free_hint">Keeps listening while a project is open. In wake mode, say “Ya Saqr” then your command and it sends itself. Stop any time from the notification or the mic button.</string>
+    <string name="voice_cmd_na">Not available right now</string>
+    <string name="voice_cmd_stopped">Stopped</string>
+    <string name="voice_cmd_new_chat">New chat</string>
+    <string name="voice_cmd_cleared">Cleared</string>
+    <string name="voice_cmd_reading">Reading aloud</string>
+    <string name="voice_cmd_muted">Reader stopped</string>
     <string name="hands_free_stopped">Hands-free off</string>
     <!-- v0.13.5 desert mode -->
     <string name="desert_section">Desert mode</string>

@@ -284,7 +284,67 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
             cmdBuf.wake(after)
         } else if (cmdBuf.armed) cmdBuf.feed(raw)
     }
+    /** First turn that may run in the background: explain battery killers once, ask for notifications. */
+    fun beforeFirstBackgroundRun() {
+        if (!settings.keepInBackground) return
+        if (android.os.Build.VERSION.SDK_INT >= 33 && !settings.notificationsAsked &&
+            androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            settings.notificationsAsked = true
+            notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        } else if (!settings.batteryTipShown) {
+            val pm = ctx.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+            settings.batteryTipShown = true
+            if (!pm.isIgnoringBatteryOptimizations(ctx.packageName)) batteryDialog = true
+        }
+    }
+
+    /** v0.1.12: run a recognized voice command (Gulf Arabic + English) instead of sending it as a prompt. */
+    fun runVoiceCommand(c: com.ctodrs.saqrcode.agent.VoiceCommands.Command) {
+        val VC = com.ctodrs.saqrcode.agent.VoiceCommands
+        val hasHistory = ws.agent.items.any { it is com.ctodrs.saqrcode.agent.ChatItem.User }
+        val speaking = speaker.speakingKey != -1L
+        if (!VC.allowed(c, ws.agent.running, speaking, hasHistory)) {
+            android.widget.Toast.makeText(ctx, R.string.voice_cmd_na, android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        fun toast(res: Int) = android.widget.Toast.makeText(ctx, res, android.widget.Toast.LENGTH_SHORT).show()
+        when (c) {
+            com.ctodrs.saqrcode.agent.VoiceCommands.Command.STOP -> { ws.agent.stop(); toast(R.string.voice_cmd_stopped) }
+            com.ctodrs.saqrcode.agent.VoiceCommands.Command.SEND -> {
+                val text = typedPrefix.trim()
+                typedPrefix = ""; input = ""
+                if (text.isBlank()) toast(R.string.voice_cmd_na)
+                else if (!ws.agent.running) sendRef[0]?.invoke(text) else input = text
+            }
+            com.ctodrs.saqrcode.agent.VoiceCommands.Command.UNDO -> {
+                val lastUser = ws.agent.items.lastOrNull { it is com.ctodrs.saqrcode.agent.ChatItem.User } as? com.ctodrs.saqrcode.agent.ChatItem.User
+                if (lastUser == null || !ws.agent.switchBranch(lastUser, -1)) toast(R.string.voice_cmd_na)
+            }
+            com.ctodrs.saqrcode.agent.VoiceCommands.Command.REGENERATE -> { beforeFirstBackgroundRun(); if (ws.agent.regenerate()) Unit else toast(R.string.voice_cmd_na) }
+            com.ctodrs.saqrcode.agent.VoiceCommands.Command.NEW_CHAT -> { ws.agent.newSession(); toast(R.string.voice_cmd_new_chat) }
+            com.ctodrs.saqrcode.agent.VoiceCommands.Command.SESSIONS -> { showSessions = true; ws.tab = Pane.AGENT }
+            com.ctodrs.saqrcode.agent.VoiceCommands.Command.READ -> {
+                val last = ws.agent.items.lastOrNull { it is com.ctodrs.saqrcode.agent.ChatItem.Assistant } as? com.ctodrs.saqrcode.agent.ChatItem.Assistant
+                if (last == null) toast(R.string.voice_cmd_na) else { toast(R.string.voice_cmd_reading); speaker.toggle(last.key, last.text) }
+            }
+            com.ctodrs.saqrcode.agent.VoiceCommands.Command.MUTE -> { speaker.stop(); toast(R.string.voice_cmd_muted) }
+            com.ctodrs.saqrcode.agent.VoiceCommands.Command.CLEAR -> { input = ""; toast(R.string.voice_cmd_cleared) }
+            com.ctodrs.saqrcode.agent.VoiceCommands.Command.SLEEP -> {
+                settings.dictation = com.ctodrs.saqrcode.agent.Dictation.Mode.OFF.key
+                toast(R.string.hands_free_stopped)
+            }
+        }
+    }
     fun finishVoiceCommand(cmd: String) {
+        val voiceCmd = com.ctodrs.saqrcode.agent.VoiceCommands.match(cmd)
+        if (voiceCmd != null) {
+            cmdBuf.disarm()
+            input = typedPrefix
+            // SEND consumes typedPrefix itself; every other command is done with it
+            if (voiceCmd != com.ctodrs.saqrcode.agent.VoiceCommands.Command.SEND) typedPrefix = ""
+            runVoiceCommand(voiceCmd)
+            return
+        }
         val full = com.ctodrs.saqrcode.agent.VoiceLocale.merge(typedPrefix, cmd).trim()
         typedPrefix = ""; cmdBuf.disarm()
         if (full.isBlank()) { input = ""; return }
@@ -333,19 +393,6 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
             continuous.stop()
             com.ctodrs.saqrcode.service.Notifs.cancelDictation(ctx)
             cmdBuf.disarm(); typedPrefix = ""
-        }
-    }
-    /** First turn that may run in the background: explain battery killers once, ask for notifications. */
-    fun beforeFirstBackgroundRun() {
-        if (!settings.keepInBackground) return
-        if (android.os.Build.VERSION.SDK_INT >= 33 && !settings.notificationsAsked &&
-            androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            settings.notificationsAsked = true
-            notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-        } else if (!settings.batteryTipShown) {
-            val pm = ctx.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
-            settings.batteryTipShown = true
-            if (!pm.isIgnoringBatteryOptimizations(ctx.packageName)) batteryDialog = true
         }
     }
 

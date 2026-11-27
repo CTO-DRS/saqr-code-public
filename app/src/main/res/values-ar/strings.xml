@@ -500,6 +500,12 @@
     <string name="hands_free_typing">إملاء مستمر</string>
     <string name="hands_free_wake">إيقاظ «يا صقر»</string>
     <string name="hands_free_hint">يبقى الصقر في إنصات ما دام المشروع مفتوحًا. في وضع الإيقاظ قل «يا صقر» ثم أمرك فيُرسل تلقائيًا. أوقفه متى شئت من الإشعار أو زر الميكروفون.</string>
+    <string name="voice_cmd_na">غير متاح الآن</string>
+    <string name="voice_cmd_stopped">توقف</string>
+    <string name="voice_cmd_new_chat">محادثة جديدة</string>
+    <string name="voice_cmd_cleared">تم المسح</string>
+    <string name="voice_cmd_reading">أقرأ بصوت عالٍ</string>
+    <string name="voice_cmd_muted">توقفت القراءة</string>
     <string name="hands_free_stopped">أُوقف الإملاء بلا يدين</string>
     <!-- v0.13.5 وضع صحراوي -->
     <string name="desert_section">وضع صحراوي</string>
