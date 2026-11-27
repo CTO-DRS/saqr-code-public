@@ -15,7 +15,7 @@ data class SlashCommand(
     val action: Action = Action.PROMPT,
     val builtin: Boolean = false,
 ) {
-    enum class Action { PROMPT, CLEAR, MODEL }
+    enum class Action { PROMPT, CLEAR, MODEL, COMPARE }
 }
 
 /** Context available when a command is expanded. */
@@ -45,6 +45,7 @@ object SlashCommands {
     const val PERF = "perf"
     const val SECURE = "secure"
     const val DEBUG = "debug"
+    const val COMPARE = "compare"
 
     private const val MAX_SELECTION = 6000
 
@@ -73,6 +74,7 @@ object SlashCommands {
             listOf("تتبع"), builtin = true),
         SlashCommand(CLEAR, "", action = SlashCommand.Action.CLEAR, builtin = true),
         SlashCommand(MODEL, "", action = SlashCommand.Action.MODEL, builtin = true),
+        SlashCommand(COMPARE, "", listOf("قارن"), action = SlashCommand.Action.COMPARE, builtin = true),
     )
 
     private val NAME = Regex("^[\\p{L}\\p{N}_-]{1,32}$")

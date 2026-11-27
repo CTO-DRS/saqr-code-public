@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.14] — 2026-11-27 — Compare two model answers · قارن النماذج
+
+- **/compare «قارن»:** type /compare (or /قارن) followed by a question and two models answer it side by side — the current model against any other configured provider, switchable in the dialog. Plain completions, no tools, no file changes.
+- **Each card shows** the provider/model label, elapsed time, tokens and estimated cost (from the user's price table; unknown prices drop out); answers are selectable text, errors show per side, and a missing second provider explains itself instead of failing.
+- EN + AR, RTL, 48dp targets.
+- **Tests:** `V0115ModelDuelTest`: cost math against PriceTable (including prefix-matched versions), stats line composition, label, unknown-price and missing-usage dropouts.
+- versionName 0.1.14, versionCode 53.
+
 ## [0.1.13] — 2026-11-27 — Project rules (AGENTS.md), nested and editable · قواعد المشروع
 
 - **Nested AGENTS.md:** the root rules file always applies, and when the session touches files, the AGENTS.md of each directory on their path applies too — labeled by directory, each file capped, the whole collection budgeted. Paths trying to escape the project are ignored.

@@ -10,6 +10,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +38,7 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -87,6 +90,8 @@ import com.ctodrs.saqrcode.ui.theme.Radius
 import com.ctodrs.saqrcode.ui.theme.Saqr
 import com.ctodrs.saqrcode.ui.theme.Sp
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -178,12 +183,18 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     }
 
     /** Run a slash command or send the text as is. */
+    // v0.1.14 «قارن»: the question being compared across two models (null = no duel open)
+    var duelQuestion by remember { mutableStateOf<String?>(null) }
     fun dispatch(raw: String) {
         val inv = SlashCommands.parse(raw, settings.customCommands)
         when (inv?.command?.action) {
             null -> ws.agent.send(raw)
             SlashCommand.Action.CLEAR -> ws.agent.clear()
             SlashCommand.Action.MODEL -> Unit // handled by the composer (opens the model menu)
+            SlashCommand.Action.COMPARE -> {
+                if (inv.args.isBlank()) android.widget.Toast.makeText(ctx, R.string.duel_hint, android.widget.Toast.LENGTH_LONG).show()
+                else duelQuestion = inv.args
+            }
             SlashCommand.Action.PROMPT -> {
                 val tab = ws.tabs.getOrNull(ws.activeTab)
                 val sel = tab?.value?.let { v -> if (v.selection.collapsed) null else v.text.substring(v.selection.min, v.selection.max) }
@@ -517,6 +528,8 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     if (showSessions) {
         com.ctodrs.saqrcode.ui.chat.SessionsSheet(ws.agent, onOpened = { speaker.stop(); ws.tab = Pane.AGENT }, onDismiss = { showSessions = false })
     }
+    // v0.1.14 «قارن»: the model-comparison duel dialog.
+    duelQuestion?.let { q -> DuelDialog(q, settings, onDismiss = { duelQuestion = null }) }
     // v0.1.13: edit the project's AGENTS.md rules (seeded from the template when missing).
     if (showRules) {
         RulesDialog(java.io.File(ws.dir, com.ctodrs.saqrcode.agent.ProjectRules.FILE), onDismiss = { showRules = false })
@@ -862,5 +875,100 @@ private fun RulesDialog(file: java.io.File, onDismiss: () -> Unit) {
             }) { Text(stringResource(R.string.save), color = c.accentText) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
+    )
+}
+
+/** v0.1.14 «قارن»: ask two models the same question and show both answers with time, tokens and cost. */
+@Composable
+private fun DuelDialog(question: String, settings: com.ctodrs.saqrcode.data.SettingsStore, onDismiss: () -> Unit) {
+    val c = Saqr.colors
+    val duel = com.ctodrs.saqrcode.agent.ModelDuel
+    val prices = remember { settings.prices() }
+    val curId = settings.activeProvider
+    val opponents = remember {
+        com.ctodrs.saqrcode.agent.Providers.all.filter { it.id != curId && settings.providerConfigured(it.id) }
+    }
+    var oppId by remember { mutableStateOf(opponents.firstOrNull()?.id) }
+    var sideA by remember { mutableStateOf(com.ctodrs.saqrcode.agent.ModelDuel.Side(curId, settings.config(curId).model)) }
+    var sideB by remember { mutableStateOf<com.ctodrs.saqrcode.agent.ModelDuel.Side?>(null) }
+
+    suspend fun runSide(def: com.ctodrs.saqrcode.agent.ProviderDef): com.ctodrs.saqrcode.agent.ModelDuel.Side {
+        val cfg = settings.config(def.id)
+        val t0 = System.currentTimeMillis()
+        return try {
+            val client = com.ctodrs.saqrcode.agent.LlmClient(def, cfg.baseUrl, cfg.model, settings.apiKey(def.id))
+            val listener = object : com.ctodrs.saqrcode.agent.StreamListener {
+                override fun onText(delta: String) {}
+            }
+            val turn = client.complete(
+                "You are a helpful coding assistant inside the Saqr Code app. Answer directly and concisely, in the language the question is written in (Arabic dialects included). No tools are available.",
+                listOf(com.ctodrs.saqrcode.agent.Msg.User(question)), emptyList(), listener)
+            com.ctodrs.saqrcode.agent.ModelDuel.Side(def.id, cfg.model, turn.text, System.currentTimeMillis() - t0, turn.usage)
+        } catch (e: Exception) {
+            com.ctodrs.saqrcode.agent.ModelDuel.Side(def.id, cfg.model, elapsedMs = System.currentTimeMillis() - t0, error = e.message ?: e.javaClass.simpleName)
+        }
+    }
+
+    LaunchedEffect(oppId) {
+        sideA = com.ctodrs.saqrcode.agent.ModelDuel.Side(curId, settings.config(curId).model)
+        sideB = oppId?.let { com.ctodrs.saqrcode.agent.ModelDuel.Side(it, settings.config(it).model) }
+        kotlinx.coroutines.coroutineScope {
+            val a = async { runSide(com.ctodrs.saqrcode.agent.Providers.byId(curId)) }
+            val b = oppId?.let { id -> async { runSide(com.ctodrs.saqrcode.agent.Providers.byId(id)) } }
+            sideA = a.await()
+            sideB = b?.await()
+        }
+    }
+
+    @Composable
+    fun SideCard(side: com.ctodrs.saqrcode.agent.ModelDuel.Side) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.md)).background(c.surface2).padding(Sp.md), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
+            Text(com.ctodrs.saqrcode.ui.chat.ltr(duel.label(side)), style = Saqr.type.monoSmall, color = c.accentText)
+            val stats = duel.statsOf(side, prices)
+            if (stats.isNotBlank()) Text(com.ctodrs.saqrcode.ui.chat.ltr(stats), style = Saqr.type.caption, color = c.text3)
+            when {
+                side.error != null -> Text(side.error, style = Saqr.type.bodySmall, color = c.danger)
+                side.running -> Text(stringResource(R.string.duel_running), style = Saqr.type.bodySmall, color = c.text2)
+                else -> androidx.compose.foundation.text.selection.SelectionContainer {
+                    Text(side.text, style = Saqr.type.bodySmall, color = c.text1)
+                }
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss, containerColor = c.surface1,
+        icon = { SIcon(Lucide.GitCompare, size = 24.dp, tint = c.accentText) },
+        title = { Text(stringResource(R.string.duel_title), style = Saqr.type.title2) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                Text(question, style = Saqr.type.bodySmall, color = c.text2, maxLines = 3)
+                SideCard(sideA)
+                if (opponents.isEmpty()) {
+                    Text(stringResource(R.string.duel_no_opponent), style = Saqr.type.bodySmall, color = c.text3)
+                } else {
+                    var picker by remember { mutableStateOf(false) }
+                    Box {
+                        Row(Modifier.fillMaxWidth().minimumInteractiveComponentSize().clip(RoundedCornerShape(Radius.sm))
+                            .clickable(onClickLabel = stringResource(R.string.duel_vs)) { picker = true }.padding(horizontal = Sp.sm),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.duel_vs), style = Saqr.type.label, color = c.text2)
+                            Spacer(Modifier.width(Sp.xs))
+                            Text(oppId ?: "", style = Saqr.type.monoSmall, color = c.accentText)
+                        }
+                        androidx.compose.material3.DropdownMenu(picker, { picker = false }, Modifier.background(c.surface2)) {
+                            opponents.forEach { d ->
+                                androidx.compose.material3.DropdownMenuItem(
+                                    text = { Text(d.id, style = Saqr.type.label, color = c.text1) },
+                                    onClick = { picker = false; oppId = d.id },
+                                )
+                            }
+                        }
+                    }
+                    sideB?.let { SideCard(it) }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close), color = c.accentText) } },
     )
 }

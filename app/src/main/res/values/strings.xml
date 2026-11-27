@@ -509,6 +509,11 @@
     <string name="rules_title">Project rules</string>
     <string name="rules_hint">AGENTS.md — Saqr reads these rules at the start of every session in this project. Nested folders can carry their own AGENTS.md.</string>
     <string name="rules_saved">Rules saved</string>
+    <string name="duel_title">Compare models</string>
+    <string name="duel_hint">Type /compare (or /قارن) followed by your question to hear two models</string>
+    <string name="duel_running">Asking…</string>
+    <string name="duel_no_opponent">No second provider is configured — add one in Settings to compare</string>
+    <string name="duel_vs">Against:</string>
     <string name="hands_free_stopped">Hands-free off</string>
     <!-- v0.13.5 desert mode -->
     <string name="desert_section">Desert mode</string>

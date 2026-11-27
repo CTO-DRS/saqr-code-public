@@ -509,6 +509,11 @@
     <string name="rules_title">قواعد المشروع</string>
     <string name="rules_hint">AGENTS.md — يقرأ صقر هذه القواعد في بداية كل جلسة في هذا المشروع. المجلدات الفرعية يمكن أن تحمل AGENTS.md خاصًا بها.</string>
     <string name="rules_saved">حُفظت القواعد</string>
+    <string name="duel_title">مقارنة النماذج</string>
+    <string name="duel_hint">اكتب /قارن متبوعًا بسؤالك لتسمع إجابة نموذجين</string>
+    <string name="duel_running">…أسأل</string>
+    <string name="duel_no_opponent">لا يوجد مزوّد ثانٍ مهيأ — أضف واحدًا من الإعدادات للمقارنة</string>
+    <string name="duel_vs">ضد:</string>
     <string name="hands_free_stopped">أُوقف الإملاء بلا يدين</string>
     <!-- v0.13.5 وضع صحراوي -->
     <string name="desert_section">وضع صحراوي</string>
