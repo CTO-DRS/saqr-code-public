@@ -933,6 +933,7 @@
     <string name="sync_repo_exists">الاسم محجوز — إن كان مستودعك هو نفسه فاضغط «ارفع» من جديد.</string>
     <string name="sync_created">أُنشئ المستودع الخاص %1$s — يرفع الآن…</string>
     <string name="sync_applied">تمّت المزامنة: %1$d إعداد، %2$d ثيم، %3$d أمر، %4$d حزمة</string>
+    <string name="sync_applied_skills">المهارات: %1$d أُضيفت أو حُدّثت، %2$d رُفضت للأمان</string>
     <string name="sync_tag_pushing">يرفع الآن…</string>
     <string name="sync_tag_pulling">يجلب الآن…</string>
     <!-- v0.15 Autonomous Core -->

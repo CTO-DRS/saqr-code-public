@@ -107,7 +107,7 @@ Audit basis: Wave H found secrets reaching synced settings through free-text fie
 ### الموجة ي · الصدق والمتانة / Wave J: honest failure states (autonomous, from the 0.1.57 audit)
 Audit basis: step, time, cost and concurrency settings are all clamped; GitHub error paths carry no tokens; the one silent degradation found is the plain-prefs fallback when the keystore fails.
 1. **(0.1.57, shipped) Unencrypted-keys notice** in Settings when the keystore fell back to plain prefs.
-2. **(next) Other silent fallbacks:** list every `runCatching { ... }.getOrNull()` that hides a user-visible failure (sync apply, backup restore, skill install) and surface a notice where the user would otherwise think it worked.
+2. **(0.1.58, shipped for sync; backup restore already reports added and skipped) Other silent fallbacks:** list every `runCatching { ... }.getOrNull()` that hides a user-visible failure (sync apply, backup restore, skill install) and surface a notice where the user would otherwise think it worked.
 3. **(device QA) Two-pane tablet project screen** (Wave F item 5).
 
 ---

@@ -933,6 +933,7 @@
     <string name="sync_repo_exists">That name is taken — if it\'s your own repository, push again.</string>
     <string name="sync_created">Private repository %1$s created — pushing…</string>
     <string name="sync_applied">Synced: %1$d settings, %2$d themes, %3$d commands, %4$d packs</string>
+    <string name="sync_applied_skills">Skills: %1$d added or updated, %2$d refused for safety</string>
     <string name="sync_tag_pushing">Pushing…</string>
     <string name="sync_tag_pulling">Pulling…</string>
     <!-- v0.15 Autonomous Core -->
