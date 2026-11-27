@@ -137,7 +137,7 @@ fun GlassIconButton(icon: ImageVector, contentDescription: String?, onClick: () 
 fun GlassPill(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, content: @Composable RowScope.() -> Unit) {
     val c = Saqr.colors
     Row(
-        modifier.height(44.dp)
+        modifier.heightIn(min = 44.dp)
             .then(if (onClick != null) Modifier.pressable(onClick = onClick) else Modifier)
             .clip(CircleShape).background(c.glass).border(1.dp, c.border, CircleShape)
             .padding(horizontal = 6.dp),

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -287,7 +288,7 @@ private fun SheetButton(text: String, icon: ImageVector, primary: Boolean, modif
     val shape = RoundedCornerShape(16.dp)
     val bg = if (primary) Brush.linearGradient(listOf(Color(0xFF6366F1), Color(0xFF8B5CF6))) else Brush.linearGradient(listOf(Color(0x1AFFFFFF), Color(0x1AFFFFFF)))
     Row(
-        modifier.height(52.dp).clip(shape).background(bg).border(1.dp, Color(0x33FFFFFF), shape).pressable(onClick = onClick)
+        modifier.heightIn(min = 52.dp).clip(shape).background(bg).border(1.dp, Color(0x33FFFFFF), shape).pressable(onClick = onClick)
             .semantics(mergeDescendants = true) { role = Role.Button; contentDescription = text },
         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
     ) {

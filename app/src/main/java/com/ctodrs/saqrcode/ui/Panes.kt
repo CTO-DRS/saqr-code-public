@@ -201,7 +201,7 @@ fun FilesPaneContent(
                     tabs.forEachIndexed { i, t ->
                         val sel = i == activeTab && !showTree
                         Row(
-                            Modifier.height(38.dp).clip(RoundedCornerShape(Radius.sm))
+                            Modifier.heightIn(min = 38.dp).clip(RoundedCornerShape(Radius.sm))
                                 .background(if (sel) c.surface2 else Color.Transparent)
                                 .border(1.dp, if (sel) c.borderStrong else c.border.copy(alpha = 0.5f), RoundedCornerShape(Radius.sm))
                                 .clickable { onActivate(i) }.padding(start = 10.dp, end = 4.dp),

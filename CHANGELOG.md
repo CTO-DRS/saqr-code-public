@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.27] — 2026-11-27 — Large-text layout · تخطيط النص الكبير
+
+- **Font scale up to 200%:** buttons, chips, menu pills and palette rows that had a fixed height now use it as a minimum, so large text grows the control instead of being clipped. Covers the primary button, onboarding button, model pill, git and pane menus, code-editor toolbar, terminal tabs, developer card actions and the command palette.
+- Looks identical at normal text size. Needs a device look at 200% (Settings, Display, Font size).
+- versionName 0.1.27, versionCode 66.
+
 ## [0.1.26] — 2026-11-27 — First-run tips + FAQ · نصائح البداية والأسئلة الشائعة
 
 - **Onboarding page 4 "Start with a small ask":** example prompts in Arabic and English and a note that the agent shows a plan and asks before risky steps.

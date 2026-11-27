@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -94,7 +95,7 @@ fun OnboardingScreen(onDone: (openSettings: Boolean) -> Unit, initialPage: Int =
             PrimaryButton(
                 stringResource(if (last) R.string.onb_start else R.string.next),
                 onClick = { if (last) onDone(true) else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = Sp.xxl).height(54.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Sp.xxl).heightIn(min = 54.dp),
                 icon = if (last) Lucide.KeyRound else null,
             )
             Spacer(Modifier.height(Sp.xl))

@@ -154,7 +154,7 @@ fun CommandPaletteDialog(visible: Boolean, onDismiss: () -> Unit, items: List<Pa
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { results.firstOrNull()?.let(onSelect) }),
                     decorationBox = { inner ->
-                        Box(Modifier.height(30.dp), contentAlignment = Alignment.CenterStart) {
+                        Box(Modifier.heightIn(min = 30.dp), contentAlignment = Alignment.CenterStart) {
                             if (query.isEmpty()) Text(stringResource(R.string.palette_hint), style = Saqr.type.body, color = c.text3)
                             inner()
                         }
@@ -163,7 +163,7 @@ fun CommandPaletteDialog(visible: Boolean, onDismiss: () -> Unit, items: List<Pa
                 )
                 Spacer(Modifier.width(Sp.sm))
                 Box(
-                    Modifier.height(26.dp).clip(RoundedCornerShape(8.dp)).background(c.surface3)
+                    Modifier.heightIn(min = 26.dp).clip(RoundedCornerShape(8.dp)).background(c.surface3)
                         .clickable(onClick = onDismiss).padding(horizontal = Sp.sm),
                     contentAlignment = Alignment.Center,
                 ) { Text("Esc", style = Saqr.type.monoMicro, color = c.text3) }

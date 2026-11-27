@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -199,7 +200,7 @@ fun TerminalContent(
                         tabs.forEachIndexed { i, t ->
                             val sel = i == active
                             Row(
-                                Modifier.height(28.dp).clip(RoundedCornerShape(8.dp)).background(if (sel) Color(0xFF1C2027) else Color.Transparent)
+                                Modifier.heightIn(min = 28.dp).clip(RoundedCornerShape(8.dp)).background(if (sel) Color(0xFF1C2027) else Color.Transparent)
                                     .border(1.dp, if (sel) Color(0xFF2C313A) else Color.Transparent, RoundedCornerShape(8.dp))
                                     .clickable { onSelectTab(i) }.padding(start = 8.dp, end = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -305,7 +306,7 @@ private fun ChromeIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, la
 private fun ExtraKey(label: String, active: Boolean, onClick: () -> Unit) {
     val c = Saqr.colors
     Box(
-        Modifier.height(32.dp).clip(RoundedCornerShape(8.dp)).background(if (active) c.accent else Color(0xFF15181D))
+        Modifier.heightIn(min = 32.dp).clip(RoundedCornerShape(8.dp)).background(if (active) c.accent else Color(0xFF15181D))
             .border(1.dp, if (active) c.accent else Color(0xFF262A31), RoundedCornerShape(8.dp))
             .clickable(onClick = onClick).padding(horizontal = 11.dp),
         contentAlignment = Alignment.Center,
