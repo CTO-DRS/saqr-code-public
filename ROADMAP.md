@@ -72,7 +72,7 @@ Audit basis: hardware-keyboard shortcuts exist only inside the code editor; no l
 Audit basis: the agent loop (AgentSession) cannot be tested end to end because it takes Android-bound stores; provider errors cover 7 kinds but not wrong-model or context-overflow; the project screen is single-pane on tablets; there is no Arabic user guide inside the app.
 1. **(0.1.41, shipped) Provider error coverage:** wrong model name and context-too-long explained in plain words, tested.
 2. **(0.1.42, shipped) Agent loop seam:** put the model client behind a small interface with the current client as default, so the loop runs in a JVM test with a fake model (behaviour unchanged).
-3. **Whole-loop scenario tests** (Wave E item 7): edit, fix-loop, approval, cancel, resume.
+3. **(0.1.43 started: plain reply, read-only tool call, provider failure; edit, approval, cancel and resume still open) Whole-loop scenario tests** (Wave E item 7): edit, fix-loop, approval, cancel, resume.
 4. **Per-turn cost caption**, once item 2 gives per-turn usage.
 5. **Two-pane project screen** on tablets and foldables.
 6. **Arabic user guide** inside the app (first steps, approvals, budgets, backup), reachable from Settings search.
