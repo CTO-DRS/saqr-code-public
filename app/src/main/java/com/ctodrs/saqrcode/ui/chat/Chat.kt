@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.agent.ErrorExplainer
+import com.ctodrs.saqrcode.agent.TurnCaption
 import com.ctodrs.saqrcode.agent.Budget
 import com.ctodrs.saqrcode.agent.AgentRole
 import com.ctodrs.saqrcode.agent.AgentRoles
@@ -324,6 +325,12 @@ fun ChatRow(
             if (!item.streaming && workspaceDir != null) {
                 val files = androidx.compose.runtime.remember(item.text, workspaceDir) { Deliverables.find(item.text, workspaceDir) }
                 files.forEach { FileCard(it, Modifier.padding(top = Sp.sm)) }
+            }
+            val caption = if (item.streaming) null else TurnCaption.format(item.usage, item.costUsd)
+            if (caption != null && item.text.isNotBlank()) {
+                val captionDesc = stringResource(R.string.turn_caption_desc, caption)
+                Text(ltr(caption), style = Saqr.type.caption, color = Saqr.colors.text3, maxLines = 1,
+                    modifier = Modifier.padding(top = Sp.sm).semantics { contentDescription = captionDesc })
             }
             if (showActions && item.text.isNotBlank()) {
                 if (sources.isNotEmpty()) SourcesRow(sources, Modifier.padding(top = Sp.sm))

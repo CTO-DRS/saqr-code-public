@@ -73,6 +73,9 @@ sealed class ChatItem {
         var feedback by mutableIntStateOf(0)
         var calls: List<ToolCall> = emptyList()
         val results = LinkedHashMap<String, String>()
+        /** v0.1.45: tokens and cost of the model call behind this reply (in memory; null until the call ends). */
+        var usage by mutableStateOf<Usage?>(null)
+        var costUsd by mutableStateOf<Double?>(null)
         /** Shown in the chat: blank turns that only called tools are hidden. */
         val visible get() = streaming || text.isNotBlank()
     }
@@ -859,6 +862,8 @@ class AgentSession(
             val used = turn.usage ?: UsageParser.estimate(inputChars, turn.text.length + turn.toolCalls.sumOf { it.argsJson.length + it.name.length })
             if (!used.estimated && used.input > 0) contextTokens = used.input.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
             recordUsage(usedModel, used)
+            bubble.usage = used
+            bubble.costUsd = PriceTable.cost(usedModel, used, settings.prices())
             // make sure the bubble shows the final text even if a delta launch is pending
             bubble.text = turn.text
             bubble.calls = turn.toolCalls
