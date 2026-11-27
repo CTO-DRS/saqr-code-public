@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.43] — 2026-11-27 — Whole-loop tests · اختبارات الحلقة كاملة
+
+- **Internal, no visible change:** the full agent loop now runs in unit tests with a scripted fake model and no network. Three scenarios: a plain reply, a read-only tool call whose result goes back to the model, and a provider failure that ends the run with an error notice.
+- versionName 0.1.43, versionCode 82.
+
 ## [0.1.42] — 2026-11-27 — Testable agent loop · حلقة الوكيل قابلة للاختبار
 
 - **Internal, no visible change:** the agent loop now talks to models through one small interface, so tests can drive it with a scripted fake model. The real client is the default and behaves exactly as before.
