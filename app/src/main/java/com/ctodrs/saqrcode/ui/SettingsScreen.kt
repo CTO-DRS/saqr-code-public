@@ -448,6 +448,7 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
     SettingsContent(ui, onBack)
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: String? = null) {
     val c = Saqr.colors
@@ -2189,8 +2190,10 @@ private fun imagePixels(ctx: android.content.Context, uri: android.net.Uri): Int
 }.getOrNull()
 
 /** Section id to scroll target, filled as the section labels compose. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 internal class SectionJump { val reqs = mutableMapOf<String, androidx.compose.foundation.relocation.BringIntoViewRequester>() }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun JumpLabel(jump: SectionJump, key: String, text: String, modifier: Modifier = Modifier) {
     val r = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
