@@ -44,6 +44,8 @@ class V0142AgentLoopTest {
 
     private fun session(fake: Fake): AgentSession {
         val app = RuntimeEnvironment.getApplication()
+        // Robolectric leaves nativeLibraryDir null; LinuxEnv reads it at construction.
+        app.applicationInfo.nativeLibraryDir = app.cacheDir.absolutePath
         val settings = SettingsStore(app, SecureStore(app))
         val id = Providers.all.first().id
         settings.activeProvider = id
