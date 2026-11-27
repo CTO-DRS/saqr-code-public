@@ -95,6 +95,7 @@ import com.ctodrs.saqrcode.agent.PlanItem
 import com.ctodrs.saqrcode.agent.QuickReplies
 import com.ctodrs.saqrcode.agent.Tools
 import com.ctodrs.saqrcode.ui.components.DiffChip
+import com.ctodrs.saqrcode.ui.errorExplanationRes
 import com.ctodrs.saqrcode.ui.components.EmptyState
 import com.ctodrs.saqrcode.ui.components.PrimaryButton
 import com.ctodrs.saqrcode.ui.components.ProgressLine
@@ -789,17 +790,7 @@ private fun NoticeCard(item: ChatItem.Notice) {
             ChatItem.Notice.Kind.FALLBACK -> stringResource(R.string.notice_fallback, item.text)
             ChatItem.Notice.Kind.TEAM -> teamNoticeText(item)
             ChatItem.Notice.Kind.ERROR -> ErrorExplainer.fromOrdinal(item.count)?.takeIf { it != ErrorExplainer.Kind.OTHER }?.let {
-                stringResource(when (it) {
-                    ErrorExplainer.Kind.OFFLINE -> R.string.err_offline
-                    ErrorExplainer.Kind.TIMEOUT -> R.string.err_timeout
-                    ErrorExplainer.Kind.AUTH -> R.string.err_auth
-                    ErrorExplainer.Kind.RATE_LIMIT -> R.string.err_rate_limit
-                    ErrorExplainer.Kind.QUOTA -> R.string.err_quota
-                    ErrorExplainer.Kind.SERVER -> R.string.err_server
-                    ErrorExplainer.Kind.MODEL_NOT_FOUND -> R.string.err_model_not_found
-                    ErrorExplainer.Kind.CONTEXT_TOO_LONG -> R.string.err_context_long
-                    else -> R.string.err_tls
-                }) + "\n\n" + item.text
+                stringResource(errorExplanationRes(it) ?: R.string.err_tls) + "\n\n" + item.text
             } ?: item.text
             else -> item.text
         }

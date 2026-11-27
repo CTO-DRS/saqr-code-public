@@ -1366,13 +1366,17 @@ private fun ProviderItem(def: ProviderDef, cfg: ProviderConfig, active: Boolean,
                         status = "…"
                         scope.launch {
                             status = ui.fetchModels(def, baseUrl, model, key.ifBlank { null })
-                                .fold({ models = it.ifEmpty { def.suggestedModels }; modelsFmt.format(it.size.toString()) }, { it.message })
+                                .fold({ models = it.ifEmpty { def.suggestedModels }; modelsFmt.format(it.size.toString()) }, { e ->
+                                    // Say why in plain words (key rejected, offline, rate limit); never a blank line.
+                                    val why = errorExplanationRes(com.ctodrs.saqrcode.agent.ErrorExplainer.classify(e))?.let { fetchCtx.getString(it) }
+                                    why ?: e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName
+                                })
                         }
                     }, icon = Lucide.RefreshCw)
                     if (!active) GhostButton(stringResource(R.string.use_this), { ui.onActivate(def.id) }, icon = Lucide.Check)
                     if (cfg.hasKey) GhostButton(stringResource(R.string.remove_key), { ui.onClearKey(def.id); key = ""; status = keyRemovedText }, icon = Lucide.Trash2, tint = c.danger)
                 }
-                status?.let { Text(it, style = Saqr.type.caption, color = c.text2, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                status?.let { Text(it, style = Saqr.type.caption, color = c.text2, maxLines = 3, overflow = TextOverflow.Ellipsis) }
             }
         }
     }

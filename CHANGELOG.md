@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.61] — 2026-11-28 — "Fetch models" says why it failed · «جلب النماذج» يشرح سبب الفشل
+
+- **Fix.** When fetching the model list failed, Settings showed the raw error text, or nothing at all when the error had no message. It now uses the same plain-words explanations as the chat (key rejected, no connection, rate limit, and so on), and falls back to the raw text, then to the error type, so the line is never blank.
+- The chat and Settings now share one explanation table.
+- Two new tests.
+- versionName 0.1.61, versionCode 100.
+- عند فشل جلب النماذج تظهر الآن رسالة بكلمات واضحة بدل نص خام أو سطر فارغ.
+
 ## [0.1.60] — 2026-11-28 — A dropped stream keeps what arrived · انقطاع البث يُبقي ما وصل
 
 - **Internal, no visible change.** Whole-loop test: a reply that dies halfway (connection reset after some text) keeps the partial text in the chat, shows the error notice, and the next message you send builds a valid request (starts and ends with a user message, no orphan tool results).
