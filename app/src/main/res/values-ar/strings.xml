@@ -1218,4 +1218,5 @@
     <string name="blame_title">من غيّر %1$s</string>
     <string name="blame_loading">جارٍ قراءة السجل…</string>
     <string name="blame_none">لا يوجد سجل لهذا الملف بعد. احفظه في commit أولًا ثم سيظهر من غيّر كل جزء.</string>
+    <string name="turn_caption_desc">رموز وتكلفة هذا الرد: %1$s</string>
 </resources>

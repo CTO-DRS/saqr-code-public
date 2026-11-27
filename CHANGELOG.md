@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.45] — 2026-11-27 — Cost under every reply · التكلفة تحت كل رد
+
+- **Per-reply caption:** a small line under each answer shows its tokens and cost, for example `1.2k · $0.0041`. A `~` means the provider sent no usage and the number is an estimate. The cost is left out when the model has no price in your price table.
+- Read aloud by TalkBack as "Tokens and cost of this reply". Western digits, Arabic and English.
+- The caption lives in memory for the open chat; saved chats and the usage sheet are unchanged.
+- versionName 0.1.45, versionCode 84.
+
 ## [0.1.44] — 2026-11-27 — Approval and stop tests · اختبارات الموافقة والإيقاف
 
 - **Internal, no visible change:** three more whole-loop scenarios run against the fake model: stopping a call in flight leaves a stopped notice; rejecting a file change writes nothing and tells the model; approving it writes the file.

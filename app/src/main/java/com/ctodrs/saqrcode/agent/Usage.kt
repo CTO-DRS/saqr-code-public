@@ -203,3 +203,20 @@ object Budget {
         else -> null
     }
 }
+
+/** v0.1.45: the small caption under a reply, e.g. "1.2k tokens · $0.0041". Pure so it is unit-tested. */
+object TurnCaption {
+    /** Null when the provider reported nothing usable. A "~" marks an estimate; the cost is left out when the model has no price. */
+    fun format(u: Usage?, costUsd: Double?): String? {
+        if (u == null || u.total <= 0) return null
+        val n = u.total
+        val tokens = when {
+            n >= 1_000_000 -> java.lang.String.format(java.util.Locale.US, "%.1fM", n / 1_000_000.0).replace(".0M", "M")
+            n >= 1000 -> java.lang.String.format(java.util.Locale.US, "%.1fk", n / 1000.0).replace(".0k", "k")
+            else -> n.toString()
+        }
+        val cost = costUsd?.takeIf { it > 0 }?.let { "$" + java.lang.String.format(java.util.Locale.US, if (it >= 1) "%.2f" else "%.4f", it) }
+        val head = (if (u.estimated) "~" else "") + tokens
+        return if (cost == null) head else "$head · $cost"
+    }
+}

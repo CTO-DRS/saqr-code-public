@@ -1218,4 +1218,5 @@
     <string name="blame_title">Who changed %1$s</string>
     <string name="blame_loading">Reading history…</string>
     <string name="blame_none">No history for this file yet. Commit it first, then blame can show who changed each part.</string>
+    <string name="turn_caption_desc">Tokens and cost of this reply: %1$s</string>
 </resources>

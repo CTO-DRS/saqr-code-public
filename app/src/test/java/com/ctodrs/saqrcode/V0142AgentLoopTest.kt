@@ -157,4 +157,14 @@ class V0142AgentLoopTest {
         assertEquals("fresh", projectFile(s, "new.txt").readText())
         assertTrue(fake.seen.last().filterIsInstance<Msg.ToolResult>().first().content.startsWith("OK"))
     }
+
+    @Test fun `each reply carries the usage the provider reported`() {
+        val fake = Fake(listOf({ Turn("hi", emptyList(), "stop", com.ctodrs.saqrcode.agent.Usage(100, 20)) }))
+        val s = session(fake)
+        s.send("hello")
+        s.await()
+        val reply = s.items.filterIsInstance<ChatItem.Assistant>().last()
+        assertEquals(120L, reply.usage?.total)
+        assertTrue(reply.costUsd == null) // "test-model" has no price
+    }
 }
