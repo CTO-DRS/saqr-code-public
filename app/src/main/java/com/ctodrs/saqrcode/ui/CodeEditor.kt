@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -343,7 +344,7 @@ private fun FindBar(
 private fun SmallTextButton(text: String, enabled: Boolean, onClick: () -> Unit) {
     val c = Saqr.colors
     Box(
-        Modifier.height(30.dp).clip(RoundedCornerShape(8.dp)).background(c.surface3).clickable(enabled = enabled, onClick = onClick)
+        Modifier.heightIn(min = 30.dp).clip(RoundedCornerShape(8.dp)).background(c.surface3).clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = Sp.sm),
         contentAlignment = Alignment.Center,
     ) { Text(text, style = Saqr.type.micro, color = if (enabled) c.text1 else c.text3) }

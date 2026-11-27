@@ -285,7 +285,7 @@ private fun RepoHeader(state: GitUiState, a: GitActions) {
             var menu by remember { mutableStateOf(false) }
             Box {
                 Row(
-                    Modifier.height(40.dp).pressable { menu = true }.clip(RoundedCornerShape(Radius.sm)).background(c.accentSoft)
+                    Modifier.heightIn(min = 40.dp).pressable { menu = true }.clip(RoundedCornerShape(Radius.sm)).background(c.accentSoft)
                         .border(1.dp, c.accent.copy(alpha = 0.35f), RoundedCornerShape(Radius.sm)).padding(horizontal = Sp.md),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

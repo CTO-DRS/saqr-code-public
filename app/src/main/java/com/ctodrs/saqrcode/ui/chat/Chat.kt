@@ -1114,7 +1114,7 @@ private fun Composer(
             Spacer(Modifier.width(Sp.sm))
             Box(Modifier.weight(1f, fill = false)) {
                 Row(
-                    Modifier.height(40.dp).pressable { setModelMenu(true) }.clip(CircleShape).background(c.surface2).border(1.dp, c.border, CircleShape)
+                    Modifier.heightIn(min = 40.dp).pressable { setModelMenu(true) }.clip(CircleShape).background(c.surface2).border(1.dp, c.border, CircleShape)
                         .padding(start = 6.dp, end = Sp.md),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
