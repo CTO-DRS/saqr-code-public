@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.57] — 2026-11-28 — Say so when keys are not encrypted · نخبرك إذا كانت المفاتيح غير مشفّرة
+
+- **Honesty fix.** If the phone's secure storage fails, the app already kept working by storing API keys and tokens unencrypted inside its private folder, but never told you. Settings now shows a notice (English and Arabic) in that case. On a normal phone nothing changes and no notice shows.
+- Two new tests for the store state and for the store working either way.
+- versionName 0.1.57, versionCode 96.
+- إذا تعطل التخزين الآمن في الجوال كان التطبيق يحفظ المفاتيح دون تشفير بصمت؛ الآن تظهر رسالة في الإعدادات.
+
 ## [0.1.56] — 2026-11-28 — Crash reports scrub keys · تقارير الأعطال تُخفي المفاتيح
 
 - **Security fix.** The crash report you can share from About only removed GitHub tokens. It now uses the full redactor: provider keys (sk-..., AIza...), Bearer tokens and `key=value` secrets.

@@ -13,6 +13,10 @@ import androidx.security.crypto.MasterKey
  * JVM), the store resets once and finally falls back to plain prefs — degraded but alive.
  */
 class SecureStore(context: Context) : KeyValue {
+    /** False when the device keystore failed and secrets sit in plain app-private prefs (see the fallback below). */
+    var encrypted: Boolean = true
+        private set
+
     private val prefs: SharedPreferences = runCatching { create(context) }
         .recoverCatching {
             // Corrupted keyset (e.g. after restore). Reset rather than crash.
@@ -23,6 +27,7 @@ class SecureStore(context: Context) : KeyValue {
         .recoverCatching {
             // v0.11: no keystore at all — keep the app working (secrets at rest unencrypted).
             Log.w("SecureStore", "Falling back to plain prefs: ${it.javaClass.simpleName}")
+            encrypted = false
             context.getSharedPreferences("${FILE}_plain", Context.MODE_PRIVATE)
         }.getOrThrow()
 

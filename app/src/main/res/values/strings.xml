@@ -184,6 +184,8 @@
     <string name="git_cherry_pick_tip">Apply its latest commit here</string>
     <string name="crash_title">Last crash report</string>
     <string name="crash_body">Saved on this phone only. Share it if you want help; secrets are removed.</string>
+    <string name="secrets_plain_title">Keys are not encrypted on this phone</string>
+    <string name="secrets_plain_body">This phone’s secure storage is unavailable, so your API keys and tokens are kept unencrypted inside the app’s private folder. They never leave the phone. Use keys with spending limits, and restart the phone if this persists.</string>
     <string name="crash_share">Share</string>
     <string name="crash_clear">Clear</string>
     <string name="git_fetch">Fetch</string>
