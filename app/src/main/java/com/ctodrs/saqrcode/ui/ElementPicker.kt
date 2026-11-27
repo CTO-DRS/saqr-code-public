@@ -44,6 +44,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -123,18 +124,32 @@ fun captureElement(wv: WebView, el: PickedElement): ImagePart? = runCatching {
 
 // ------------------------------------------------------------------ preview pane
 
+/** v0.1.16: previewable HTML entry points — index.html first, then shallowest, then name. Skips node_modules/.git. */
+fun previewCandidates(dir: File): List<File> {
+    val all = dir.walkTopDown().maxDepth(3).onEnter { it.name !in setOf("node_modules", ".git") }
+        .filter { it.isFile && it.extension.lowercase() in setOf("html", "htm") }.toList()
+    return all.sortedWith(compareBy(
+        { it.name.lowercase() != "index.html" },
+        { it.relativeTo(dir).path.count { ch -> ch == File.separatorChar || ch == '/' } },
+        { it.relativeTo(dir).path.lowercase() },
+    ))
+}
+
 @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
 @Composable
 fun PreviewPane(ws: Workspace) {
-    val entry = remember(ws.fsVersion) {
-        File(ws.dir, "index.html").takeIf { it.isFile }
-            ?: ws.dir.walkTopDown().maxDepth(3).onEnter { it.name !in setOf("node_modules", ".git") }.firstOrNull { it.isFile && it.extension in setOf("html", "htm") }
-    }
+    val candidates = remember(ws.fsVersion) { previewCandidates(ws.dir) }
+    var entryIdx by remember(ws.dir) { mutableIntStateOf(0) }
+    val entry = candidates.getOrNull(entryIdx) ?: candidates.firstOrNull()
     var reload by remember { mutableIntStateOf(0) }
+    var autoReload by rememberSaveable { mutableStateOf(true) }
     var picking by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<PickResult?>(null) }
+    var filePicker by remember { mutableStateOf(false) }
     val webRef = remember { arrayOfNulls<WebView>(1) }
+    val scrollSaved = remember { arrayOf("0") }
     val pickingNow by rememberUpdatedState(picking)
+    val autoNow by rememberUpdatedState(autoReload)
     val store = SaqrApp.instance.settings
     val c = Saqr.colors
     if (entry == null) {
@@ -142,6 +157,18 @@ fun PreviewPane(ws: Workspace) {
             EmptyState(stringResource(R.string.preview_empty_title), stringResource(R.string.preview_empty_body), icon = Lucide.Globe)
         }
         return
+    }
+    // v0.1.16 live preview: a debounced reload follows workspace changes (agent edits, git ops)
+    var fsSeen by remember { mutableIntStateOf(ws.fsVersion) }
+    LaunchedEffect(ws.fsVersion) {
+        if (ws.fsVersion != fsSeen) {
+            fsSeen = ws.fsVersion
+            if (autoNow) { kotlinx.coroutines.delay(700); reload++ }
+        }
+    }
+    fun triggerReload() {
+        webRef[0]?.evaluateJavascript("(window.scrollY||0).toString()") { v -> scrollSaved[0] = v?.trim('"') ?: "0" }
+        reload++
     }
     val bridge = remember(ws.dir) {
         PickerBridge(ws.dir) { el ->
@@ -175,14 +202,23 @@ fun PreviewPane(ws: Workspace) {
                 .padding(start = Sp.md, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 SIcon(Lucide.Globe, size = 15.dp, tint = c.text3)
                 Spacer(Modifier.width(Sp.sm))
-                Text(entry.relativeTo(ws.dir).path, style = Saqr.type.monoSmall, color = c.text2, modifier = Modifier.weight(1f), maxLines = 1)
+                Text(entry.relativeTo(ws.dir).path, style = Saqr.type.monoSmall, color = c.text2,
+                    modifier = Modifier.weight(1f).clickable(enabled = candidates.size > 1, onClickLabel = stringResource(R.string.preview_file_pick)) { filePicker = true },
+                    maxLines = 1)
+                // v0.1.16: live auto-refresh toggle
+                Box(
+                    Modifier.size(32.dp).clip(CircleShape).background(if (autoReload) c.accent else Color.Transparent)
+                        .clickable(onClickLabel = stringResource(R.string.preview_auto)) { autoReload = !autoReload },
+                    contentAlignment = Alignment.Center,
+                ) { SIcon(Lucide.Zap, size = 16.dp, tint = if (autoReload) c.onAccent else c.text1, contentDescription = stringResource(R.string.preview_auto)) }
+                Spacer(Modifier.width(2.dp))
                 Box(
                     Modifier.size(32.dp).clip(CircleShape).background(if (picking) c.accent else Color.Transparent)
                         .clickable(onClickLabel = stringResource(R.string.pick_element)) { picking = !picking },
                     contentAlignment = Alignment.Center,
                 ) { SIcon(Lucide.Crosshair, size = 16.dp, tint = if (picking) c.onAccent else c.text1, contentDescription = stringResource(R.string.pick_element)) }
                 Spacer(Modifier.width(2.dp))
-                Box(Modifier.minimumInteractiveComponentSize().size(32.dp).clip(CircleShape).clickable(role = Role.Button) { reload++ }, contentAlignment = Alignment.Center) { SIcon(Lucide.RefreshCw, size = 15.dp) }
+                Box(Modifier.minimumInteractiveComponentSize().size(32.dp).clip(CircleShape).clickable(role = Role.Button) { triggerReload() }, contentAlignment = Alignment.Center) { SIcon(Lucide.RefreshCw, size = 15.dp) }
             }
         }
         if (picking) PickHint()
@@ -202,6 +238,9 @@ fun PreviewPane(ws: Workspace) {
                             override fun onPageFinished(view: WebView, url: String?) {
                                 bridge.currentUrl = url
                                 inject(view) // re-inject after every (re)load
+                                // v0.1.16: a live reload keeps the scroll position
+                                val y = scrollSaved[0].toDoubleOrNull() ?: 0.0
+                                if (y > 0) view.evaluateJavascript("window.scrollTo(0, ${y.toLong()})", null)
                             }
                             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                                 val u = request.url.toString()
@@ -217,6 +256,31 @@ fun PreviewPane(ws: Workspace) {
                 update = { wv -> wv.tag.let { if (it != reload) { wv.tag = reload; wv.loadUrl("file://" + entry.absolutePath) } } },
                 modifier = Modifier.fillMaxSize(),
             )
+        }
+    }
+
+    if (filePicker) {
+        SaqrSheet(onDismiss = { filePicker = false }) {
+            Row(Modifier.padding(bottom = Sp.md), verticalAlignment = Alignment.CenterVertically) {
+                SIcon(Lucide.Globe, size = 20.dp, tint = c.accentText)
+                Spacer(Modifier.width(Sp.sm))
+                Text(stringResource(R.string.preview_file_title), style = Saqr.type.title2, color = c.text1)
+            }
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                candidates.forEachIndexed { i, f ->
+                    val rel = f.relativeTo(ws.dir).path
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .clip(RoundedCornerShape(Radius.md))
+                            .clickable { entryIdx = i; filePicker = false; triggerReload() }
+                            .padding(horizontal = Sp.sm),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(rel, style = Saqr.type.monoSmall, color = if (i == entryIdx) c.accentText else c.text1, modifier = Modifier.weight(1f))
+                        if (i == entryIdx) SIcon(Lucide.Check, size = 16.dp, tint = c.accentText)
+                    }
+                }
+            }
         }
     }
 

@@ -1,5 +1,14 @@
 # Changelog · سجل التغييرات
 
+## [0.1.16] — 2026-11-27 — Live preview · معاينة حية
+
+- **Auto-refresh:** the preview pane now reloads itself (debounced) whenever the workspace changes — agent edits, git operations — so the page on screen is always the current code. A toolbar toggle turns live refresh on or off; it defaults on.
+- **Reloads keep their place:** the WebView restores its scroll position after a refresh instead of jumping to the top.
+- **Pick the entry file:** when a project has more than one HTML file, tapping the path in the toolbar opens a chooser (index.html first, then shallowest, then name); switching reloads the preview.
+- EN + AR, RTL, a11y labels on the new controls.
+- **Tests:** `V0117LivePreviewTest`: index-first ordering, shallowest-then-name, node_modules/.git skipped, .htm counted, empty and non-HTML projects.
+- versionName 0.1.16, versionCode 55.
+
 ## [0.1.15] — 2026-11-27 — Per-task cost + daily spend cap · تكلفة المهمة وحد يومي
 
 - **This task, priced:** the Usage sheet gains a live “This task” row — active time, steps, files touched, commands, tokens and estimated cost — refreshing every two seconds while the agent works, kept after the run ends.

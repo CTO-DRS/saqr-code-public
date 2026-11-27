@@ -140,6 +140,9 @@
     <string name="plan_review_title">راجع التعديلات المقترحة</string>
     <string name="preview_empty_body">أضف ملف index.html (أو اطلب من الوكيل صفحة ويب) لتعاينه هنا.</string>
     <string name="preview_empty_title">لا شيء للمعاينة بعد</string>
+    <string name="preview_auto">تحديث تلقائي</string>
+    <string name="preview_file_pick">اختيار ملف المعاينة</string>
+    <string name="preview_file_title">ملف المعاينة</string>
     <string name="recent">الأخيرة</string>
     <string name="setup_body">أضف مفتاح API لتبدأ المحادثة مع الوكيل.</string>
     <string name="setup_title">اربط مزوّد ذكاء اصطناعي</string>

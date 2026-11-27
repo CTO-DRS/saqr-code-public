@@ -140,6 +140,9 @@
     <string name="plan_review_title">Review proposed changes</string>
     <string name="preview_empty_body">Add an index.html (or ask the agent for a web page) to preview it here.</string>
     <string name="preview_empty_title">Nothing to preview yet</string>
+    <string name="preview_auto">Auto-refresh</string>
+    <string name="preview_file_pick">Choose preview file</string>
+    <string name="preview_file_title">Preview file</string>
     <string name="recent">Recent</string>
     <string name="setup_body">Add an API key to start chatting with the agent.</string>
     <string name="setup_title">Connect an AI provider</string>
