@@ -86,4 +86,23 @@ class V019SyncTest {
         val text = SyncKit.toJson(SyncKit.snapshot(s, "d", "0.19", 1L))
         assertFalse(text.contains("BODY-MARKER-123"))
     }
+
+    @Test
+    fun `stdio server env values never travel but local ones survive an apply`() {
+        val src = settings()
+        src.saveProvider("openai", "https://api.openai.com/v1", "gpt-4o", "sk-live-PROVIDERKEY-1234")
+        src.mcpStdioServers = listOf(com.ctodrs.saqrcode.agent.McpStdio.StdioServer("gh", "npx srv", "GITHUB_TOKEN=ghp_SECRETVALUE_9999\nMODE=fast"))
+        val text = SyncKit.toJson(SyncKit.snapshot(src, "d", "0.1.54", 1L))
+        assertFalse(text.contains("ghp_SECRETVALUE_9999"))
+        assertFalse(text.contains("sk-live-PROVIDERKEY-1234"))
+        assertTrue(text.contains("GITHUB_TOKEN="))
+        // the receiving device keeps its own secret for the same server and variable
+        val dst = settings()
+        dst.mcpStdioServers = listOf(com.ctodrs.saqrcode.agent.McpStdio.StdioServer("gh", "old", "GITHUB_TOKEN=local-secret-1\nOTHER=x"))
+        SyncKit.apply(SyncKit.parse(text)!!, dst)
+        val env = dst.mcpStdioServers.single().envText
+        assertTrue(env.contains("GITHUB_TOKEN=local-secret-1"))
+        assertFalse(env.contains("ghp_SECRETVALUE_9999"))
+        assertEquals("npx srv", dst.mcpStdioServers.single().command)
+    }
 }

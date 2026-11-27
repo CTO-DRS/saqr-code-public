@@ -119,7 +119,9 @@ object SyncKit {
         SyncSetting("gh_client_id", { it.githubClientId }, { s, v -> s.githubClientId = v }),
         SyncSetting("aapt2_mirror", { it.aapt2Mirror }, { s, v -> s.aapt2Mirror = v }),
         SyncSetting("mcp_servers", { com.ctodrs.saqrcode.agent.Mcp.encodeConfig(it.mcpServers) }, { s, v -> s.mcpServers = com.ctodrs.saqrcode.agent.Mcp.decodeConfig(v) }),
-        SyncSetting("mcp_stdio", { com.ctodrs.saqrcode.agent.McpStdio.encodeConfig(it.mcpStdioServers) }, { s, v -> s.mcpStdioServers = com.ctodrs.saqrcode.agent.McpStdio.decodeConfig(v) }),
+        SyncSetting("mcp_stdio",
+            { com.ctodrs.saqrcode.agent.McpStdio.encodeConfig(it.mcpStdioServers.map { sv -> sv.copy(envText = com.ctodrs.saqrcode.agent.McpStdio.stripEnvValues(sv.envText)) }) },
+            { s, v -> s.mcpStdioServers = com.ctodrs.saqrcode.agent.McpStdio.mergeLocalEnv(com.ctodrs.saqrcode.agent.McpStdio.decodeConfig(v), s.mcpStdioServers) }),
         SyncSetting("mcp_oauth_configs", { com.ctodrs.saqrcode.agent.McpOAuth.encodeConfigs(com.ctodrs.saqrcode.agent.McpOAuth.decodeConfigs(it.mcpOAuthJson)) }, { s, v -> s.mcpOAuthJson = v }),
         SyncSetting("mcp_disabled", { com.ctodrs.saqrcode.agent.Mcp.encodeDisabled(it.mcpDisabledTools) }, { s, v -> s.mcpDisabledTools = com.ctodrs.saqrcode.agent.Mcp.decodeDisabled(v) }),
         // v0.15 Autonomous Core, v0.16 Agent Team, v0.17 Memory/Router, v0.18 Skills switches (v0.19 sync round).

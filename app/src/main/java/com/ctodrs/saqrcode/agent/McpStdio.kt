@@ -60,6 +60,25 @@ object McpStdio {
         .filter { it.contains('=') && !it.startsWith("=") }
         .map { it.take(400) }
 
+    /** Env text with every value removed ("K=V" becomes "K="), so names survive a sync but secrets do not. */
+    fun stripEnvValues(envText: String): String =
+        parseEnv(envText).joinToString("\n") { it.substringBefore('=') + "=" }
+
+    /**
+     * Sync apply: servers arrive with empty env values. Fill each from the same server's local env
+     * (matched by server name and variable name); a variable with no local value stays empty.
+     */
+    fun mergeLocalEnv(incoming: List<StdioServer>, local: List<StdioServer>): List<StdioServer> = incoming.map { inc ->
+        val have = local.firstOrNull { it.name == inc.name }?.let { l ->
+            parseEnv(l.envText).associate { it.substringBefore('=') to it.substringAfter('=') }
+        }.orEmpty()
+        inc.copy(envText = parseEnv(inc.envText).joinToString("\n") { kv ->
+            val k = kv.substringBefore('=')
+            val v = kv.substringAfter('=')
+            k + "=" + v.ifEmpty { have[k].orEmpty() }
+        })
+    }
+
     // ------------------------------------------------------------ protocol (pure)
 
     fun rpc(id: Int, method: String) = JSONObject()
