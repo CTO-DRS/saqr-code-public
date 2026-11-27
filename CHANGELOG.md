@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.29] — 2026-11-27 — Git cherry-pick · نقل Commit
+
+- **Cherry-pick from the branch list:** tap a branch, then "Apply its latest commit here". The newest commit of that branch is applied on top of the branch you are on. On a conflict nothing is left half-done: the pick is rolled back and the message names the conflicted files.
+- **Tests:** `V0129GitCherryPickTest` on real temp repos: clean pick, conflict rollback, unknown ref.
+- EN + AR. versionName 0.1.29, versionCode 68.
+
 ## [0.1.28] — 2026-11-27 — Git stash · حفظ التغييرات مؤقتًا
 
 - **Stash from the branch menu:** "Stash changes" shelves tracked and untracked files (like `git stash -u`); "Apply last stash" restores the newest one and drops it. On conflicts the stash is kept and the conflicted files are listed. Needs one commit first.
