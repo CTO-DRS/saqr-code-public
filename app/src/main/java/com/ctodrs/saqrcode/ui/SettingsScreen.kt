@@ -1923,6 +1923,42 @@ private fun SyncSection(ui: SettingsUi) {
         }
     }
 
+    var chatMsg by remember { mutableStateOf<String?>(null) }
+    val chatsRoot = remember { java.io.File(ctx.filesDir, "chats") }
+    val chatSave = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/octet-stream"),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val pw = pass
+        scope.launch {
+            val ok = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching {
+                    val text = com.ctodrs.saqrcode.data.ChatBackup.seal(chatsRoot, pw, System.currentTimeMillis())
+                    ctx.contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) } != null
+                }.getOrDefault(false)
+            }
+            chatMsg = ctx.getString(if (ok) R.string.chat_backup_done else R.string.chat_backup_fail)
+        }
+    }
+    val chatOpen = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val pw = pass
+        scope.launch {
+            val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val text = syncReadText(ctx, uri)
+                try {
+                    val r = com.ctodrs.saqrcode.data.ChatBackup.restore(chatsRoot, text.orEmpty(), pw)
+                    ctx.getString(R.string.chat_restore_done, r.sessions, r.skipped)
+                } catch (e: com.ctodrs.saqrcode.data.SyncException) {
+                    ctx.getString(when (e.reason) { "short" -> R.string.sync_pass_short; "passphrase" -> R.string.sync_bad_pass; else -> R.string.sync_bad_container })
+                }
+            }
+            chatMsg = msg
+        }
+    }
+
     fun tokenAndSlug(): Pair<String, Pair<String, String>>? {
         val tok = settings.githubToken
         if (tok == null) { errRes = R.string.sync_needs_account; return null }
@@ -2060,6 +2096,18 @@ private fun SyncSection(ui: SettingsUi) {
             GhostButton(stringResource(R.string.sync_share), { share() }, icon = Lucide.ArrowUpFromLine, enabled = busyKind == null)
             GhostButton(stringResource(R.string.sync_import), { filePicker.launch(arrayOf("*/*")) }, icon = Lucide.HardDrive, enabled = busyKind == null)
         }
+        Text(stringResource(R.string.chat_backup_desc), style = Saqr.type.micro, color = c.text3)
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
+            GhostButton(stringResource(R.string.chat_backup), {
+                if (com.ctodrs.saqrcode.data.SyncKit.passphraseProblem(pass) != null) errRes = R.string.sync_pass_short
+                else { errRes = null; chatSave.launch(com.ctodrs.saqrcode.data.ChatBackup.FILE_NAME) }
+            }, icon = Lucide.ArrowUpFromLine, enabled = busyKind == null)
+            GhostButton(stringResource(R.string.chat_restore), {
+                if (com.ctodrs.saqrcode.data.SyncKit.passphraseProblem(pass) != null) errRes = R.string.sync_pass_short
+                else { errRes = null; chatOpen.launch(arrayOf("*/*")) }
+            }, icon = Lucide.HardDrive, enabled = busyKind == null)
+        }
+        chatMsg?.let { Text(it, style = Saqr.type.micro, color = c.text2) }
         if (settings.accounts.github == null) {
             Text(stringResource(R.string.sync_needs_account), style = Saqr.type.micro, color = c.text3)
         }

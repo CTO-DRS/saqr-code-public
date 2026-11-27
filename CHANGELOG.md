@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.33] — 2026-11-27 — Chat backup · نسخ المحادثات احتياطيًا
+
+- **Back up and restore your chats:** Settings, Repository sync now has "Back up chats" and "Restore chats". All chats of all projects, with their images, go into one file encrypted with your passphrase (same AES-GCM and PBKDF2 as sync; the passphrase is never stored).
+- **Restore merges.** A chat on this phone that is as new or newer is kept. Nothing outside the chats folder can be written, whatever the file says.
+- Settings, themes, commands and skill packs were already covered by repository sync and "Share as a file".
+- **Tests:** `V0133ChatBackupTest` (round trip, newer-wins, images, wrong passphrase, foreign file, hostile names).
+- EN + AR. versionName 0.1.33, versionCode 72.
+
 ## [0.1.32] — 2026-11-27 — Settings search · بحث الإعدادات
 
 - **Search box at the top of Settings:** type a word (Arabic or English, with or without diacritics) and see the sections that contain it. Tap one to jump straight to it.

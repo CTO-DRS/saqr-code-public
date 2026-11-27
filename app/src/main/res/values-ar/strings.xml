@@ -1206,4 +1206,10 @@
     <string name="widget_desc">يعرض هل صقر شغال؛ اضغط للفتح</string>
     <string name="settings_search">ابحث في الإعدادات</string>
     <string name="settings_search_none">لا توجد إعدادات مطابقة</string>
+    <string name="chat_backup">نسخ المحادثات احتياطيًا</string>
+    <string name="chat_restore">استعادة المحادثات</string>
+    <string name="chat_backup_desc">المحادثات وصورها، مشفّرة بعبارة المرور أعلاه في ملف واحد تحتفظ به. الاستعادة تدمج: المحادثات الأحدث على هذا الهاتف لا تُستبدل. أعد فتح المشروع لرؤية المحادثات المستعادة.</string>
+    <string name="chat_backup_done">تم حفظ ملف النسخة الاحتياطية.</string>
+    <string name="chat_backup_fail">تعذّرت كتابة ملف النسخة الاحتياطية.</string>
+    <string name="chat_restore_done">تمت استعادة %1$d محادثة، وأُبقيت %2$d أحدث موجودة هنا.</string>
 </resources>

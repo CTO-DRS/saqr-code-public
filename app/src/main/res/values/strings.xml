@@ -1206,4 +1206,10 @@
     <string name="widget_desc">Shows whether Saqr is running; tap to open</string>
     <string name="settings_search">Search settings</string>
     <string name="settings_search_none">No matching settings</string>
+    <string name="chat_backup">Back up chats</string>
+    <string name="chat_restore">Restore chats</string>
+    <string name="chat_backup_desc">Chats and their images, encrypted with the passphrase above into one file you keep. Restoring merges: newer chats on this phone are never overwritten. Reopen the project to see restored chats.</string>
+    <string name="chat_backup_done">Backup file saved.</string>
+    <string name="chat_backup_fail">Couldn\'t write the backup file.</string>
+    <string name="chat_restore_done">Restored %1$d chats, kept %2$d newer ones already here.</string>
 </resources>
