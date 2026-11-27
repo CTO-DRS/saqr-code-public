@@ -825,6 +825,10 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 )
             }
 
+            // ---- v0.1.46 user guide
+            JumpLabel(jump, "guide_section", stringResource(R.string.guide_section), Modifier.padding(top = Sp.md))
+            Group { GuideList() }
+
             // ---- about
             JumpLabel(jump, "about", stringResource(R.string.about), Modifier.padding(top = Sp.md))
             Group {
@@ -2273,6 +2277,7 @@ private fun settingsSectionIndex(): List<SettingsSearch.Entry> {
         e("accounts", R.string.accounts, R.string.github),
         e("billing_section", R.string.billing_section),
         e("coach_title", R.string.coach_title, R.string.coach_row_title),
+        e("guide_section", R.string.guide_section, *GUIDE_STRINGS.flatMap { listOf(it.first, it.second) }.toIntArray()),
         e("about", R.string.about, R.string.crash_title),
         e("about_developer", R.string.about_developer),
     )
@@ -2283,4 +2288,40 @@ private fun settingsSectionIndex(): List<SettingsSearch.Entry> {
 /** Wave E: TalkBack announces this text when it appears or changes (status and error messages). */
 internal fun Modifier.polite(): Modifier = this.semantics {
     liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
+}
+
+
+/** v0.1.46: the in-app user guide, one (title, body) pair per topic. Also feeds Settings search. */
+private val GUIDE_STRINGS = listOf(
+    R.string.guide_1_title to R.string.guide_1_body,
+    R.string.guide_2_title to R.string.guide_2_body,
+    R.string.guide_3_title to R.string.guide_3_body,
+    R.string.guide_4_title to R.string.guide_4_body,
+    R.string.guide_5_title to R.string.guide_5_body,
+    R.string.guide_6_title to R.string.guide_6_body,
+)
+
+@Composable
+private fun GuideList() {
+    val c = Saqr.colors
+    Column {
+        GUIDE_STRINGS.forEachIndexed { i, (title, body) ->
+            var open by remember { mutableStateOf(false) }
+            val t = stringResource(title)
+            Column(Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                        .clickable(role = Role.Button) { open = !open }
+                        .padding(horizontal = Sp.lg, vertical = Sp.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(t, style = Saqr.type.body.copy(fontWeight = FontWeight.Medium), color = c.text1, modifier = Modifier.weight(1f))
+                    SIcon(Lucide.ChevronDown, size = 18.dp, tint = c.text3)
+                }
+                if (open) Text(stringResource(body), style = Saqr.type.bodySmall, color = c.text2,
+                    modifier = Modifier.padding(start = Sp.lg, end = Sp.lg, bottom = Sp.md))
+                if (i < GUIDE_STRINGS.lastIndex) RowDivider()
+            }
+        }
+    }
 }
