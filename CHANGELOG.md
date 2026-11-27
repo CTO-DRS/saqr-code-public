@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.37] — 2026-11-27 — Tablet and foldable width · عرض الأجهزة الكبيرة
+
+- **Readable width on big screens:** Home, Settings, Accounts, Plans and the first-run screens now sit centred at up to 720dp wide instead of stretching edge to edge on a tablet or an unfolded foldable. On a phone nothing changes.
+- The project screen (chat, editor, preview) still uses the full window. A two-pane layout is still on the roadmap.
+- **Tests:** `V0137ContentWidthTest`.
+- versionName 0.1.37, versionCode 76.
+
 ## [0.1.36] — 2026-11-27 — Keyboard shortcuts · اختصارات لوحة المفاتيح
 
 - **Chat box with an external keyboard (tablets, foldables, Bluetooth):** **Ctrl+Enter** (Cmd+Enter) sends. **Esc** stops a running turn. Plain Enter and Shift+Enter still add a new line, so typing on the phone keyboard is unchanged.
