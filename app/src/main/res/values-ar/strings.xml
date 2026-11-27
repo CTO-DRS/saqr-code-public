@@ -133,6 +133,8 @@
     <string name="onb2_title">مفاتيحك، نماذجك</string>
     <string name="onb3_body">‏Alpine Linux يعمل على جوالك بلا Root. ثبّت Node وPython وGit ودع الوكيل يشغّل كودك ويختبره.</string>
     <string name="onb3_title">طرفية لينكس حقيقية</string>
+    <string name="onb4_body">جرّب جملة واحدة واضحة بالعربية أو الإنجليزية: ابنِ صفحة، أصلح خطأ، اشرح كودًا. يعرض الوكيل خطة ويسألك قبل أي خطوة حساسة.</string>
+    <string name="onb4_title">ابدأ بطلب صغير</string>
     <string name="onb_start">اربط نموذجًا</string>
     <string name="open_settings">افتح الإعدادات</string>
     <string name="plan_header">الخطة</string>

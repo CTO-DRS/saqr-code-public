@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
 
 private data class Page(val title: Int, val body: Int, val art: @Composable () -> Unit)
 
-/** First-run welcome: three short pages, then straight into the app. */
+/** First-run welcome: four short pages, then straight into the app. */
 @Composable
 fun OnboardingScreen(onDone: (openSettings: Boolean) -> Unit, initialPage: Int = 0) {
     val c = Saqr.colors
@@ -59,6 +59,7 @@ fun OnboardingScreen(onDone: (openSettings: Boolean) -> Unit, initialPage: Int =
         Page(R.string.onb1_title, R.string.onb1_body) { ArtWelcome() },
         Page(R.string.onb2_title, R.string.onb2_body) { ArtKeys() },
         Page(R.string.onb3_title, R.string.onb3_body) { ArtTerminal() },
+        Page(R.string.onb4_title, R.string.onb4_body) { ArtPrompts() },
     )
     val pager = rememberPagerState(initialPage) { pages.size }
     val scope = rememberCoroutineScope()
@@ -115,6 +116,16 @@ private fun Bubble(text: String, modifier: Modifier) {
     val c = Saqr.colors
     Box(modifier.clip(RoundedCornerShape(16.dp)).background(c.surface2).border(1.dp, c.border, RoundedCornerShape(16.dp)).padding(horizontal = 12.dp, vertical = 7.dp)) {
         Text(text, style = Saqr.type.caption, color = c.text1, maxLines = 1)
+    }
+}
+
+@Composable
+private fun ArtPrompts() {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Bubble("سوّ لي موقع لمطعمي", Modifier)
+        Bubble("Add a dark mode toggle", Modifier)
+        Bubble("اشرح لي هذا الكود", Modifier)
+        Bubble("Write tests for utils.kt", Modifier)
     }
 }
 
