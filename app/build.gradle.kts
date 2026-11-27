@@ -77,6 +77,8 @@ android {
             isIncludeAndroidResources = true
             all {
                 it.maxHeapSize = System.getenv("SAQR_TEST_HEAP") ?: "3g"
+                // Fresh JVM every 40 classes: a long shared JVM leaves the main looper busy and Compose UI tests hit AppNotIdle.
+                it.setForkEvery(40)
                 // Robolectric fetches android-all jars at runtime; Maven Central rate-limits shared IPs, so use Google's mirror.
                 it.systemProperty("robolectric.dependency.repo.url", "https://maven-central.storage-download.googleapis.com/maven2")
                 // Screenshot rendering is opt-in: SAQR_SCREENS=1 ./gradlew testDebugUnitTest --tests '*ScreenshotTest*'
