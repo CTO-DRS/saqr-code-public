@@ -179,6 +179,8 @@
     <string name="git_current_branch">الفرع الحالي</string>
     <string name="git_delete_branch_q">حذف الفرع %1$s؟</string>
     <string name="git_discard">تجاهل التغييرات</string>
+    <string name="git_stash">‏احفظ التغييرات مؤقتًا</string>
+    <string name="git_stash_pop">‏أعد آخر حفظ مؤقت</string>
     <string name="git_fetch">جلب</string>
     <string name="git_init">تهيئة المستودع</string>
     <string name="git_link_github">ربط GitHub</string>

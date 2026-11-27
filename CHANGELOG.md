@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.28] — 2026-11-27 — Git stash · حفظ التغييرات مؤقتًا
+
+- **Stash from the branch menu:** "Stash changes" shelves tracked and untracked files (like `git stash -u`); "Apply last stash" restores the newest one and drops it. On conflicts the stash is kept and the conflicted files are listed. Needs one commit first.
+- **Tests:** `V0128GitStashTest` on real temp repos: round trip with an untracked file, nothing to stash, no stash to apply, pre-first-commit refusal.
+- EN + AR. versionName 0.1.28, versionCode 67.
+
 ## [0.1.27] — 2026-11-27 — Large-text layout · تخطيط النص الكبير
 
 - **Font scale up to 200%:** buttons, chips, menu pills and palette rows that had a fixed height now use it as a minimum, so large text grows the control instead of being clipped. Covers the primary button, onboarding button, model pill, git and pane menus, code-editor toolbar, terminal tabs, developer card actions and the command palette.

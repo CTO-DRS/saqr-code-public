@@ -101,6 +101,12 @@ class GitController(val dir: File, private val settings: SettingsStore, private 
         if (!m.success) throw GitException("Merge: ${m.status}. Conflicts: ${m.conflicts.joinToString()}")
         m.status.replace('_', ' ').lowercase()
     }
+    fun stash() = op("stash") { stash(dir, settings.gitName, settings.gitEmail)?.let { "✓ stash $it" } ?: "Nothing to stash" }
+    fun stashPop() = op("stash") {
+        val c = stashPop(dir)
+        if (c.isNotEmpty()) throw GitException("Conflicts: ${c.joinToString()} (stash kept)")
+        "✓ stash applied"
+    }
     fun abortMerge() = op("merge") { abortMerge(dir); null }
 
     /** v0.1.22: the working-tree text of a conflicted file, or null when [path] escapes the project or is unreadable. */

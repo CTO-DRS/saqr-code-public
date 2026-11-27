@@ -125,6 +125,7 @@ class GitActions(
     val onFetch: () -> Unit = {}, val onPull: () -> Unit = {}, val onPush: () -> Unit = {},
     val onCheckout: (String) -> Unit = {}, val onNewBranch: (String) -> Unit = {}, val onDeleteBranch: (String) -> Unit = {},
     val onMerge: (String) -> Unit = {}, val onAbortMerge: () -> Unit = {},
+    val onStash: () -> Unit = {}, val onStashPop: () -> Unit = {},
     val onOpenCommit: (GitCommitInfo) -> Unit = {}, val onAddRemote: (String, String) -> Unit = { _, _ -> },
     val onRemoveRemote: (String) -> Unit = {}, val onPublish: () -> Unit = {}, val onPullRequest: () -> Unit = {},
     val onEditGitignore: () -> Unit = {}, val onAccounts: () -> Unit = {}, val onDismissToast: () -> Unit = {},
@@ -167,6 +168,7 @@ fun GitScreen(ws: Workspace, onAccounts: () -> Unit = {}) {
             onCommit = { m, amend, push -> ctl.commit(m, amend, push) },
             onFetch = { ctl.fetch() }, onPull = { ctl.pull(); ws.fsVersion++ }, onPush = { ctl.push() },
             onCheckout = { ctl.checkout(it); ws.fsVersion++ }, onNewBranch = { ctl.createBranch(it) }, onDeleteBranch = { ctl.deleteBranch(it) },
+            onStash = { ctl.stash(); ws.fsVersion++ }, onStashPop = { ctl.stashPop(); ws.fsVersion++ },
             onMerge = { ctl.merge(it); ws.fsVersion++ }, onAbortMerge = { ctl.abortMerge(); ws.fsVersion++ },
             onOpenCommit = { c -> scope.launch { diff = (c.shortId + " · " + c.message) to ctl.commitDiff(c.id) } },
             onAddRemote = { n, u -> ctl.setRemote(n, u) }, onRemoveRemote = { ctl.removeRemote(it) },
@@ -304,6 +306,16 @@ private fun RepoHeader(state: GitUiState, a: GitActions) {
                             onClick = { menu = false; if (!b.current) a.onCheckout(b.shortName) },
                         )
                     }
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.git_stash), style = Saqr.type.body, color = c.text1) },
+                        leadingIcon = { SIcon(Lucide.ArrowDownToLine, size = 16.dp, tint = c.text3) },
+                        onClick = { menu = false; a.onStash() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.git_stash_pop), style = Saqr.type.body, color = c.text1) },
+                        leadingIcon = { SIcon(Lucide.ArrowUpFromLine, size = 16.dp, tint = c.text3) },
+                        onClick = { menu = false; a.onStashPop() },
+                    )
                 }
             }
             Spacer(Modifier.width(Sp.sm))
