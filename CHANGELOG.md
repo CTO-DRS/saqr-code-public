@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.25] — 2026-11-27 — Home-screen widget · ويدجت الشاشة الرئيسية
+
+- **Saqr widget:** long-press the home screen, Widgets, Saqr Code. A compact card shows Idle / Running: project / Needs you: project and updates the moment a run starts, waits for you or ends. Tap opens the app (on the waiting project when a turn needs you). Same wording as the Quick Settings tile.
+- EN + AR; the widget uses the dark Falcon palette (gold on graphite).
+- **Tests:** the shared line is covered by `V0127TileModelTest`; the widget itself is a thin RemoteViews wrapper and needs a device look.
+- versionName 0.1.25, versionCode 64.
+
 ## [0.1.24] — 2026-11-27 — Quick Settings tile · بلاطة الإعدادات السريعة
 
 - **Saqr tile:** add "Saqr Code" from the Quick Settings edit screen. It shows Idle / Running: project / Needs you: project. Tap while a turn runs to stop it (work so far is kept); tap while idle to open the app; when a turn is waiting for you it opens that project.

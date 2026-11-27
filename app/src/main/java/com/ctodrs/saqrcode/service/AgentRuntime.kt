@@ -58,6 +58,7 @@ object AgentRuntime : RunHooks {
     private fun apply(effects: List<RunEffect>) {
         _state.value = machine.all
         val ctx: Context = app
+        AgentWidget.refreshAll(ctx)
         for (e in effects) when (e) {
             RunEffect.StartService -> startService(ctx)
             RunEffect.StopService -> AgentService.instance?.syncWithRuntime()
