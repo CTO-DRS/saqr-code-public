@@ -216,4 +216,14 @@ class V0142AgentLoopTest {
         assertTrue(!projectFile(second, "new.txt").exists())
         first.stop()
     }
+
+    @Test fun `a failure notice never shows the user's key`() {
+        val fake = Fake(listOf({ throw LlmException("HTTP 401: bad key test-key rejected") }))
+        val s = session(fake)
+        s.send("hello")
+        s.await()
+        val n = s.items.filterIsInstance<ChatItem.Notice>().first { it.kind == ChatItem.Notice.Kind.ERROR }
+        assertTrue(n.text.contains("401"))
+        assertTrue(!n.text.contains("test-key"))
+    }
 }

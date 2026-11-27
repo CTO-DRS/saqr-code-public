@@ -90,7 +90,7 @@ Audit basis: the agent loop now has scenario tests for reply, tool call, failure
 ### الموجة ح · الأمان والمتانة / Wave H: secrets and error paths (autonomous, from the 0.1.52 audit)
 Audit basis: unit coverage is broad (every subsystem has tests under a feature-named class). Gaps found by reading error paths: provider error bodies reached the chat, the model and logs unredacted. Remaining no-device work is error-path hygiene; layout work (Wave F item 5) waits for device QA.
 1. **(0.1.52, shipped) Provider error redaction:** scrub the API key from every LlmException; tests.
-2. **(next) Run-failure notice and side lines:** the top-level turn failure notice, the reviewer-failed line and the router failover audit line use raw `e.message`; route them through `AuditLog.redact` with the GitHub token and the provider key (non-LLM exceptions, such as git or network errors, can carry credentials in URLs); test.
+2. **(0.1.53, shipped) Run-failure notice and side lines:** the top-level turn failure notice, the reviewer-failed line and the router failover audit line use raw `e.message`; route them through `AuditLog.redact` with the GitHub token and the provider key (non-LLM exceptions, such as git or network errors, can carry credentials in URLs); test.
 3. **(next) Settings export audit:** confirm chat backup and any exported log never include keys; add a test that scans an export of a settings fixture holding fake keys.
 
 ---
