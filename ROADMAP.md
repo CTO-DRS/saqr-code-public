@@ -57,6 +57,17 @@ Audit basis: 36.6k lines of Kotlin, 80 test classes, release build not minified,
 
 **Rule:** every item ships with tests, EN+AR strings, a bilingual CHANGELOG entry and a mirrored public release; the order inside each wave follows impact, and this section is updated in the same commit as each release.
 
+### الموجة هـ · الصقل والوصول / Wave E: polish and reach (autonomous, from the 0.1.35 audit)
+Audit basis: hardware-keyboard shortcuts exist only inside the code editor; no large-screen layout (no window size classes); git blame still missing; no contributor map.
+1. **(0.1.35, shipped with this plan) Contributor map:** `docs/ARCHITECTURE.md`.
+2. **Keyboard shortcuts:** Ctrl+Enter to send, Ctrl+F in chat search, Esc to stop, for external keyboards and tablets (pure key-mapping, tested).
+3. **Large-screen layout:** two-pane chat plus preview or editor on tablets and foldables (window size classes).
+4. **Git blame in the editor:** per-line author and age through JGit.
+5. **Accessibility pass** on the newest screens (settings search, chat backup, crash card): TalkBack order, 200% font, contrast.
+6. **Per-turn cost summary** in the chat, from the existing usage ledger.
+7. **Whole-loop agent harness:** make `AgentSession` take an injectable model and environment, then scenario tests for edit, fix-loop, approval, cancel and resume.
+
+
 ---
 
 ## 1 · الرؤية والمبادئ الحاكمة
