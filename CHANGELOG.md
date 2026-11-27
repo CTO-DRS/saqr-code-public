@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.49] — 2026-11-27 — File history · سجل الملف
+
+- **File history:** the history button in the editor now also lists the commits that changed the open file, newest first, under the blame rows: `a1b2c3d · Sara · 3 d ago · Fix login`. Read-only.
+- **Project names with `&`, `<` or `'`** no longer break the XML and HTML of new Android and lite-web projects; they are escaped.
+- versionName 0.1.49, versionCode 88.
+
 ## [0.1.48] — 2026-11-27 — Template checks · فحص القوالب
 
 - **Fixed a real bug the new tests found:** new Compose, keyboard and lite-web projects had the literal text `@@NAME@@` as the app name in their strings, manifest and Gradle settings. The project name is now filled in.

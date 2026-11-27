@@ -8,6 +8,9 @@ data class BlameGroup(val start: Int, val count: Int, val author: String, val ti
     val end: Int get() = start + count - 1
 }
 
+/** v0.1.49: one commit that touched a file. */
+data class FileCommit(val sha: String, val author: String, val timeSec: Long, val subject: String)
+
 /** Wave E: pure helpers for git blame (grouping and a short relative age, English and Arabic). Unit-tested. */
 object BlameKit {
     fun group(lines: List<BlameLine>): List<BlameGroup> {
@@ -40,4 +43,8 @@ object BlameKit {
         val lines = if (g.count == 1) "${g.start}" else "${g.start}-${g.end}"
         return "${g.sha} · ${g.author} · ${age(nowSec, g.timeSec, arabic)} · " + (if (arabic) "السطر $lines" else "line $lines")
     }
+
+    /** One history row, e.g. "a1b2c3d · Rashid · 3 d ago · Fix login". */
+    fun historyRow(c: FileCommit, nowSec: Long, arabic: Boolean): String =
+        "${c.sha} · ${c.author} · ${age(nowSec, c.timeSec, arabic)} · ${c.subject}"
 }

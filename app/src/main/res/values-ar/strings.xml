@@ -1232,4 +1232,5 @@
     <string name="guide_5_body">مع لوحة مفاتيح خارجية: Ctrl+Enter للإرسال، وCtrl+F للبحث في المحادثة، وEsc لإيقاف الوكيل.</string>
     <string name="guide_6_title">العمل بلا إنترنت</string>
     <string name="guide_6_body">المحرر والملفات وgit والطرفية تعمل بلا إنترنت. أما الوكيل فيحتاج اتصالاً بالنموذج. وضع الصحراء يوقف أدوار السحابة ويخبرك بالسبب.</string>
+    <string name="history_heading">الإيداعات التي غيّرت هذا الملف</string>
 </resources>

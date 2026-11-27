@@ -21,6 +21,7 @@ import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.SaqrApp
 import com.ctodrs.saqrcode.git.BlameGroup
 import com.ctodrs.saqrcode.git.BlameKit
+import com.ctodrs.saqrcode.git.FileCommit
 import com.ctodrs.saqrcode.git.GitService
 import com.ctodrs.saqrcode.ui.theme.Saqr
 import com.ctodrs.saqrcode.ui.theme.Sp
@@ -36,11 +37,13 @@ fun BlameSheet(dir: File, path: String, onDismiss: () -> Unit) {
     val app = SaqrApp.instance
     var groups by remember { mutableStateOf<List<BlameGroup>?>(null) }
     var failed by remember { mutableStateOf(false) }
+    var history by remember { mutableStateOf<List<FileCommit>>(emptyList()) }
     LaunchedEffect(dir, path) {
         val r = withContext(Dispatchers.IO) {
             runCatching { BlameKit.group(GitService(app.filesDir, app.settings.accounts).blame(dir, path)) }
         }
         groups = r.getOrNull(); failed = r.isFailure
+        history = withContext(Dispatchers.IO) { runCatching { GitService(app.filesDir, app.settings.accounts).fileHistory(dir, path) }.getOrDefault(emptyList()) }
     }
     val arabic = androidx.compose.ui.platform.LocalConfiguration.current.locales.get(0)?.language == "ar"
     val now = System.currentTimeMillis() / 1000
@@ -60,6 +63,12 @@ fun BlameSheet(dir: File, path: String, onDismiss: () -> Unit) {
                 else -> Column(Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     groups.orEmpty().forEach {
                         androidx.compose.material3.Text(BlameKit.summary(it, now, arabic), style = Saqr.type.monoSmall, color = c.text1)
+                    }
+                    if (history.isNotEmpty()) {
+                        androidx.compose.material3.Text(stringResource(R.string.history_heading), style = Saqr.type.title3, color = c.text1, modifier = Modifier.padding(top = Sp.md))
+                        history.forEach {
+                            androidx.compose.material3.Text(BlameKit.historyRow(it, now, arabic), style = Saqr.type.monoSmall, color = c.text2)
+                        }
                     }
                 }
             }
