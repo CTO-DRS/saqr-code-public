@@ -432,6 +432,17 @@ class GitService(homeDir: File? = null, private val credentials: CredentialResol
         r.newHead.name.take(7)
     }
 
+    /** Wave E: who last changed each line of [path] (committed content at HEAD). Untracked or unknown files throw. */
+    fun blame(dir: File, path: String): List<BlameLine> = open(dir).use { git ->
+        val rel = path.replace('\\', '/').trim('/')
+        if (rel.isEmpty() || rel.split('/').any { it == ".." }) throw GitException("Bad path")
+        val r = git.blame().setFilePath(rel).call() ?: throw GitException("No history for $rel yet")
+        (0 until r.resultContents.size()).map { i ->
+            val c = r.getSourceCommit(i)
+            BlameLine(r.getSourceAuthor(i)?.name ?: "?", c.commitTime.toLong(), c.name.take(7))
+        }
+    }
+
     private fun toOutcome(r: MergeResult) = MergeOutcome(
         status = r.mergeStatus.name, success = r.mergeStatus.isSuccessful,
         conflicts = r.conflicts?.keys?.sorted().orEmpty(), newHead = r.newHead?.name?.take(7),

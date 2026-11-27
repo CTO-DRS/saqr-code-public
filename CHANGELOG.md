@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.38] — 2026-11-27 — Git blame engine · محرّك من غيّر السطر
+
+- **Blame under the hood:** `GitService.blame` tells who last changed each line of a file and in which commit, using JGit on the committed content. Untracked files and paths that try to leave the project are refused with a clear message.
+- **Helpers:** consecutive lines from one commit are grouped, and each group gets a short row: sha, author, age (English or Arabic, western digits) and the line range.
+- No screen yet: the editor entry that shows these rows is the next step on the roadmap, so this release has no visible change.
+- **Tests:** `V0138BlameTest` on real temp repos plus the formatter.
+- versionName 0.1.38, versionCode 77.
+
 ## [0.1.37] — 2026-11-27 — Tablet and foldable width · عرض الأجهزة الكبيرة
 
 - **Readable width on big screens:** Home, Settings, Accounts, Plans and the first-run screens now sit centred at up to 720dp wide instead of stretching edge to edge on a tablet or an unfolded foldable. On a phone nothing changes.
