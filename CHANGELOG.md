@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.51] — 2026-11-27 — Restart with a pending approval · إعادة التشغيل مع موافقة معلّقة
+
+- **Internal, no visible change.** A whole-loop test saves a chat while a file-change approval card is waiting, reopens it as a new session, and checks that no card is stuck, that every tool call the model made has an answer (providers refuse requests that do not), and that the unapproved file was not written.
+- versionName 0.1.51, versionCode 90.
+
 ## [0.1.50] — 2026-11-27 — Long-chat guard · حماية المحادثات الطويلة
 
 - **Internal, no visible change.** Audit result: the chat list already uses a stable key per item and hides tool-only replies with one pass over the list, so nothing needed changing.
