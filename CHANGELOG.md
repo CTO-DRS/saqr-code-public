@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.35] — 2026-11-27 — Agent scenario tests · اختبارات سيناريو الوكيل
+
+- **Scripted-model scenarios:** the stream a provider sends is replayed in tests: a plain answer, tool arguments split across chunks, parallel tool calls interleaved, text before a tool call, junk chunks, provider errors, and Anthropic text plus tool use. The Turn the agent loop receives is checked each time.
+- **History pairing:** a denied command result, parallel results and a trailing user message are sent back with every tool call matched to its result, in both the OpenAI and Anthropic formats.
+- Why this scope: the full AgentSession needs the Android settings store and a Linux environment, so a whole-loop harness would need a large refactor. These tests cover the wire layer the loop depends on, which is where a provider change breaks things silently. The whole-loop harness stays on the roadmap.
+- **Tests:** `V0135AgentScenarioTest`. No user-visible change.
+- versionName 0.1.35, versionCode 74.
+
 ## [0.1.34] — 2026-11-27 — Performance baselines · خطوط أساس الأداء
 
 - **Startup audit:** the app's startup only builds light stores and one network watcher. The terminal, MCP servers, voice and sync already start on first use, so nothing needed to change.
