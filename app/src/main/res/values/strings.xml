@@ -179,6 +179,8 @@
     <string name="git_current_branch">Current branch</string>
     <string name="git_delete_branch_q">Delete branch %1$s?</string>
     <string name="git_discard">Discard changes</string>
+    <string name="git_stash">Stash changes</string>
+    <string name="git_stash_pop">Apply last stash</string>
     <string name="git_fetch">Fetch</string>
     <string name="git_init">Initialize repository</string>
     <string name="git_link_github">Link GitHub</string>

@@ -386,6 +386,33 @@ class GitService(homeDir: File? = null, private val credentials: CredentialResol
         repo.writeMergeHeads(null); repo.writeMergeCommitMsg(null)
     }
 
+    /** v0.1.28: shelves tracked and untracked changes (like `git stash -u`). Returns the stash id, or null when there was nothing to shelve. */
+    fun stash(dir: File, name: String, email: String, message: String? = null): String? = open(dir).use { git ->
+        val repo = git.repository
+        if (repo.resolve(Constants.HEAD) == null) throw GitException("Commit once before stashing")
+        val who = PersonIdent(name.ifBlank { "Saqr Code" }, email.ifBlank { "saqr@users.noreply.github.com" })
+        repo.config.apply { setString("user", null, "name", who.name); setString("user", null, "email", who.emailAddress); save() }
+        val c = git.stashCreate().setIncludeUntracked(true)
+            .setWorkingDirectoryMessage(message?.takeIf { it.isNotBlank() } ?: "Saqr stash on ${repo.branch}")
+            .call()
+        c?.name?.take(7)
+    }
+
+    /** v0.1.28: how many stashes this repo holds. */
+    fun stashCount(dir: File): Int = open(dir).use { git -> git.stashList().call().size }
+
+    /** v0.1.28: applies the newest stash and drops it. On conflicts the stash is kept and the conflicted paths are returned. */
+    fun stashPop(dir: File): List<String> = open(dir).use { git ->
+        if (git.stashList().call().isEmpty()) throw GitException("No stash to apply")
+        try {
+            git.stashApply().setStashRef("stash@{0}").call()
+        } catch (e: org.eclipse.jgit.api.errors.StashApplyFailureException) {
+            return@use git.status().call().conflicting.sorted().ifEmpty { throw GitException("Stash did not apply: ${e.message}", e) }
+        }
+        git.stashDrop().setStashRef(0).call()
+        emptyList()
+    }
+
     private fun toOutcome(r: MergeResult) = MergeOutcome(
         status = r.mergeStatus.name, success = r.mergeStatus.isSuccessful,
         conflicts = r.conflicts?.keys?.sorted().orEmpty(), newHead = r.newHead?.name?.take(7),
