@@ -27,14 +27,14 @@ object TemplateFiles {
             "AGENTS.md" to Template.AGENTS_MD +
                 "- This is a Compose app: keep UI in Kotlin, put user-facing text in strings.xml (values + values-ar).\n",
             "settings.gradle.kts" to fill(COMPOSE_SETTINGS, name),
-            "build.gradle.kts" to COMPOSE_ROOT,
-            "gradle.properties" to COMPOSE_GRADLE_PROPS,
+            "build.gradle.kts" to fill(COMPOSE_ROOT, name),
+            "gradle.properties" to fill(COMPOSE_GRADLE_PROPS, name),
             "app/build.gradle.kts" to fill(COMPOSE_APP, name),
-            "app/src/main/AndroidManifest.xml" to COMPOSE_MANIFEST,
+            "app/src/main/AndroidManifest.xml" to fill(COMPOSE_MANIFEST, name),
             "app/src/main/java/com/saqr/" + pkg(name) + "/MainActivity.kt" to fill(COMPOSE_MAIN, name),
-            "app/src/main/res/values/strings.xml" to COMPOSE_STRINGS_EN,
-            "app/src/main/res/values-ar/strings.xml" to COMPOSE_STRINGS_AR,
-            "app/src/main/res/values/themes.xml" to COMPOSE_THEMES,
+            "app/src/main/res/values/strings.xml" to fill(COMPOSE_STRINGS_EN, name),
+            "app/src/main/res/values-ar/strings.xml" to fill(COMPOSE_STRINGS_AR, name),
+            "app/src/main/res/values/themes.xml" to fill(COMPOSE_THEMES, name),
         )
         return m
     }
@@ -207,12 +207,12 @@ fun MainScreen() {
                 "- The page lives at `app/src/main/assets/index.html`; edit it directly or ask the agent.\n",
             "AGENTS.md" to Template.AGENTS_MD +
                 "- This is a zero-dependency WebView app: the UI is `app/src/main/assets/index.html` (HTML/CSS/JS, Arabic-ready). Keep MainActivity.kt minimal.\n",
-            "settings.gradle.kts" to LITE_SETTINGS,
-            "build.gradle.kts" to LITE_ROOT,
-            "gradle.properties" to LITE_GRADLE_PROPS,
+            "settings.gradle.kts" to fill(LITE_SETTINGS, name),
+            "build.gradle.kts" to fill(LITE_ROOT, name),
+            "gradle.properties" to fill(LITE_GRADLE_PROPS, name),
             "app/build.gradle.kts" to fill(LITE_APP, name),
-            "app/src/main/AndroidManifest.xml" to LITE_MANIFEST,
-            "app/src/main/java/com/saqr/" + pkg(name) + "/MainActivity.kt" to LITE_MAIN,
+            "app/src/main/AndroidManifest.xml" to fill(LITE_MANIFEST, name),
+            "app/src/main/java/com/saqr/" + pkg(name) + "/MainActivity.kt" to fill(LITE_MAIN, name),
             "app/src/main/assets/index.html" to fill(LITE_PAGE, name),
         )
     }
@@ -345,15 +345,15 @@ class MainActivity : Activity() {
             "AGENTS.md" to Template.AGENTS_MD +
                 "- This is an Arabic keyboard app: keep the layout XML and the service simple; commits use English.\n",
             "settings.gradle.kts" to fill(COMPOSE_SETTINGS, name),
-            "build.gradle.kts" to COMPOSE_ROOT,
-            "gradle.properties" to COMPOSE_GRADLE_PROPS,
+            "build.gradle.kts" to fill(COMPOSE_ROOT, name),
+            "gradle.properties" to fill(COMPOSE_GRADLE_PROPS, name),
             "app/build.gradle.kts" to fill(IME_APP, name),
-            "app/src/main/AndroidManifest.xml" to IME_MANIFEST,
+            "app/src/main/AndroidManifest.xml" to fill(IME_MANIFEST, name),
             "app/src/main/java/com/saqr/" + pkg(name) + "/ArabicImeService.kt" to fill(IME_SERVICE, name),
-            "app/src/main/res/xml/method.xml" to IME_METHOD,
-            "app/src/main/res/xml/arabic_keyboard.xml" to IME_KEYBOARD,
-            "app/src/main/res/values/strings.xml" to IME_STRINGS_EN,
-            "app/src/main/res/values-ar/strings.xml" to IME_STRINGS_AR,
+            "app/src/main/res/xml/method.xml" to fill(IME_METHOD, name),
+            "app/src/main/res/xml/arabic_keyboard.xml" to fill(IME_KEYBOARD, name),
+            "app/src/main/res/values/strings.xml" to fill(IME_STRINGS_EN, name),
+            "app/src/main/res/values-ar/strings.xml" to fill(IME_STRINGS_AR, name),
         )
         return m
     }
