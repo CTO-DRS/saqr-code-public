@@ -2153,8 +2153,9 @@ private fun SyncSection(ui: SettingsUi) {
                     pending = null
                     android.widget.Toast.makeText(
                         ctx,
-                        ctx.getString(R.string.sync_applied, a.settings, a.themes, a.commands, a.packs),
-                        android.widget.Toast.LENGTH_SHORT,
+                        ctx.getString(R.string.sync_applied, a.settings, a.themes, a.commands, a.packs) +
+                            (if (a.hasSkillNews) "\n" + ctx.getString(R.string.sync_applied_skills, a.skills, a.skillsRefused) else ""),
+                        if (a.hasSkillNews) android.widget.Toast.LENGTH_LONG else android.widget.Toast.LENGTH_SHORT,
                     ).show()
                 }, icon = Lucide.Check)
             }

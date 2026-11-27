@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.58] — 2026-11-28 — Sync says what happened to skills · المزامنة تذكر ما جرى للمهارات
+
+- **Honesty fix.** Applying a sync counted skills added, updated or refused for safety, but the result message only showed settings, themes, commands and packs. A refused skill vanished silently. The message now adds a second line, "Skills: N added or updated, M refused for safety", whenever skills were involved (English and Arabic, shown a bit longer).
+- New test for the new rule.
+- versionName 0.1.58, versionCode 97.
+- رسالة المزامنة تضيف سطرًا عن المهارات المضافة والمرفوضة للأمان.
+
 ## [0.1.57] — 2026-11-28 — Say so when keys are not encrypted · نخبرك إذا كانت المفاتيح غير مشفّرة
 
 - **Honesty fix.** If the phone's secure storage fails, the app already kept working by storing API keys and tokens unencrypted inside its private folder, but never told you. Settings now shows a notice (English and Arabic) in that case. On a normal phone nothing changes and no notice shows.

@@ -66,7 +66,10 @@ data class SyncApplied(
     val skills: Int = 0,
     /** Skills in the payload that SkillSafety or the installer refused. */
     val skillsRefused: Int = 0,
-)
+) {
+    /** True when the sync touched skills (added, updated or refused some), so the result message must say so. */
+    val hasSkillNews: Boolean get() = skills > 0 || skillsRefused > 0
+}
 
 class SyncException(val reason: String) : Exception(reason)
 

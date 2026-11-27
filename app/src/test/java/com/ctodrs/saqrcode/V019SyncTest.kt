@@ -120,4 +120,13 @@ class V019SyncTest {
         SyncKit.apply(SyncKit.parse(text)!!, dst)
         assertEquals("https://x.io/mcp?api_key=localkey1&v=2", dst.mcpServers.single().url)
     }
+
+    @Test
+    fun `the sync result says so when skills were added or refused`() {
+        assertFalse(com.ctodrs.saqrcode.data.SyncApplied(5, 1, 2, 0).hasSkillNews)
+        assertTrue(com.ctodrs.saqrcode.data.SyncApplied(5, 1, 2, 0, skills = 2).hasSkillNews)
+        assertTrue(com.ctodrs.saqrcode.data.SyncApplied(5, 1, 2, 0, skillsRefused = 1).hasSkillNews)
+        val a = SyncKit.apply(SyncKit.parse(SyncKit.toJson(SyncKit.snapshot(customised(), "d", "0.1.58", 1L)))!!, settings())
+        assertFalse(a.hasSkillNews)
+    }
 }
