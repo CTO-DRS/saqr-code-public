@@ -182,6 +182,10 @@
     <string name="git_stash">Stash changes</string>
     <string name="git_stash_pop">Apply last stash</string>
     <string name="git_cherry_pick_tip">Apply its latest commit here</string>
+    <string name="crash_title">Last crash report</string>
+    <string name="crash_body">Saved on this phone only. Share it if you want help; secrets are removed.</string>
+    <string name="crash_share">Share</string>
+    <string name="crash_clear">Clear</string>
     <string name="git_fetch">Fetch</string>
     <string name="git_init">Initialize repository</string>
     <string name="git_link_github">Link GitHub</string>
