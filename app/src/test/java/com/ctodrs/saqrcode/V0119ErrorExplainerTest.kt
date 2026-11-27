@@ -10,6 +10,7 @@ import java.net.UnknownHostException
 import javax.net.ssl.SSLHandshakeException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** v0.1.18: failed turns are classified so the chat can explain them in plain words. */
@@ -59,5 +60,17 @@ class V0119ErrorExplainerTest {
         Kind.values().forEach { assertEquals(it, ErrorExplainer.fromOrdinal(it.ordinal)) }
         assertNull(ErrorExplainer.fromOrdinal(-1))
         assertNull(ErrorExplainer.fromOrdinal(99))
+    }
+
+    @Test fun `mid-stream provider errors without an http code are classified and retried`() {
+        assertEquals(Kind.SERVER, k(LlmException("Overloaded")))
+        assertEquals(Kind.SERVER, k(LlmException("overloaded_error")))
+        assertEquals(Kind.RATE_LIMIT, k(LlmException("rate_limit_error: slow down")))
+        assertEquals(Kind.SERVER, k(LlmException("The server is temporarily unavailable")))
+        assertTrue(com.ctodrs.saqrcode.agent.LlmRetry.isRetryable(LlmException("Overloaded")))
+        assertTrue(com.ctodrs.saqrcode.agent.LlmRetry.isRetryable(LlmException("rate_limit_error: slow down")))
+        // a plain unknown error is still not retried, and an auth error never is
+        assertTrue(!com.ctodrs.saqrcode.agent.LlmRetry.isRetryable(LlmException("invalid request body")))
+        assertTrue(!com.ctodrs.saqrcode.agent.LlmRetry.isRetryable(LlmException("HTTP 401: bad key")))
     }
 }

@@ -112,6 +112,14 @@ Audit basis: step, time, cost and concurrency settings are all clamped; GitHub e
 
 ---
 
+### الموجة ك · الموثوقية مع المزودين / Wave K: provider reliability (autonomous, from the 0.1.59 audit)
+Audit basis: ErrorExplainer and LlmRetry only understood errors that carry an HTTP code; streams fail mid-reply without one.
+1. **(0.1.59, shipped) Mid-stream busy and rate-limit errors** classified and retried once.
+2. **(next) Partial reply on stream failure:** check what the chat shows when a stream dies after some text; keep the partial text and offer retry instead of dropping it; test with a fake client.
+3. **(next) Model list failures:** the model picker's fetch error path (listModels) should say why (auth, offline) using ErrorExplainer.
+
+---
+
 ## 1 · الرؤية والمبادئ الحاكمة
 
 صقر كود ليس «تطبيق محادثة مع ذكاء اصطناعي»؛ هو **استوديو برمجة متنقل كامل**: وكيل يخطط ويبرمج ويراجع، يبني APK موقّعًا على الجهاز، ينشر على المستودعات، ويحترم مفاتيح المستخدم وبياناته. هذه الخارطة — مرسومة من جديد بالكامل — تجعله خلال أربعة إصدارات **أجمل مظهرًا، أعمق ذكاءً، أوسع تكاملًا، ومتجرًا حقيقيًا على Play**.

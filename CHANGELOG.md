@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.59] — 2026-11-28 — Busy-provider errors retry and read right · أخطاء انشغال المزود تُعاد وتُشرح
+
+- **Reliability fix.** Providers sometimes fail in the middle of a reply with a short message such as "Overloaded" or "rate_limit_error" and no HTTP code. The app treated those as unknown errors and did not retry. They are now classified (server busy, rate limit) so the chat explains them, and they get the usual one retry with backoff and the fallback model if you set one. Auth errors and unknown errors are still never retried.
+- New test for the classification and the retry rule.
+- versionName 0.1.59, versionCode 98.
+- أخطاء المزود أثناء البث مثل "Overloaded" تُصنَّف وتُعاد مرة واحدة بدل أن تُعد مجهولة.
+
 ## [0.1.58] — 2026-11-28 — Sync says what happened to skills · المزامنة تذكر ما جرى للمهارات
 
 - **Honesty fix.** Applying a sync counted skills added, updated or refused for safety, but the result message only showed settings, themes, commands and packs. A refused skill vanished silently. The message now adds a second line, "Skills: N added or updated, M refused for safety", whenever skills were involved (English and Arabic, shown a bit longer).

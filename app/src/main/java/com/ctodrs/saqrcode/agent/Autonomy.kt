@@ -91,10 +91,17 @@ object LlmRetry {
     fun isRetryable(e: Throwable): Boolean {
         if (e is CancellationException) return false
         if (e is LlmException) {
-            val code = httpCode(e) ?: return e.message.orEmpty().contains("Empty response")
+            val code = httpCode(e) ?: return transientText(e.message.orEmpty())
             return code == 429 || code == 408 || code in 500..599
         }
         return e is SocketTimeoutException || e is InterruptedIOException || e is IOException
+    }
+
+    /** A stream error without an HTTP code: transient when it says the provider is busy or the reply was empty. */
+    fun transientText(message: String): Boolean {
+        val m = message.lowercase()
+        return m.contains("empty response") || m.contains("overloaded") || m.contains("rate_limit") ||
+            m.contains("rate limit") || m.contains("temporarily unavailable") || m.contains("server_error")
     }
 
     fun backoffMs(attempt: Int): Long = BACKOFF_MS * (1L shl attempt.coerceIn(0, 4))
