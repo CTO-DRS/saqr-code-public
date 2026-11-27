@@ -188,6 +188,11 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
 
     fun budgets() = com.ctodrs.saqrcode.agent.Budgets.Limits(maxSteps, maxMinutes, maxCostUsd)
 
+    /** v0.1.9 plan mode: show the agent's plan for editing/approval before it starts working. */
+    var planFirst: Boolean
+        get() = prefs.getBoolean("plan_first", false)
+        set(v) { prefs.edit().putBoolean("plan_first", v).apply(); bump() }
+
     // ------------------------------------------------ v0.16 Agent team (فريق الوكلاء)
 
     /** v0.16: Chief mode — in team mode the Chief classifies each request and staffs it with the minimum set of roles. Off = the classic Planner → Coder → Reviewer team. */

@@ -1116,4 +1116,16 @@
     <string name="chat_search_next">Next result</string>
     <string name="chat_export">Export chat</string>
     <string name="msg_you">You</string>
+    <string name="plan_first">Plan first</string>
+    <string name="plan_first_desc">Before working on a request, the agent shows its plan so you can edit, reorder or cancel it</string>
+    <string name="plan_edit_title">Plan</string>
+    <string name="plan_edit_sub">Edit the steps, then run</string>
+    <string name="plan_edit_approved">Running this plan</string>
+    <string name="plan_edit_cancelled">Cancelled</string>
+    <string name="plan_move_up">Move step up</string>
+    <string name="plan_move_down">Move step down</string>
+    <string name="plan_remove_step">Remove step</string>
+    <string name="plan_add_step">Add a step</string>
+    <string name="plan_run">Run plan</string>
+    <string name="plan_cancel">Cancel</string>
 </resources>

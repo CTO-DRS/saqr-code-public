@@ -102,6 +102,13 @@ sealed class ChatItem {
         val canSubmit get() = AskUserTool.canSubmit(request, answers)
         fun update(q: AskQuestion, a: AskAnswer) { if (status == Status.PENDING) answers = answers + (q.id to a) }
     }
+    /** v0.1.9 plan mode: the agent's plan, shown for the user to edit before any work starts. The loop waits on [deferred] (true = run the edited plan). */
+    class PlanReview(initial: List<String>) : ChatItem() {
+        enum class Status { PENDING, APPROVED, CANCELLED }
+        val tasks = mutableStateListOf<String>().also { it.addAll(initial) }
+        var status by mutableStateOf(Status.PENDING)
+        val deferred = CompletableDeferred<Boolean>()
+    }
     class Notice(val text: String, val isError: Boolean = false, val kind: Kind = if (isError) Kind.ERROR else Kind.INFO, val count: Int = -1) : ChatItem() {
         /** INTERRUPTED: a turn was cut off (app killed / phone off) and can be resumed; RESUMED: it was. COMPACTED: v0.7 context compaction; LOOP: v0.7 loop detector stopped the turn. PLANNED: v0.8 planner produced a task plan; MCP: v0.8 MCP server connection problem; DESERT: v0.13.5 offline gate refused a send. */
         /** v0.15: VERIFY = completion gate verdict ([count] = CompletionGate.Status ordinal, or [VERIFY_RETRY]); BUDGET = a run budget stopped the turn ([text] = time/cost); FALLBACK = a step moved to the fallback model ([text] = its label). */
@@ -691,6 +698,16 @@ class AgentSession(
         markDirty()
     }
 
+    /** v0.1.9 plan mode: run the (edited) plan, or cancel the turn. */
+    fun decidePlan(item: ChatItem.PlanReview, approve: Boolean) {
+        if (item.status != ChatItem.PlanReview.Status.PENDING) return
+        if (approve && Planner.fromEdited(item.tasks.toList()) == null) return
+        item.status = if (approve) ChatItem.PlanReview.Status.APPROVED else ChatItem.PlanReview.Status.CANCELLED
+        item.deferred.complete(approve)
+        hooks.onResumed(projectName)
+        markDirty()
+    }
+
     /** Submit ([skip] = false) or skip an `ask_user` card. */
     fun answer(item: ChatItem.AskUser, skip: Boolean) {
         if (item.status != ChatItem.AskUser.Status.PENDING) return
@@ -774,6 +791,11 @@ class AgentSession(
         }
         // v0.18: installed skills named by the user (or, opt-in, the most relevant ones) join this run
         attachSkills(currentUser?.text.orEmpty())
+        // v0.1.9 plan mode: show the plan and wait for the user's edit/approval before any work
+        if (settings.planFirst && stepBase == 0 && !planReview(model)) {
+            items += ChatItem.Notice("⏹", kind = ChatItem.Notice.Kind.STOPPED)
+            return RunOutcome(RunOutcome.Kind.STOPPED)
+        }
         // v0.16 Chief mode: the Chief staffs the request with the minimum set of roles
         if (settings.agentMode == "team" && settings.chiefMode && !chiefSolo) return chiefLoop(llm, model)
         val team = settings.agentMode == "team" && !chiefSolo
@@ -1480,6 +1502,39 @@ class AgentSession(
      * coder's own model) turns the request into a task list that fills the progress pill and
      * is handed to the coder. Silent on failure — the coder can work without a plan.
      */
+    /** v0.1.9 plan mode. Returns false when the user cancelled. A planner failure lets the run continue unplanned. */
+    private suspend fun planReview(coderModel: String): Boolean {
+        val user = currentUser ?: return true
+        if (!Planner.worthPlanning(user.text)) return true
+        val model = stageModel(FalconRouter.Stage.PLANNER, settings.plannerModel).first.ifBlank { coderModel }
+        if (model.isBlank()) return true
+        hooks.onActivity(projectName, 0, RunActivity.forTool("planner", ""))
+        val req = Planner.buildRequest(user.text)
+        val turn = runCatching {
+            clientFor(model).complete(Planner.SYSTEM, listOf(Msg.User(req)), emptyList(), object : StreamListener {
+                override fun onText(delta: String) {}
+            })
+        }.getOrNull() ?: return true
+        recordUsage(model, turn.usage ?: UsageParser.estimate(req.length, turn.text.length))
+        val parsed = Planner.parse(turn.text) ?: return true
+        val card = ChatItem.PlanReview(parsed.tasks)
+        items += card
+        saveNow()
+        hooks.onWaiting(projectName, RunWait(RunWait.Kind.ASK, parsed.tasks.joinToString(" · ").take(200)))
+        persistTask(TaskState.Status.WAITING_APPROVAL)
+        val t0 = System.currentTimeMillis()
+        val ok = card.deferred.await()
+        waitMs += System.currentTimeMillis() - t0
+        persistTask(TaskState.Status.RUNNING)
+        if (!ok) return false
+        val edited = Planner.fromEdited(card.tasks.toList()) ?: return true
+        plan.clear(); plan.addAll(Planner.toPlanItems(edited))
+        items += ChatItem.Notice("", kind = ChatItem.Notice.Kind.PLANNED, count = edited.tasks.size)
+        history += Msg.User(Planner.planMessage(edited).replace("Suggested task plan", "Task plan approved by the user"))
+        markDirty()
+        return true
+    }
+
     private suspend fun runPlanner() {
         val user = currentUser ?: return
         if (!Planner.worthPlanning(user.text)) return

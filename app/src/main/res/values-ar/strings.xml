@@ -1116,4 +1116,16 @@
     <string name="chat_search_next">النتيجة التالية</string>
     <string name="chat_export">تصدير المحادثة</string>
     <string name="msg_you">أنت</string>
+    <string name="plan_first">الخطة أولاً</string>
+    <string name="plan_first_desc">قبل تنفيذ أي طلب، يعرض الوكيل خطته لتعدّلها أو تعيد ترتيبها أو تلغيها</string>
+    <string name="plan_edit_title">الخطة</string>
+    <string name="plan_edit_sub">عدّل الخطوات ثم نفّذ</string>
+    <string name="plan_edit_approved">جارٍ تنفيذ هذه الخطة</string>
+    <string name="plan_edit_cancelled">أُلغيت</string>
+    <string name="plan_move_up">نقل الخطوة للأعلى</string>
+    <string name="plan_move_down">نقل الخطوة للأسفل</string>
+    <string name="plan_remove_step">حذف الخطوة</string>
+    <string name="plan_add_step">إضافة خطوة</string>
+    <string name="plan_run">نفّذ الخطة</string>
+    <string name="plan_cancel">إلغاء</string>
 </resources>

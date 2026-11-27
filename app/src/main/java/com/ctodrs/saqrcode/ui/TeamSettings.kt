@@ -26,6 +26,8 @@ import com.ctodrs.saqrcode.ui.theme.Sp
  * are always on, so they have no switch. A plain holder so previews/screenshot tests can build it.
  */
 class TeamUi(
+    val planFirst: Boolean = false,
+    val onPlanFirst: (Boolean) -> Unit = {},
     val chiefMode: Boolean = false,
     val onChiefMode: (Boolean) -> Unit = {},
     val maxConcurrent: Int = 1,
@@ -39,6 +41,7 @@ class TeamUi(
 
     companion object {
         fun from(settings: SettingsStore) = TeamUi(
+            planFirst = settings.planFirst, onPlanFirst = { settings.planFirst = it },
             chiefMode = settings.chiefMode, onChiefMode = { settings.chiefMode = it },
             maxConcurrent = settings.teamMaxConcurrent, onMaxConcurrent = { settings.teamMaxConcurrent = it },
             costEstimate = settings.teamCostEstimate, onCostEstimate = { settings.teamCostEstimate = it },
@@ -56,6 +59,9 @@ internal fun TeamSection(ui: TeamUi) {
     SectionLabel(stringResource(R.string.team_section), Modifier.padding(top = Sp.md))
     Group {
         Column {
+            ListRow(stringResource(R.string.plan_first), stringResource(R.string.plan_first_desc), icon = Lucide.ListChecks,
+                trailing = { SaqrSwitch(ui.planFirst, ui.onPlanFirst) })
+            RowDivider()
             ListRow(stringResource(R.string.chief_mode), stringResource(R.string.chief_mode_desc), icon = Lucide.Users,
                 trailing = { SaqrSwitch(ui.chiefMode, ui.onChiefMode) })
             if (ui.chiefMode) {

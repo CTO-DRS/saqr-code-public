@@ -435,6 +435,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                                 onDecide = { a, ok -> ws.agent.decide(a, ok) },
                                 onPickModel = { settings.setModel(def.id, it) }, onManageProviders = onSettings, topInset = top,
                                 onAnswer = { a, skip -> ws.agent.answer(a, skip) },
+                                onDecidePlan = { pr, ok -> ws.agent.decidePlan(pr, ok) },
                                 onMeter = { showUsage = true },
                                 onRestore = { askRestore(it.checkpointId) },
                                 onImageAction = { onImageAction(it) },

@@ -167,6 +167,7 @@ object SessionCodec {
                     }
                 })
             }
+            is ChatItem.PlanReview -> o.put("t", "notice").put("text", "").put("kind", "PLANNED").put("count", item.tasks.size)
             is ChatItem.Notice -> o.put("t", "notice").put("text", item.text).put("kind", item.kind.name).put("count", item.count)
             is ChatItem.Review -> {
                 o.put("t", "review").put("model", item.model).put("status", item.status.name).put("summary", item.summary)
@@ -309,6 +310,7 @@ object SessionRepair {
                 is ChatItem.Assistant -> if (item.streaming) { item.streaming = false; changed = true }
                 is ChatItem.Tool -> if (item.result == null) { item.result = "(interrupted)"; item.ok = false; changed = true }
                 is ChatItem.Approval -> if (item.decision == null) { item.decision = false; item.deferred.complete(false); changed = true }
+                is ChatItem.PlanReview -> if (item.status == ChatItem.PlanReview.Status.PENDING) { item.status = ChatItem.PlanReview.Status.CANCELLED; item.deferred.complete(false); changed = true }
                 is ChatItem.AskUser -> if (item.status == ChatItem.AskUser.Status.PENDING && !keepAskPending) {
                     item.status = ChatItem.AskUser.Status.CANCELLED; changed = true
                 }

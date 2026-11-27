@@ -160,6 +160,7 @@ fun ChatContent(
     listState: LazyListState = rememberLazyListState(),
     autoScroll: Boolean = true,
     onAnswer: (ChatItem.AskUser, Boolean) -> Unit = { _, _ -> },
+    onDecidePlan: (ChatItem.PlanReview, Boolean) -> Unit = { _, _ -> },
     onMeter: () -> Unit = {},
     onRestore: (ChatItem.User) -> Unit = {},
     onImageAction: (ImageAction) -> Unit = {},
@@ -206,7 +207,7 @@ fun ChatContent(
                             val endsTurn = item is ChatItem.Assistant && !item.streaming &&
                                 shown.getOrNull(i + 1).let { it == null || it is ChatItem.User || it is ChatItem.Notice } &&
                                 !(state.running && i == shown.lastIndex)
-                            ChatRow(item, onDecide, onAnswer, onRestore = if (state.running) null else onRestore,
+                            ChatRow(item, onDecide, onAnswer, onDecidePlan, onRestore = if (state.running) null else onRestore,
                                 onSpeak = if (endsTurn) onSpeak else null, speaking = item.key == state.speakingKey,
                                 showActions = endsTurn, sources = if (endsTurn) Sources.forTurn(shown, i) else emptyList(),
                                 onResumeTask = if (state.running) null else onResumeTask, workspaceDir = workspaceDir,
@@ -220,6 +221,7 @@ fun ChatContent(
                         is ChatItem.Tool -> last.result != null
                         is ChatItem.Approval -> last.decision != null
                         is ChatItem.AskUser -> last.status != ChatItem.AskUser.Status.PENDING
+                        is ChatItem.PlanReview -> last.status != ChatItem.PlanReview.Status.PENDING
                         else -> true
                     }
                     if (showWorking) item(key = "working") {
@@ -275,6 +277,7 @@ private fun spacingFor(item: ChatItem) = when (item) {
     is ChatItem.Tool -> 0.dp
     is ChatItem.Approval -> if (item.decision == null) 8.dp else 0.dp
     is ChatItem.AskUser -> if (item.status == ChatItem.AskUser.Status.PENDING) 8.dp else 4.dp
+    is ChatItem.PlanReview -> 8.dp
     is ChatItem.User -> 10.dp
     is ChatItem.Notice -> 8.dp
     is ChatItem.Review -> 8.dp
@@ -284,6 +287,7 @@ private fun spacingFor(item: ChatItem) = when (item) {
 @Composable
 fun ChatRow(
     item: ChatItem, onDecide: (ChatItem.Approval, Boolean) -> Unit, onAnswer: (ChatItem.AskUser, Boolean) -> Unit = { _, _ -> },
+    onDecidePlan: (ChatItem.PlanReview, Boolean) -> Unit = { _, _ -> },
     onRestore: ((ChatItem.User) -> Unit)? = null,
     onSpeak: ((ChatItem.Assistant) -> Unit)? = null,
     speaking: Boolean = false,
@@ -320,6 +324,7 @@ fun ChatRow(
             else if (item.action != null) ActionDecisionRow(item)
             else Column { item.changes.forEach { ChangeRow(it, item.decision == true, item.durationMs) } }
         is ChatItem.AskUser -> AskUserCard(item, onAnswer)
+        is ChatItem.PlanReview -> PlanReviewCard(item, onDecidePlan)
         is ChatItem.Review -> ReviewCard(item)
         is ChatItem.Notice -> when (item.kind) {
             ChatItem.Notice.Kind.INTERRUPTED -> InterruptedCard(onResumeTask)

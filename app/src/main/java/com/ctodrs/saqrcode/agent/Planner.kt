@@ -111,6 +111,19 @@ Rules:
         return words >= MIN_WORDS || t.length >= MIN_CHARS
     }
 
+    /** v0.1.9 plan mode: the user's edited task titles, normalized (trimmed, blanks dropped, capped). Null when nothing is left. */
+    fun fromEdited(titles: List<String>): Plan? {
+        val t = titles.map { it.trim().replace(Regex("\\s+"), " ").take(120) }.filter { it.isNotEmpty() }.take(MAX_TEAM_TASKS)
+        return if (t.isEmpty()) null else Plan(t)
+    }
+
+    /** Edit helpers for the plan card (pure, tested). */
+    fun move(list: List<String>, from: Int, delta: Int): List<String> {
+        val to = from + delta
+        if (from !in list.indices || to !in list.indices) return list
+        return list.toMutableList().also { val x = it.removeAt(from); it.add(to, x) }
+    }
+
     const val MAX_TASKS = 6
     /** v0.16: a team plan (with roles/dependencies) may hold a few more tasks. */
     const val MAX_TEAM_TASKS = 8

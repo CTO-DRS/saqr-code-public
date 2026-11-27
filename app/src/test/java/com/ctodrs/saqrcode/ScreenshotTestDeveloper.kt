@@ -90,6 +90,25 @@ class ScreenshotTestDeveloper {
     @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-night-xxhdpi") @Test fun branchAr() = branchShot("branch-ar", true)
     @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi") @Test fun branchEn() = branchShot("branch-en", false)
 
+    private fun planShot(name: String, ar: Boolean) {
+        val item = com.ctodrs.saqrcode.agent.ChatItem.PlanReview(if (ar) listOf("استكشاف ملفات المشروع", "إضافة شاشة الإعدادات الجديدة", "ربط الشاشة بالتنقل", "كتابة الاختبارات وتشغيلها") else listOf("Explore the project files", "Add the new settings screen", "Wire it into navigation", "Write and run the tests"))
+        rule.setContent {
+            SaqrTheme("dark") {
+                Column(Modifier.fillMaxSize().background(Saqr.colors.surface1).padding(top = 160.dp, start = 16.dp, end = 16.dp)) {
+                    com.ctodrs.saqrcode.ui.chat.PlanReviewCard(item) { _, _ -> }
+                }
+            }
+        }
+        rule.waitForIdle(); rule.mainClock.advanceTimeBy(300)
+        val root = rule.activity.window.decorView
+        val bmp = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
+        root.draw(Canvas(bmp))
+        File(outDir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    @Config(qualifiers = "ar-rSA-ldrtl-w411dp-h891dp-night-xxhdpi") @Test fun planAr() = planShot("plan-ar", true)
+    @Config(qualifiers = "en-rUS-ldltr-w411dp-h891dp-night-xxhdpi") @Test fun planEn() = planShot("plan-en", false)
+
     private fun sheetShot(name: String) {
         rule.setContent {
             SaqrTheme("dark") {

@@ -136,6 +136,7 @@ object SyncKit {
         SyncSetting("max_steps", { it.maxSteps.toString() }, { s, v -> v.toIntOrNull()?.let { s.maxSteps = it } }),
         SyncSetting("max_minutes", { it.maxMinutes.toString() }, { s, v -> v.toIntOrNull()?.let { s.maxMinutes = it } }),
         SyncSetting("max_cost_usd", { it.maxCostUsd.toString() }, { s, v -> v.toDoubleOrNull()?.let { s.maxCostUsd = it } }),
+        SyncSetting("plan_first", { b(it.planFirst) }, { s, v -> s.planFirst = unbool(v) }),
         SyncSetting("chief_mode", { b(it.chiefMode) }, { s, v -> s.chiefMode = unbool(v) }),
         SyncSetting("team_max_concurrent", { it.teamMaxConcurrent.toString() }, { s, v -> v.toIntOrNull()?.let { s.teamMaxConcurrent = it } }),
         SyncSetting("team_cost_estimate", { b(it.teamCostEstimate) }, { s, v -> s.teamCostEstimate = unbool(v) }),

@@ -1,5 +1,14 @@
 # Changelog · سجل التغييرات
 
+## [0.1.9] — 2026-11-27 — Plan mode · وضع الخطة
+
+- **Plan first (Settings → Team).** When on, the agent drafts its plan and shows it as an editable card before touching anything: edit a step, reorder, remove, add, then "Run plan" or Cancel. The coder gets the plan you approved.
+- Cancel stops the turn with nothing done. A plan card left open when the app dies is cancelled on restore, never hangs the run.
+- Short or slash requests skip planning; a planner failure continues unplanned.
+- EN + AR, RTL, 48dp controls, labelled buttons. Setting syncs.
+- **Tests:** `V0110PlanModeTest` (4).
+- versionName 0.1.9, versionCode 48.
+
 ## [0.1.8] — 2026-11-26 — Majlis 8: chat branching · تفرّع المحادثة
 
 - **Edit and regenerate keep the old answer.** Everything from the edited (or regenerated) message on is saved as a branch. A "‹ 2/3 ›" switcher under that message flips between versions, including the tool rows and approvals of each. The model always continues from the branch on screen.
