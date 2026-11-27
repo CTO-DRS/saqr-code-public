@@ -95,6 +95,15 @@ Audit basis: unit coverage is broad (every subsystem has tests under a feature-n
 
 ---
 
+### الموجة ط · الأسرار في التصدير والمزامنة / Wave I: secrets in exports (autonomous, from the 0.1.54 audit)
+Audit basis: Wave H found secrets reaching synced settings through free-text fields. Wave I walks every other free-text field that leaves the device.
+1. **(0.1.55, shipped) MCP server URLs:** credential-looking query values are blanked in sync and refilled locally on apply.
+2. **(next) Packs and skills sync:** audit `packsJson` and exported skill bundles for pasted keys; scan with the same redactor and warn at export.
+3. **(next) Share and crash text:** audit the crash card, shared logs and the "copy error" action for unredacted provider text.
+4. Chat backup: audited, encrypted with the user's passphrase, no change.
+
+---
+
 ## 1 · الرؤية والمبادئ الحاكمة
 
 صقر كود ليس «تطبيق محادثة مع ذكاء اصطناعي»؛ هو **استوديو برمجة متنقل كامل**: وكيل يخطط ويبرمج ويراجع، يبني APK موقّعًا على الجهاز، ينشر على المستودعات، ويحترم مفاتيح المستخدم وبياناته. هذه الخارطة — مرسومة من جديد بالكامل — تجعله خلال أربعة إصدارات **أجمل مظهرًا، أعمق ذكاءً، أوسع تكاملًا، ومتجرًا حقيقيًا على Play**.
