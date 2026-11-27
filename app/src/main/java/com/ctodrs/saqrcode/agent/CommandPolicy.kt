@@ -34,6 +34,11 @@ object CommandPolicy {
         Regex("""\$\(\s*(curl|wget)\b|`\s*(curl|wget)\b""") to "running downloaded content (command substitution)",
         Regex("""\|\s*(sudo\s+)?(\S*/)?(ba|z|da|k)?sh\b(\s|$)""") to "piping text into a shell",
         Regex("""\b(base64\s+(-d|--decode|-D)|xxd\s+-r)""") to "decoding hidden content",
+        // v0.1.31: uploading local files to a server (the way an injected page would exfiltrate secrets)
+        Regex("""\b(curl|wget)\b[^;&|]*\s(-d|-F|--data\S*|--form\S*|--json)[=\s]+\S*@""") to "uploading a local file to a server",
+        Regex("""\bcurl\b[^;&|]*\s(-T|--upload-file)\b""") to "uploading a local file to a server",
+        Regex("""\bwget\b[^;&|]*--post-(file|data)\b""") to "uploading local data to a server",
+        Regex("""\b(nc|ncat|netcat)\b[^;&|]*<\s*\S""") to "sending a file over a raw socket",
         // deletion
         Regex("""\brm\s+(-[a-zA-Z]*\s+)*(-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b""") to "recursive delete (rm -r)",
         Regex("""\bfind\b.*\s-(delete|exec\s+rm)\b""") to "bulk delete with find",
