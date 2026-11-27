@@ -1176,4 +1176,11 @@
     <string name="plan_add_step">إضافة خطوة</string>
     <string name="plan_run">نفّذ الخطة</string>
     <string name="plan_cancel">إلغاء</string>
+    <string name="err_offline">ما فيه اتصال بمزوّد النموذج. تأكد من الإنترنت ثم اضغط استئناف أو أرسل من جديد.</string>
+    <string name="err_timeout">المزوّد تأخر بالرد. جرّب مرة ثانية أو بدّل لنموذج أسرع.</string>
+    <string name="err_auth">المزوّد رفض مفتاح الـAPI. افتح الإعدادات ← المزوّدات وتأكد من المفتاح.</string>
+    <string name="err_rate_limit">طلبات كثيرة الحين. انتظر دقيقة ثم استأنف.</string>
+    <string name="err_quota">رصيد أو حصة حسابك عند المزوّد خلصت. اشحنه أو بدّل المزوّد.</string>
+    <string name="err_server">المزوّد عنده مشكلة من جهته. جرّب بعد شوي أو بدّل النموذج.</string>
+    <string name="err_tls">تعذّر إنشاء اتصال آمن. تأكد من التاريخ والوقت أو الـVPN أو رابط المزوّد.</string>
 </resources>

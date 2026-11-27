@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.18] — 2026-11-27 — Errors that explain themselves · أخطاء تشرح نفسها
+
+- **Plain-words failures:** when a turn fails (no internet, timeout, wrong API key, rate limit, out of quota, provider outage, TLS), the error card now says what happened and what to do, in the app language, with the raw detail kept underneath. Unknown errors still show the raw text.
+- EN + AR, RTL.
+- **Tests:** `V0119ErrorExplainerTest`: offline, timeout, 401/403/429/402/5xx, quota vs rate limit, TLS, unknown, ordinal round trip.
+- versionName 0.1.18, versionCode 57.
+
 ## [0.1.17] — 2026-11-27 — Learning mode (Arabic, line by line) · وضع التعلّم
 
 - **Learning mode:** a switch in Settings → Autonomy. When on, every change Saqr makes ends with a line-by-line walkthrough: what each line does and why, one concept per bullet, new terms defined once, a two-line summary and a small exercise. Explanations are in Arabic when the app is Arabic; code stays in English. The work itself (tools, edits, verification) is unchanged.

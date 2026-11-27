@@ -529,7 +529,7 @@ class AgentSession(
             catch (e: CancellationException) { items += ChatItem.Notice("⏹", kind = ChatItem.Notice.Kind.STOPPED); outcome = RunOutcome(RunOutcome.Kind.STOPPED) }
             catch (e: Exception) {
                 val msg = e.message ?: e.toString()
-                items += ChatItem.Notice(msg, isError = true); outcome = RunOutcome(RunOutcome.Kind.ERROR, msg)
+                items += ChatItem.Notice(msg, isError = true, count = ErrorExplainer.classify(e).ordinal); outcome = RunOutcome(RunOutcome.Kind.ERROR, msg)
             }
             finally {
                 endTask(outcome)

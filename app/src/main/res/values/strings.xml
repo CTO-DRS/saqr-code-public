@@ -1176,4 +1176,11 @@
     <string name="plan_add_step">Add a step</string>
     <string name="plan_run">Run plan</string>
     <string name="plan_cancel">Cancel</string>
+    <string name="err_offline">No connection to the model provider. Check your internet, then tap Resume or send again.</string>
+    <string name="err_timeout">The provider took too long to answer. Try again, or switch to a faster model.</string>
+    <string name="err_auth">The provider rejected your API key. Open Settings → Providers and check the key.</string>
+    <string name="err_rate_limit">Too many requests right now. Wait a minute, then resume.</string>
+    <string name="err_quota">Your provider account is out of credit or quota. Top it up or switch provider.</string>
+    <string name="err_server">The provider is having trouble on its side. Try again shortly, or switch model.</string>
+    <string name="err_tls">A secure connection could not be made. Check the date/time, VPN or the provider URL.</string>
 </resources>

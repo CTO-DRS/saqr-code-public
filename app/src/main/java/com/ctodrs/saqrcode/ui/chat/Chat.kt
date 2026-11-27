@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ctodrs.saqrcode.R
+import com.ctodrs.saqrcode.agent.ErrorExplainer
 import com.ctodrs.saqrcode.agent.Budget
 import com.ctodrs.saqrcode.agent.AgentRole
 import com.ctodrs.saqrcode.agent.AgentRoles
@@ -775,6 +776,17 @@ private fun NoticeCard(item: ChatItem.Notice) {
             })
             ChatItem.Notice.Kind.FALLBACK -> stringResource(R.string.notice_fallback, item.text)
             ChatItem.Notice.Kind.TEAM -> teamNoticeText(item)
+            ChatItem.Notice.Kind.ERROR -> ErrorExplainer.fromOrdinal(item.count)?.takeIf { it != ErrorExplainer.Kind.OTHER }?.let {
+                stringResource(when (it) {
+                    ErrorExplainer.Kind.OFFLINE -> R.string.err_offline
+                    ErrorExplainer.Kind.TIMEOUT -> R.string.err_timeout
+                    ErrorExplainer.Kind.AUTH -> R.string.err_auth
+                    ErrorExplainer.Kind.RATE_LIMIT -> R.string.err_rate_limit
+                    ErrorExplainer.Kind.QUOTA -> R.string.err_quota
+                    ErrorExplainer.Kind.SERVER -> R.string.err_server
+                    else -> R.string.err_tls
+                }) + "\n\n" + item.text
+            } ?: item.text
             else -> item.text
         }
         Text(body, style = Saqr.type.bodySmall.copy(color = c.text1, textDirection = TextDirection.Content))
