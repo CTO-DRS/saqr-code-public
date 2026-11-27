@@ -61,11 +61,19 @@ class LlmClient(
         .writeTimeout(60, TimeUnit.SECONDS)
         .build()
 
+    /** Provider error text can echo the request's key ("Incorrect API key: sk-..."); scrub it before it reaches the chat, history or logs. */
+    private fun llmError(msg: String) = LlmException(safeError(msg, apiKey))
+
     override suspend fun complete(system: String, messages: List<Msg>, tools: List<ToolSpec>, l: StreamListener): Turn =
         withContext(Dispatchers.IO) {
-            when (def.kind) {
-                ProviderKind.OPENAI_COMPAT -> openAi(system, messages, tools, l)
-                ProviderKind.ANTHROPIC -> anthropic(system, messages, tools, l)
+            try {
+                when (def.kind) {
+                    ProviderKind.OPENAI_COMPAT -> openAi(system, messages, tools, l)
+                    ProviderKind.ANTHROPIC -> anthropic(system, messages, tools, l)
+                }
+            } catch (e: LlmException) {
+                // Errors raised inside the stream parsers have no key in scope; scrub every one here.
+                throw llmError(e.message.orEmpty())
             }
         }
 
@@ -112,9 +120,9 @@ class LlmClient(
             call.execute().use { resp ->
                 if (!resp.isSuccessful) {
                     val err = resp.body?.string()?.take(800) ?: ""
-                    throw LlmException("HTTP ${resp.code}: ${extractError(err)}")
+                    throw llmError("HTTP ${resp.code}: ${extractError(err)}")
                 }
-                val source = resp.body?.source() ?: throw LlmException("Empty response")
+                val source = resp.body?.source() ?: throw llmError("Empty response")
                 val parser = SseParser(onEvent)
                 while (true) {
                     val line = source.readUtf8Line() ?: break
@@ -137,7 +145,7 @@ class LlmClient(
         }
         http.newCall(req).execute().use { resp ->
             val txt = resp.body?.string() ?: ""
-            if (!resp.isSuccessful) throw LlmException("HTTP ${resp.code}: ${extractError(txt)}")
+            if (!resp.isSuccessful) throw llmError("HTTP ${resp.code}: ${extractError(txt)}")
             val arr = JSONObject(txt).optJSONArray("data") ?: JSONArray()
             (0 until arr.length()).mapNotNull { arr.optJSONObject(it)?.optString("id") }
                 .map { it.removePrefix("models/") }.sorted()
@@ -149,6 +157,8 @@ class LlmClient(
 
         /** Providers known to accept `stream_options.include_usage`; others may reject unknown fields. */
         val USAGE_STREAM_OPTION = setOf("openai", "openrouter", "deepseek")
+
+        fun safeError(msg: String, apiKey: String?): String = AuditLog.redact(msg, apiKey)
 
         fun extractError(body: String): String = try {
             val o = JSONObject(body)

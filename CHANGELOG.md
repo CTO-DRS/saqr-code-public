@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.52] — 2026-11-27 — Provider errors never echo your key · أخطاء المزود لا تكرر مفتاحك
+
+- **Security hardening.** Some providers repeat the API key inside their error text ("Incorrect API key provided: ..."). That text went into the chat notice, back to the model and into logs. It is now scrubbed in the model client before anything else sees it. Ordinary error text, such as context-length messages, is unchanged.
+- Two new tests: a fake server that echoes the key, and a check that normal messages pass through untouched.
+- versionName 0.1.52, versionCode 91.
+- نص خطأ بعض المزودين يكرر مفتاح API. صار يُنظَّف في عميل النموذج قبل ظهوره في المحادثة أو السجلات.
+
 ## [0.1.51] — 2026-11-27 — Restart with a pending approval · إعادة التشغيل مع موافقة معلّقة
 
 - **Internal, no visible change.** A whole-loop test saves a chat while a file-change approval card is waiting, reopens it as a new session, and checks that no card is stuck, that every tool call the model made has an answer (providers refuse requests that do not), and that the unapproved file was not written.

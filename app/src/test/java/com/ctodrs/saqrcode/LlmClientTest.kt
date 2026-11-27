@@ -99,4 +99,21 @@ data: {"type":"message_stop"}
         assertTrue(e is LlmException)
         assertTrue(e!!.message!!.contains("401") && e.message!!.contains("Invalid API key"))
     }
+
+    @Test fun errorTextNeverEchoesTheKey() = runBlocking {
+        val key = "zz-secret-key-1234567890"
+        route("/v1/chat/completions", status = 401, body = """{"error":{"message":"Incorrect API key provided: $key. Check it."}}""")
+        val e = runCatching {
+            LlmClient(Providers.byId("openai"), "$base/v1", "m", key).complete("s", listOf(Msg.User("x")), emptyList(), L())
+        }.exceptionOrNull()
+        assertTrue(e is LlmException)
+        assertTrue(e!!.message!!.contains("401") && e.message!!.contains("Incorrect API key"))
+        assertTrue(!e.message!!.contains(key))
+    }
+
+    @Test fun safeErrorKeepsOrdinaryProviderText() {
+        val m = "HTTP 400: This model's maximum context length is 8192 tokens, however you requested 9000 tokens"
+        assertEquals(m, LlmClient.safeError(m, "sk-abcdef123456"))
+        assertEquals("bad ***", LlmClient.safeError("bad sk-abcdef123456", "sk-abcdef123456"))
+    }
 }
