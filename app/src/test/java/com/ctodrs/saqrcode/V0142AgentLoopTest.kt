@@ -192,4 +192,28 @@ class V0142AgentLoopTest {
         assertTrue(fake.seen.first().filterIsInstance<Msg.User>().any { it.text.contains("build me a page") })
         first.stop()
     }
+
+    @Test fun `an approval card pending at a restart does not leave the history broken`() {
+        val app = RuntimeEnvironment.getApplication()
+        val root = File(app.cacheDir, "pending-${System.nanoTime()}")
+        val first = session(Fake(listOf({ Turn("", listOf(writeCall), "tool_use") })), null, root)
+        first.send("make a file")
+        awaitUntil("approval card") { first.items.any { it is ChatItem.Approval } }
+        first.saveNow(blocking = true) // what is on disk if the process dies right here
+        val fake = Fake(listOf({ Turn("recovered", emptyList(), "stop") }))
+        val second = session(fake, null, root)
+        // nothing is left waiting on a card nobody can answer
+        assertTrue(second.items.filterIsInstance<ChatItem.Approval>().none { it.decision == null })
+        assertTrue(second.interrupted)
+        assertTrue(second.resumeInterrupted())
+        second.await()
+        // every tool call the model made is answered, so a provider accepts the request
+        val sent = fake.seen.first()
+        val calls = sent.filterIsInstance<Msg.Assistant>().flatMap { it.toolCalls }.map { it.id }
+        val answered = sent.filterIsInstance<Msg.ToolResult>().map { it.callId }.toSet()
+        assertTrue("unanswered calls: ${calls.filter { it !in answered }}", calls.all { it in answered })
+        // the change that was never approved was not written
+        assertTrue(!projectFile(second, "new.txt").exists())
+        first.stop()
+    }
 }
