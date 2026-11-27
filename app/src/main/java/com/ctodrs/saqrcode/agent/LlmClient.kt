@@ -35,19 +35,33 @@ interface StreamListener {
     fun onToolStart(name: String) {}
 }
 
+/** v0.1.42: the one call the agent loop makes to a model. Lets tests drive the loop with a scripted fake. */
+interface ModelClient {
+    suspend fun complete(system: String, messages: List<Msg>, tools: List<ToolSpec>, l: StreamListener): Turn
+}
+
+/** Builds the client for a provider and model. The default builds the real [LlmClient]. */
+fun interface ModelFactory {
+    fun create(def: ProviderDef, baseUrl: String, model: String, apiKey: String?): ModelClient
+
+    companion object {
+        val DEFAULT = ModelFactory { def, baseUrl, model, apiKey -> LlmClient(def, baseUrl, model, apiKey) }
+    }
+}
+
 class LlmClient(
     private val def: ProviderDef,
     private val baseUrl: String,
     private val model: String,
     private val apiKey: String?,
-) {
+) : ModelClient {
     private val http = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(180, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS)
         .build()
 
-    suspend fun complete(system: String, messages: List<Msg>, tools: List<ToolSpec>, l: StreamListener): Turn =
+    override suspend fun complete(system: String, messages: List<Msg>, tools: List<ToolSpec>, l: StreamListener): Turn =
         withContext(Dispatchers.IO) {
             when (def.kind) {
                 ProviderKind.OPENAI_COMPAT -> openAi(system, messages, tools, l)

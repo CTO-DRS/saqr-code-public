@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.42] — 2026-11-27 — Testable agent loop · حلقة الوكيل قابلة للاختبار
+
+- **Internal, no visible change:** the agent loop now talks to models through one small interface, so tests can drive it with a scripted fake model. The real client is the default and behaves exactly as before.
+- This is the base for whole-loop scenario tests and a per-turn cost caption.
+- versionName 0.1.42, versionCode 81.
+
 ## [0.1.41] — 2026-11-27 — Clearer provider errors · أخطاء أوضح
 
 - **Two more plain-words errors:** a wrong or retired model name, and a chat longer than the model's window, now say what happened and what to do instead of showing only the raw provider text.
