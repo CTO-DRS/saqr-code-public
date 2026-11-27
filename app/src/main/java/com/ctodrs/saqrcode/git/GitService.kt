@@ -443,6 +443,17 @@ class GitService(homeDir: File? = null, private val credentials: CredentialResol
         }
     }
 
+    /** v0.1.49: commits that changed [path], newest first (at most [limit]). Untracked files and empty repos give an empty list. */
+    fun fileHistory(dir: File, path: String, limit: Int = 30): List<FileCommit> = open(dir).use { git ->
+        val rel = path.replace('\\', '/').trim('/')
+        if (rel.isEmpty() || rel.split('/').any { it == ".." }) throw GitException("Bad path")
+        try {
+            git.log().addPath(rel).setMaxCount(limit.coerceIn(1, 200)).call().map {
+                FileCommit(it.name.take(7), it.authorIdent?.name ?: "?", it.commitTime.toLong(), it.shortMessage.orEmpty())
+            }
+        } catch (_: org.eclipse.jgit.api.errors.NoHeadException) { emptyList() }
+    }
+
     private fun toOutcome(r: MergeResult) = MergeOutcome(
         status = r.mergeStatus.name, success = r.mergeStatus.isSuccessful,
         conflicts = r.conflicts?.keys?.sorted().orEmpty(), newHead = r.newHead?.name?.take(7),

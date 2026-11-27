@@ -17,6 +17,13 @@ object TemplateFiles {
     private fun fill(s: String, name: String): String =
         s.replace("@@PKG@@", pkg(name)).replace("@@NAME@@", name.replace("\"", ""))
 
+    /** v0.1.49: like [fill] for XML and HTML files: `& < > "` in the name are escaped; [strings] also escapes `'` for strings.xml. */
+    private fun fillXml(s: String, name: String, strings: Boolean = false): String {
+        var n = name.replace("\"", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        if (strings) n = n.replace("'", "\\'")
+        return s.replace("@@PKG@@", pkg(name)).replace("@@NAME@@", n)
+    }
+
     // ------------------------------------------------------------ compose
 
     fun compose(name: String): Map<String, String> {
@@ -32,8 +39,8 @@ object TemplateFiles {
             "app/build.gradle.kts" to fill(COMPOSE_APP, name),
             "app/src/main/AndroidManifest.xml" to fill(COMPOSE_MANIFEST, name),
             "app/src/main/java/com/saqr/" + pkg(name) + "/MainActivity.kt" to fill(COMPOSE_MAIN, name),
-            "app/src/main/res/values/strings.xml" to fill(COMPOSE_STRINGS_EN, name),
-            "app/src/main/res/values-ar/strings.xml" to fill(COMPOSE_STRINGS_AR, name),
+            "app/src/main/res/values/strings.xml" to fillXml(COMPOSE_STRINGS_EN, name, strings = true),
+            "app/src/main/res/values-ar/strings.xml" to fillXml(COMPOSE_STRINGS_AR, name, strings = true),
             "app/src/main/res/values/themes.xml" to fill(COMPOSE_THEMES, name),
         )
         return m
@@ -211,9 +218,9 @@ fun MainScreen() {
             "build.gradle.kts" to fill(LITE_ROOT, name),
             "gradle.properties" to fill(LITE_GRADLE_PROPS, name),
             "app/build.gradle.kts" to fill(LITE_APP, name),
-            "app/src/main/AndroidManifest.xml" to fill(LITE_MANIFEST, name),
+            "app/src/main/AndroidManifest.xml" to fillXml(LITE_MANIFEST, name),
             "app/src/main/java/com/saqr/" + pkg(name) + "/MainActivity.kt" to fill(LITE_MAIN, name),
-            "app/src/main/assets/index.html" to fill(LITE_PAGE, name),
+            "app/src/main/assets/index.html" to fillXml(LITE_PAGE, name),
         )
     }
 
@@ -352,8 +359,8 @@ class MainActivity : Activity() {
             "app/src/main/java/com/saqr/" + pkg(name) + "/ArabicImeService.kt" to fill(IME_SERVICE, name),
             "app/src/main/res/xml/method.xml" to fill(IME_METHOD, name),
             "app/src/main/res/xml/arabic_keyboard.xml" to fill(IME_KEYBOARD, name),
-            "app/src/main/res/values/strings.xml" to fill(IME_STRINGS_EN, name),
-            "app/src/main/res/values-ar/strings.xml" to fill(IME_STRINGS_AR, name),
+            "app/src/main/res/values/strings.xml" to fillXml(IME_STRINGS_EN, name, strings = true),
+            "app/src/main/res/values-ar/strings.xml" to fillXml(IME_STRINGS_AR, name, strings = true),
         )
         return m
     }

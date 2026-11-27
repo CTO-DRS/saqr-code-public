@@ -1232,4 +1232,5 @@
     <string name="guide_5_body">With an external keyboard: Ctrl+Enter sends, Ctrl+F searches the chat, Esc stops the agent.</string>
     <string name="guide_6_title">Working offline</string>
     <string name="guide_6_body">The editor, files, git and terminal work without internet. The agent needs a connection to reach your model. Desert mode pauses cloud turns and tells you why.</string>
+    <string name="history_heading">Commits that changed this file</string>
 </resources>
