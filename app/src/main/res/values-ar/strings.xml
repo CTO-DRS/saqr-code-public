@@ -506,6 +506,9 @@
     <string name="voice_cmd_cleared">تم المسح</string>
     <string name="voice_cmd_reading">أقرأ بصوت عالٍ</string>
     <string name="voice_cmd_muted">توقفت القراءة</string>
+    <string name="rules_title">قواعد المشروع</string>
+    <string name="rules_hint">AGENTS.md — يقرأ صقر هذه القواعد في بداية كل جلسة في هذا المشروع. المجلدات الفرعية يمكن أن تحمل AGENTS.md خاصًا بها.</string>
+    <string name="rules_saved">حُفظت القواعد</string>
     <string name="hands_free_stopped">أُوقف الإملاء بلا يدين</string>
     <!-- v0.13.5 وضع صحراوي -->
     <string name="desert_section">وضع صحراوي</string>

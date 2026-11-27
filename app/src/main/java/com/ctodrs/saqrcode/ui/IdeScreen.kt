@@ -203,6 +203,8 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     // ---- v0.6: sessions, voice, background
     var showSessions by remember { mutableStateOf(false) }
     var showMemory by remember { mutableStateOf(false) }
+    // v0.1.13: the project's AGENTS.md rules editor
+    var showRules by remember { mutableStateOf(false) }
     // v0.12: command palette
     var showPalette by remember { mutableStateOf(false) }
     var batteryDialog by remember { mutableStateOf(false) }
@@ -404,7 +406,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
 
     val chatOverflow: @Composable () -> Unit = {
         ChatOverflow(onCheckpoints = { showCheckpoints = true }, onUsage = { showUsage = true }, onNewChat = { ws.agent.clear() },
-            onSessions = { showSessions = true }, onMemory = { showMemory = true })
+            onSessions = { showSessions = true }, onMemory = { showMemory = true }, onRules = { showRules = true })
     }
 
     ModalNavigationDrawer(
@@ -514,6 +516,10 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     }
     if (showSessions) {
         com.ctodrs.saqrcode.ui.chat.SessionsSheet(ws.agent, onOpened = { speaker.stop(); ws.tab = Pane.AGENT }, onDismiss = { showSessions = false })
+    }
+    // v0.1.13: edit the project's AGENTS.md rules (seeded from the template when missing).
+    if (showRules) {
+        RulesDialog(java.io.File(ws.dir, com.ctodrs.saqrcode.agent.ProjectRules.FILE), onDismiss = { showRules = false })
     }
     // v0.13: the project's memory bank — what Saqr remembers about this user and project.
     if (showMemory) {
@@ -653,7 +659,7 @@ fun BatteryDialog(onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun ChatOverflow(onCheckpoints: () -> Unit, onUsage: () -> Unit, onNewChat: () -> Unit, onSessions: () -> Unit = {}, onMemory: () -> Unit = {}) {
+private fun ChatOverflow(onCheckpoints: () -> Unit, onUsage: () -> Unit, onNewChat: () -> Unit, onSessions: () -> Unit = {}, onMemory: () -> Unit = {}, onRules: () -> Unit = {}) {
     val c = Saqr.colors
     var open by remember { mutableStateOf(false) }
     Box {
@@ -678,6 +684,11 @@ private fun ChatOverflow(onCheckpoints: () -> Unit, onUsage: () -> Unit, onNewCh
                 text = { Text(stringResource(R.string.memory_title), style = Saqr.type.label, color = c.text1) },
                 leadingIcon = { SIcon(Lucide.BookMarked, size = 16.dp, tint = c.accentText) },
                 onClick = { open = false; onMemory() },
+            )
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(stringResource(R.string.rules_title), style = Saqr.type.label, color = c.text1) },
+                leadingIcon = { SIcon(Lucide.ListChecks, size = 16.dp, tint = c.accentText) },
+                onClick = { open = false; onRules() },
             )
             androidx.compose.material3.DropdownMenuItem(
                 text = { Text(stringResource(R.string.clear_chat), style = Saqr.type.label, color = c.text1) },
@@ -816,4 +827,40 @@ private fun DrawerItem(icon: ImageVector, label: String, selected: Boolean, onCl
         Text(label, style = Saqr.type.label, color = if (selected) c.text1 else c.text2, modifier = Modifier.weight(1f))
         if (selected) Box(Modifier.size(6.dp).clip(CircleShape).background(c.accent))
     }
+}
+
+/** v0.1.13: edit the project's AGENTS.md rules file; created from the template when missing. */
+@Composable
+private fun RulesDialog(file: java.io.File, onDismiss: () -> Unit) {
+    val c = Saqr.colors
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var text by remember(file) {
+        mutableStateOf(
+            if (file.isFile) runCatching { file.readText() }.getOrDefault("")
+            else com.ctodrs.saqrcode.data.Template.AGENTS_MD
+        )
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss, containerColor = c.surface1,
+        icon = { SIcon(Lucide.ListChecks, size = 24.dp, tint = c.accentText) },
+        title = { Text(stringResource(R.string.rules_title), style = Saqr.type.title2) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                Text(stringResource(R.string.rules_hint), style = Saqr.type.caption, color = c.text3)
+                androidx.compose.material3.OutlinedTextField(
+                    value = text, onValueChange = { text = it },
+                    modifier = Modifier.fillMaxWidth().height(280.dp),
+                    textStyle = Saqr.type.monoSmall.copy(color = c.text1),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                runCatching { file.writeText(text.trimEnd() + "\n") }
+                    .onSuccess { android.widget.Toast.makeText(ctx, R.string.rules_saved, android.widget.Toast.LENGTH_SHORT).show() }
+                onDismiss()
+            }) { Text(stringResource(R.string.save), color = c.accentText) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
+    )
 }

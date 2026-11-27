@@ -2187,7 +2187,7 @@ object SystemPrompt {
         /** v0.18: the installed-skills section ([com.ctodrs.saqrcode.agent.skills.SkillRuntime.section]); empty = none. */
         skills: String = "",
     ): String {
-        val rules = File(projectDir, "AGENTS.md").takeIf { it.isFile }?.readText()?.take(4000)
+        val rules = ProjectRules.collect(projectDir, touched).takeIf { it.isNotBlank() }
         return buildString {
             appendLine("""You are Saqr (صقر), an expert software engineer working as a coding agent inside the Saqr Code Android app.
 You operate on the user's project through tools. The project root is the current directory (also mounted at /workspace in the terminal).
@@ -2246,7 +2246,7 @@ You operate on the user's project through tools. The project root is the current
             }
             if (rules != null) {
                 appendLine()
-                appendLine("# PROJECT-SPECIFIC RULES (AGENTS.md)")
+                appendLine("# PROJECT-SPECIFIC RULES (AGENTS.md — honor them; when the user sets a durable project convention or asks to remember one, update the right AGENTS.md with edit_file)")
                 appendLine(rules)
             }
         }

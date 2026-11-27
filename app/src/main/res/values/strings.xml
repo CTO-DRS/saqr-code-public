@@ -506,6 +506,9 @@
     <string name="voice_cmd_cleared">Cleared</string>
     <string name="voice_cmd_reading">Reading aloud</string>
     <string name="voice_cmd_muted">Reader stopped</string>
+    <string name="rules_title">Project rules</string>
+    <string name="rules_hint">AGENTS.md — Saqr reads these rules at the start of every session in this project. Nested folders can carry their own AGENTS.md.</string>
+    <string name="rules_saved">Rules saved</string>
     <string name="hands_free_stopped">Hands-free off</string>
     <!-- v0.13.5 desert mode -->
     <string name="desert_section">Desert mode</string>

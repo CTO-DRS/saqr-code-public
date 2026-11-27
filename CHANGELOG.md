@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.13] — 2026-11-27 — Project rules (AGENTS.md), nested and editable · قواعد المشروع
+
+- **Nested AGENTS.md:** the root rules file always applies, and when the session touches files, the AGENTS.md of each directory on their path applies too — labeled by directory, each file capped, the whole collection budgeted. Paths trying to escape the project are ignored.
+- **The agent maintains the rules:** the system prompt now tells Saqr to update the right AGENTS.md with edit_file when the user sets a durable project convention or asks to remember one.
+- **Edit rules in the app:** the chat overflow menu gains "Project rules" — a dialog that edits the project's AGENTS.md directly, seeded from the starter template when the file does not exist yet. EN + AR.
+- **Tests:** `V0114ProjectRulesTest` (6): root always applies, nested on touched paths, ancestors root-down, missing/empty skipped, total budget cap, escape paths ignored.
+- versionName 0.1.13, versionCode 52.
+
 ## [0.1.12] — 2026-11-27 — Arabic voice commands (Gulf dialects) · أوامر صوتية خليجية
 
 - **Hands-free voice commands:** in wake mode, «يا صقر» followed by a command now runs it in the app instead of sending it as a prompt: stop «وقف / بس / خلاص / بطل», send «أرسل / ابعت», undo to the previous branch «تراجع / رجّع», regenerate «عيد / مرة ثانية», new chat «محادثة جديدة», sessions «المحادثات», read the last answer aloud «اقرأ / اسمعني», stop the reader «اسكت», clear the composer «امسح», and hands-free off «طفّي المايك / وقف الاستماع». A small English set (stop, send, undo, new chat…) works too.
