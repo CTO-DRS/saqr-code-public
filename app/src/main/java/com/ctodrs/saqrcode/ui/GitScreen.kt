@@ -131,6 +131,8 @@ class GitActions(
     val onOpenLink: (String) -> Unit = {},
     /** v0.1.11: pull requests. */
     val onOpenPr: (PrInfo) -> Unit = {}, val onUndoMerge: () -> Unit = {},
+    /** v0.1.22: open the conflict resolver for a conflicted file. */
+    val onResolveConflict: (GitFileStatus) -> Unit = {},
 )
 
 object GitTab { const val CHANGES = 0; const val HISTORY = 1; const val BRANCHES = 2; const val PULLS = 3 }
@@ -146,6 +148,7 @@ fun GitScreen(ws: Workspace, onAccounts: () -> Unit = {}) {
     var diff by remember { mutableStateOf<Pair<String, String>?>(null) }
     var publish by remember { mutableStateOf(false) }
     var pr by remember { mutableStateOf(false) }
+    var resolving by remember { mutableStateOf<String?>(null) }
     var openPr by remember { mutableStateOf<PrInfo?>(null) }
     var mergeFor by remember { mutableStateOf<PrInfo?>(null) }
     val settings = app.settings
@@ -172,8 +175,19 @@ fun GitScreen(ws: Workspace, onAccounts: () -> Unit = {}) {
             onAccounts = onAccounts, onDismissToast = { ctl.toast = null },
             onOpenLink = { runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) } },
             onOpenPr = { openPr = it }, onUndoMerge = { ctl.undoMerge() },
+            onResolveConflict = { resolving = it.path },
         ),
     )
+    resolving?.let { path ->
+        val text = remember(path) { ctl.conflictText(path) }
+        if (text == null || !com.ctodrs.saqrcode.git.ConflictResolver.hasConflicts(text)) {
+            // already resolved or unreadable: nothing to merge, just stage it
+            LaunchedEffect(path) { ctl.status.files.firstOrNull { it.path == path }?.let { ctl.toggleStage(it) }; resolving = null }
+        } else ConflictDialog(path, text, onDismiss = { resolving = null }) { resolved ->
+            resolving = null
+            ctl.resolveConflict(path, resolved); ws.fsVersion++
+        }
+    }
     openPr?.let { p ->
         PrDetailDialog(p, ctl,
             onDismiss = { openPr = null },
@@ -462,7 +476,7 @@ private fun FileRow(f: GitFileStatus, staged: Boolean, a: GitActions) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 50.dp).clip(RoundedCornerShape(Radius.sm))
-                    .combinedClickable(onClick = { a.onOpenDiff(f) }, onLongClick = { menu = true }).padding(horizontal = 4.dp),
+                    .combinedClickable(onClick = { if (f.conflict) a.onResolveConflict(f) else a.onOpenDiff(f) }, onLongClick = { menu = true }).padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 FileTypeIcon(name, 20.dp)
@@ -1029,7 +1043,7 @@ fun PrMergeContent(method: String, onMethod: (String) -> Unit) {
         "squash" to stringResource(R.string.git_pr_merge_squash),
         "rebase" to stringResource(R.string.git_pr_merge_rebase),
     )
-    Column(verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         methods.forEach { (id, label) ->
             Row(
                 Modifier.fillMaxWidth().minimumInteractiveComponentSize().clip(RoundedCornerShape(Radius.sm))
@@ -1058,6 +1072,63 @@ fun PrMergeDialog(pr: PrInfo, onDismiss: () -> Unit, onOk: (String) -> Unit) {
         title = { Text(stringResource(R.string.git_pr_merge_title, pr.number.toString()), style = Saqr.type.title2) },
         text = { PrMergeContent(method, { method = it }) },
         confirmButton = { TextButton(onClick = { onOk(method) }) { Text(stringResource(R.string.git_pr_merge), color = c.accentText) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
+    )
+}
+
+
+/** v0.1.22: resolve each conflict hunk with Mine / Theirs / Both, then write and stage the file. */
+@Composable
+fun ConflictDialog(path: String, text: String, onDismiss: () -> Unit, onApply: (String) -> Unit) {
+    val c = Saqr.colors
+    val segments = remember(text) { com.ctodrs.saqrcode.git.ConflictResolver.parse(text) }
+    val hunks = remember(segments) { com.ctodrs.saqrcode.git.ConflictResolver.hunks(segments) }
+    val choices = remember(text) { androidx.compose.runtime.mutableStateListOf<com.ctodrs.saqrcode.git.ConflictResolver.Choice?>().apply { repeat(hunks.size) { add(null) } } }
+    val ready = choices.none { it == null }
+    AlertDialog(
+        onDismissRequest = onDismiss, containerColor = c.surface1,
+        icon = { SIcon(Lucide.GitMerge, size = 24.dp, tint = c.accentText) },
+        title = { Text(path.substringAfterLast('/'), style = Saqr.type.title2, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        text = {
+            Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                    GhostButton(stringResource(R.string.conflict_all_mine), { for (i in choices.indices) choices[i] = com.ctodrs.saqrcode.git.ConflictResolver.Choice.OURS })
+                    GhostButton(stringResource(R.string.conflict_all_theirs), { for (i in choices.indices) choices[i] = com.ctodrs.saqrcode.git.ConflictResolver.Choice.THEIRS })
+                }
+                hunks.forEachIndexed { i, h ->
+                    val shape = RoundedCornerShape(Radius.md)
+                    Column(Modifier.fillMaxWidth().clip(shape).border(1.dp, c.border, shape).padding(Sp.md), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                        Text(stringResource(R.string.conflict_hunk, (i + 1).toString(), hunks.size.toString()), style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text2)
+                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                            Text(h.ours.take(8).joinToString("\n").ifEmpty { " " }, style = Saqr.type.monoMicro, color = c.diffAdd,
+                                modifier = Modifier.fillMaxWidth().background(c.diffAddBg).padding(6.dp))
+                            Text(h.theirs.take(8).joinToString("\n").ifEmpty { " " }, style = Saqr.type.monoMicro, color = c.diffDel,
+                                modifier = Modifier.fillMaxWidth().background(c.diffDelBg).padding(6.dp))
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf(
+                                com.ctodrs.saqrcode.git.ConflictResolver.Choice.OURS to R.string.conflict_mine,
+                                com.ctodrs.saqrcode.git.ConflictResolver.Choice.THEIRS to R.string.conflict_theirs,
+                                com.ctodrs.saqrcode.git.ConflictResolver.Choice.BOTH to R.string.conflict_both,
+                            ).forEach { (ch, label) ->
+                                val on = choices[i] == ch
+                                Box(
+                                    Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(Radius.sm))
+                                        .background(if (on) c.accent else c.surface3)
+                                        .clickable(onClickLabel = stringResource(label), role = androidx.compose.ui.semantics.Role.RadioButton) { choices[i] = ch },
+                                    contentAlignment = Alignment.Center,
+                                ) { Text(stringResource(label), style = Saqr.type.label, color = if (on) c.onAccent else c.text1) }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = ready, onClick = {
+                com.ctodrs.saqrcode.git.ConflictResolver.resolve(segments, choices.toList())?.let(onApply)
+            }) { Text(stringResource(R.string.conflict_apply), color = if (ready) c.accentText else c.text3) }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
     )
 }

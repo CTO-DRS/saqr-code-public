@@ -102,6 +102,21 @@ class GitController(val dir: File, private val settings: SettingsStore, private 
         m.status.replace('_', ' ').lowercase()
     }
     fun abortMerge() = op("merge") { abortMerge(dir); null }
+
+    /** v0.1.22: the working-tree text of a conflicted file, or null when [path] escapes the project or is unreadable. */
+    fun conflictText(path: String): String? = runCatching {
+        val f = File(dir, path).canonicalFile
+        if (!f.path.startsWith(dir.canonicalPath + File.separator) || !f.isFile) null else f.readText()
+    }.getOrNull()
+
+    /** v0.1.22: writes the resolved [text] over a conflicted file and stages it. */
+    fun resolveConflict(path: String, text: String) = op("stage") {
+        val f = File(dir, path).canonicalFile
+        require(f.path.startsWith(dir.canonicalPath + File.separator)) { "Path is outside the project." }
+        f.writeText(text)
+        stage(dir, listOf(path))
+        null
+    }
     fun setRemote(name: String, url: String) = op("remote") { setRemote(dir, name, url); null }
     fun removeRemote(name: String) = op("remote") { removeRemote(dir, name); null }
 

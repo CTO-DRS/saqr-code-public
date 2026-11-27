@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.22] — 2026-11-27 — Merge-conflict resolver · حلّ التعارضات
+
+- **Resolve conflicts on the phone:** tapping a conflicted file in Git (ديوان) now opens a resolver. Each conflict hunk shows your side and the incoming side, with Mine / Theirs / Both per hunk and "All mine" / "All theirs" shortcuts. "Resolve and stage" writes the file and stages it, so you can commit the merge. diff3 base sections are understood; unterminated markers are left untouched.
+- Writes are confined to the project folder. EN + AR, RTL, 48dp choice targets.
+- **Tests:** `V0125ConflictResolverTest` (6): hunk parsing with labels, per-hunk choices, missing choices, diff3, broken markers, trailing newline.
+- versionName 0.1.22, versionCode 61.
+
 ## [0.1.21] — 2026-11-27 — Sharper self-fix loop · حلقة إصلاح أدق
 
 - **Diagnostics digest:** when the automatic checks fail after a change, the verifier message now starts with an exact "where" list (`file:line: message`, de-duplicated, at most 15) pulled from Kotlin, TypeScript, gcc/clang/javac/eslint-style and Python output, followed by the raw output as before. Saqr jumps straight to the failing lines and spends fewer tokens re-reading logs.

@@ -1185,4 +1185,11 @@
     <string name="err_tls">تعذّر إنشاء اتصال آمن. تأكد من التاريخ والوقت أو الـVPN أو رابط المزوّد.</string>
     <string name="reload_preview">أعد تحميل المعاينة</string>
     <string name="memory_clear_all">فرّغ بنك الذاكرة</string>
+    <string name="conflict_all_mine">كلها لي</string>
+    <string name="conflict_all_theirs">كلها لهم</string>
+    <string name="conflict_hunk">تعارض %1$s من %2$s</string>
+    <string name="conflict_mine">نسختي</string>
+    <string name="conflict_theirs">نسختهم</string>
+    <string name="conflict_both">الاثنتين</string>
+    <string name="conflict_apply">حلّ وجهّز</string>
 </resources>

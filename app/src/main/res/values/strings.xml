@@ -1185,4 +1185,11 @@
     <string name="err_tls">A secure connection could not be made. Check the date/time, VPN or the provider URL.</string>
     <string name="reload_preview">Reload preview</string>
     <string name="memory_clear_all">Empty the memory bank</string>
+    <string name="conflict_all_mine">All mine</string>
+    <string name="conflict_all_theirs">All theirs</string>
+    <string name="conflict_hunk">Conflict %1$s of %2$s</string>
+    <string name="conflict_mine">Mine</string>
+    <string name="conflict_theirs">Theirs</string>
+    <string name="conflict_both">Both</string>
+    <string name="conflict_apply">Resolve and stage</string>
 </resources>
