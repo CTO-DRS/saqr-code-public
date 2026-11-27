@@ -42,6 +42,19 @@ class V0119ErrorExplainerTest {
         assertEquals(Kind.OTHER, k(LlmException("Empty response")))
     }
 
+    @Test fun `model not found and context too long`() {
+        assertEquals(Kind.MODEL_NOT_FOUND, k(LlmException("HTTP 404: model gpt-x not found")))
+        assertEquals(Kind.MODEL_NOT_FOUND, k(LlmException("HTTP 400: {\"code\":\"model_not_found\"}")))
+        assertEquals(Kind.CONTEXT_TOO_LONG, k(LlmException("HTTP 400: maximum context length is 8192 tokens")))
+        assertEquals(Kind.CONTEXT_TOO_LONG, k(LlmException("HTTP 400: prompt is too long")))
+        assertEquals(Kind.OTHER, k(LlmException("HTTP 404: not found")))
+    }
+
+    @Test fun `existing ordinals stay stable`() {
+        assertEquals(7, Kind.OTHER.ordinal)
+        assertEquals(Kind.MODEL_NOT_FOUND, ErrorExplainer.fromOrdinal(8))
+    }
+
     @Test fun `ordinal round trip`() {
         Kind.values().forEach { assertEquals(it, ErrorExplainer.fromOrdinal(it.ordinal)) }
         assertNull(ErrorExplainer.fromOrdinal(-1))

@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.41] — 2026-11-27 — Clearer provider errors · أخطاء أوضح
+
+- **Two more plain-words errors:** a wrong or retired model name, and a chat longer than the model's window, now say what happened and what to do instead of showing only the raw provider text.
+- Existing error kinds keep their numbers, so saved chats still show the right message. Arabic and English.
+- versionName 0.1.41, versionCode 80.
+
 ## [0.1.40] — 2026-11-27 — Who changed this line · من غيّر هذا السطر
 
 - **Blame sheet in the editor:** with a file open, a history button next to Save opens a sheet listing each block of the file with its commit, author, age and line range, for example `a1b2c3d · Sara · 3 d ago · line 4-9`. It is read-only and changes nothing.

@@ -1192,6 +1192,8 @@
     <string name="err_quota">رصيد أو حصة حسابك عند المزوّد خلصت. اشحنه أو بدّل المزوّد.</string>
     <string name="err_server">المزوّد عنده مشكلة من جهته. جرّب بعد شوي أو بدّل النموذج.</string>
     <string name="err_tls">تعذّر إنشاء اتصال آمن. تأكد من التاريخ والوقت أو الـVPN أو رابط المزوّد.</string>
+    <string name="err_model_not_found">المزوّد لا يعرف اسم هذا النموذج. افتح الإعدادات ← المزوّدون واختر نموذجاً من القائمة.</string>
+    <string name="err_context_long">هذه المحادثة أطول مما يستطيع النموذج قراءته. ابدأ محادثة جديدة أو اختصرها أو اختر نموذجاً بنافذة أكبر.</string>
     <string name="reload_preview">أعد تحميل المعاينة</string>
     <string name="memory_clear_all">فرّغ بنك الذاكرة</string>
     <string name="conflict_all_mine">كلها لي</string>

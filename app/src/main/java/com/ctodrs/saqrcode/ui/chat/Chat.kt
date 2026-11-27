@@ -789,6 +789,8 @@ private fun NoticeCard(item: ChatItem.Notice) {
                     ErrorExplainer.Kind.RATE_LIMIT -> R.string.err_rate_limit
                     ErrorExplainer.Kind.QUOTA -> R.string.err_quota
                     ErrorExplainer.Kind.SERVER -> R.string.err_server
+                    ErrorExplainer.Kind.MODEL_NOT_FOUND -> R.string.err_model_not_found
+                    ErrorExplainer.Kind.CONTEXT_TOO_LONG -> R.string.err_context_long
                     else -> R.string.err_tls
                 }) + "\n\n" + item.text
             } ?: item.text
