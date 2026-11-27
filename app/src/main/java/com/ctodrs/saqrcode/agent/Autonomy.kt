@@ -53,8 +53,14 @@ object CompletionGate {
     fun feedback(lint: String?, tests: String?, round: Int): String = buildString {
         append("[Verifier] Automatic checks FAILED after your changes (round $round of $MAX_ROUNDS). ")
         append("Fix the problems below, then finish. Do not claim success while checks fail.\n")
-        if (lintFailed(lint)) append("\n## lint\n").append(lint!!.take(3000))
-        if (testsFailed(tests)) append("\n## tests\n").append(tests!!.takeLast(3000))
+        if (lintFailed(lint)) {
+            Diagnostics.digest(lint).takeIf { it.isNotEmpty() }?.let { append("\n## lint — where\n").append(it) }
+            append("\n## lint\n").append(lint!!.take(3000))
+        }
+        if (testsFailed(tests)) {
+            Diagnostics.digest(tests).takeIf { it.isNotEmpty() }?.let { append("\n## tests — where\n").append(it) }
+            append("\n## tests\n").append(tests!!.takeLast(3000))
+        }
     }
 
     /** One line for the outcome summary / notification. */

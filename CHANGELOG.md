@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.21] — 2026-11-27 — Sharper self-fix loop · حلقة إصلاح أدق
+
+- **Diagnostics digest:** when the automatic checks fail after a change, the verifier message now starts with an exact "where" list (`file:line: message`, de-duplicated, at most 15) pulled from Kotlin, TypeScript, gcc/clang/javac/eslint-style and Python output, followed by the raw output as before. Saqr jumps straight to the failing lines and spends fewer tokens re-reading logs.
+- **Docs:** `docs/PRIVACY.md`, a bilingual privacy and security page grounded in what the app actually does (draft for the store listing, owner review needed before publishing).
+- **Tests:** `V0124DiagnosticsTest` (6): Kotlin, tsc, gcc-style, Python tracebacks, dedupe and limit, no false positives on stack frames, feedback ordering.
+- versionName 0.1.21, versionCode 60.
+
 ## [0.1.20] — 2026-11-27 — Screen-reader fix in Memory · إصلاح قارئ الشاشة
 
 - **Accessibility:** the delete button on each memory entry had no label for TalkBack and was a 30dp target. It is now announced as "Delete" (button) with a 48dp target. The same scan found three more unlabeled icon-only controls, now fixed: the Memory "empty" and "add" buttons (also 48dp now) and the preview reload button.
