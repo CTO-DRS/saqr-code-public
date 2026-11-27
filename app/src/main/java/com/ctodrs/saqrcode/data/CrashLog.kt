@@ -1,7 +1,6 @@
 package com.ctodrs.saqrcode.data
 
 import android.content.Context
-import com.ctodrs.saqrcode.git.Redact
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -30,7 +29,8 @@ object CrashLog {
             depth++
         }
         val body = "Saqr Code $version · $device · Android API $sdk\n$stamp · thread: $thread\n\n$trace"
-        return Redact.text(body).take(MAX_CHARS)
+        // The report is shared outside the app: use the full redactor (provider key shapes, Bearer, key=value), not only git tokens.
+        return com.ctodrs.saqrcode.agent.AuditLog.redact(body).take(MAX_CHARS)
     }
 
     private fun dir(ctx: Context) = File(ctx.filesDir, DIR).apply { mkdirs() }

@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.56] — 2026-11-28 — Crash reports scrub keys · تقارير الأعطال تُخفي المفاتيح
+
+- **Security fix.** The crash report you can share from About only removed GitHub tokens. It now uses the full redactor: provider keys (sk-..., AIza...), Bearer tokens and `key=value` secrets.
+- Audit result for the rest of Wave I: shared skills carry no keys by design (private skills are never exported), and chat and terminal copy are your own content.
+- New test with a crash message holding all three shapes.
+- versionName 0.1.56, versionCode 95.
+- تقرير العطل المشارك صار يُخفي مفاتيح المزودين ورموز Bearer وقيم key=value.
+
 ## [0.1.55] — 2026-11-28 — Sync drops keys in MCP server URLs · المزامنة تحذف المفاتيح في روابط MCP
 
 - **Security fix.** Some MCP servers take the key in the address (`...?api_key=...`). Sync wrote that address as is. It now blanks the value of credential-looking parameters (key, token, api_key, secret, password, sig and similar). Applying a sync on another device refills them from that device's own copy of the same server.
