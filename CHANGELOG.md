@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.24] — 2026-11-27 — Quick Settings tile · بلاطة الإعدادات السريعة
+
+- **Saqr tile:** add "Saqr Code" from the Quick Settings edit screen. It shows Idle / Running: project / Needs you: project. Tap while a turn runs to stop it (work so far is kept); tap while idle to open the app; when a turn is waiting for you it opens that project.
+- **Tests:** `V0127TileModelTest` (4): idle, running, waiting wins and tap opens, Arabic labels and name cut.
+- versionName 0.1.24, versionCode 63.
+
 ## [0.1.23] — 2026-11-27 — Sentinel: morning digest · الحارس: ملخص الصباح
 
 - **Morning digest (off by default):** Settings → Autonomy → "Morning digest". Every day at 08:00 local time Saqr posts one short notification: which projects have uncommitted changes (busiest first) and yesterday's model spend, with this month against your budget. It is computed on the phone, makes no network call, and stays silent when there is nothing to report.

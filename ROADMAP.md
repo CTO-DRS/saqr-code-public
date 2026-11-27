@@ -16,6 +16,8 @@
 
 **الحالة / Status (0.1.17, versionCode 56, 616 tests green):** plan mode, notifications, PR review/merge/undo from the phone, Gulf-dialect voice commands, model duel (/compare), live cost + daily cap, live preview, nested AGENTS.md, learning mode (/learn). Test suite stable (JVM fork every 40 classes). Performance review found no hot spot.
 
+**Shipped since 0.1.17 / مُنجز:** 0.1.18 plain-words errors · 0.1.19 light-theme contrast (WCAG AA) · 0.1.20 TalkBack labels + 48dp targets · 0.1.21 file:line diagnostics digest in the self-fix loop + privacy page · 0.1.22 merge-conflict resolver · 0.1.23 Sentinel morning digest · 0.1.24 Quick Settings tile.
+
 ### الموجة أ · الموثوقية والصقل / Wave A: reliability and polish (autonomous, first)
 1. Crash/ANR hardening: error and offline states on every network path, cancel-safe agent runs, process-death restore tests for sessions and tasks.
 2. Release-build smoke: R8 minified release assembled and verified in CI-less local script (keep rules, reflection, WebView, billing); APK verify step in release recipe.
