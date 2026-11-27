@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.54] — 2026-11-28 — Sync no longer carries MCP environment secrets · المزامنة لا تنقل أسرار بيئة MCP
+
+- **Security fix.** The environment text of a stdio MCP server (often `GITHUB_TOKEN=...` or an API key) was saved as plain text in the settings sync file. Sync now keeps the variable names and drops the values. When you apply a sync on another device, each server keeps that device's own values for the same variable names.
+- New test: a synced snapshot holds no env value or provider key, and applying it keeps the receiving device's own secret.
+- versionName 0.1.54, versionCode 93.
+- نص بيئة خوادم MCP كان يُحفظ في ملف المزامنة بقيمه؛ صارت القيم تُحذف وتبقى الأسماء، وتحتفظ كل جهة بقيمها المحلية.
+
 ## [0.1.53] — 2026-11-28 — Failure notices scrub secrets too · إشعارات الفشل تُخفي الأسرار
 
 - **Security hardening.** The red failure notice at the end of a turn, the reviewer-failed line sent to the model and the router failover line in the audit log now remove your API keys and GitHub token, like tool output already did.
