@@ -59,6 +59,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ctodrs.saqrcode.R
@@ -334,7 +337,7 @@ fun SaqrField(
         if (label != null) Text(label, style = Saqr.type.caption.copy(fontWeight = FontWeight.Medium), color = c.text2)
         val shape = RoundedCornerShape(Radius.sm)
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 46.dp).clip(shape).background(c.surface3.copy(alpha = if (c.isDark) 0.6f else 0.7f))
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(shape).background(c.surface3.copy(alpha = if (c.isDark) 0.6f else 0.7f))
                 .border(1.dp, if (isError) c.danger else c.border, shape).padding(horizontal = Sp.md),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -367,10 +370,14 @@ fun Segmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, mod
         options.forEachIndexed { i, o ->
             val sel = i == selected
             Box(
-                Modifier.weight(1f).heightIn(min = 36.dp).clip(RoundedCornerShape(Radius.sm - 3.dp))
+                Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(Radius.sm - 3.dp))
                     .background(if (sel) c.surface1 else Color.Transparent)
                     .then(if (sel) Modifier.border(1.dp, c.borderStrong, RoundedCornerShape(Radius.sm - 3.dp)) else Modifier)
-                    .clickable { onSelect(i) },
+                    .clickable { onSelect(i) }
+                    .semantics(mergeDescendants = true) {
+                        role = androidx.compose.ui.semantics.Role.RadioButton
+                        this.selected = sel
+                    },
                 contentAlignment = Alignment.Center,
             ) { Text(o, style = Saqr.type.label, color = if (sel) c.text1 else c.text2, maxLines = 1) }
         }
