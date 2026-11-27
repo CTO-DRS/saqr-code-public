@@ -13,7 +13,7 @@ import javax.net.ssl.SSLException
  */
 object ErrorExplainer {
     /** The ordinal travels in Notice.count; keep the order stable. */
-    enum class Kind { OFFLINE, TIMEOUT, AUTH, RATE_LIMIT, QUOTA, SERVER, TLS, OTHER }
+    enum class Kind { OFFLINE, TIMEOUT, AUTH, RATE_LIMIT, QUOTA, SERVER, TLS, OTHER, MODEL_NOT_FOUND, CONTEXT_TOO_LONG }
 
     fun classify(e: Throwable): Kind {
         var t: Throwable? = e
@@ -29,6 +29,10 @@ object ErrorExplainer {
         val m = (e.message ?: "").lowercase()
         val http = Regex("""http (\d{3})""").find(m)?.groupValues?.get(1)?.toIntOrNull()
         return when {
+            m.contains("context length") || m.contains("context_length") || m.contains("maximum context") ||
+                m.contains("too many tokens") || m.contains("prompt is too long") || m.contains("context window") -> Kind.CONTEXT_TOO_LONG
+            m.contains("model_not_found") || (http == 404 && m.contains("model")) ||
+                (m.contains("model") && m.contains("does not exist")) -> Kind.MODEL_NOT_FOUND
             http == 401 || http == 403 -> Kind.AUTH
             http == 429 -> if (m.contains("quota") || m.contains("billing") || m.contains("insufficient")) Kind.QUOTA else Kind.RATE_LIMIT
             http == 402 -> Kind.QUOTA

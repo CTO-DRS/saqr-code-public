@@ -1192,6 +1192,8 @@
     <string name="err_quota">Your provider account is out of credit or quota. Top it up or switch provider.</string>
     <string name="err_server">The provider is having trouble on its side. Try again shortly, or switch model.</string>
     <string name="err_tls">A secure connection could not be made. Check the date/time, VPN or the provider URL.</string>
+    <string name="err_model_not_found">The provider does not know this model name. Open Settings → Providers and pick a model from the list.</string>
+    <string name="err_context_long">This chat is longer than the model can read. Start a new chat, or compact it, or pick a model with a larger window.</string>
     <string name="reload_preview">Reload preview</string>
     <string name="memory_clear_all">Empty the memory bank</string>
     <string name="conflict_all_mine">All mine</string>
