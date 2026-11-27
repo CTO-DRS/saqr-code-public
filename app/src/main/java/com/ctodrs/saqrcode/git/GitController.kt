@@ -101,6 +101,7 @@ class GitController(val dir: File, private val settings: SettingsStore, private 
         if (!m.success) throw GitException("Merge: ${m.status}. Conflicts: ${m.conflicts.joinToString()}")
         m.status.replace('_', ' ').lowercase()
     }
+    fun cherryPick(ref: String) = op("cherry-pick") { "✓ ${cherryPick(dir, ref, settings.gitName, settings.gitEmail)}" }
     fun stash() = op("stash") { stash(dir, settings.gitName, settings.gitEmail)?.let { "✓ stash $it" } ?: "Nothing to stash" }
     fun stashPop() = op("stash") {
         val c = stashPop(dir)

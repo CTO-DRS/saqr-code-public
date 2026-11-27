@@ -413,6 +413,25 @@ class GitService(homeDir: File? = null, private val credentials: CredentialResol
         emptyList()
     }
 
+    /**
+     * v0.1.29: applies the newest commit of [ref] (a branch or commit id) onto the current branch.
+     * Returns the new short id. On conflicts the pick is rolled back and the conflicted paths are reported in the exception.
+     */
+    fun cherryPick(dir: File, ref: String, name: String, email: String): String = open(dir).use { git ->
+        val repo = git.repository
+        val target = repo.resolve(ref) ?: throw GitException("No such branch or commit: $ref")
+        val who = PersonIdent(name.ifBlank { "Saqr Code" }, email.ifBlank { "saqr@users.noreply.github.com" })
+        repo.config.apply { setString("user", null, "name", who.name); setString("user", null, "email", who.emailAddress); save() }
+        val r = git.cherryPick().include(target).call()
+        if (r.status != org.eclipse.jgit.api.CherryPickResult.CherryPickStatus.OK) {
+            val paths = git.status().call().conflicting.sorted()
+            git.reset().setMode(ResetCommand.ResetType.HARD).call()
+            repo.writeCherryPickHead(null); repo.writeMergeCommitMsg(null)
+            throw GitException("Cherry-pick ${r.status.name.lowercase()}" + if (paths.isNotEmpty()) ": ${paths.joinToString()}" else "")
+        }
+        r.newHead.name.take(7)
+    }
+
     private fun toOutcome(r: MergeResult) = MergeOutcome(
         status = r.mergeStatus.name, success = r.mergeStatus.isSuccessful,
         conflicts = r.conflicts?.keys?.sorted().orEmpty(), newHead = r.newHead?.name?.take(7),

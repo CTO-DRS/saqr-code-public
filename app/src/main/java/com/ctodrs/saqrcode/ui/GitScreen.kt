@@ -125,7 +125,7 @@ class GitActions(
     val onFetch: () -> Unit = {}, val onPull: () -> Unit = {}, val onPush: () -> Unit = {},
     val onCheckout: (String) -> Unit = {}, val onNewBranch: (String) -> Unit = {}, val onDeleteBranch: (String) -> Unit = {},
     val onMerge: (String) -> Unit = {}, val onAbortMerge: () -> Unit = {},
-    val onStash: () -> Unit = {}, val onStashPop: () -> Unit = {},
+    val onStash: () -> Unit = {}, val onStashPop: () -> Unit = {}, val onCherryPick: (String) -> Unit = {},
     val onOpenCommit: (GitCommitInfo) -> Unit = {}, val onAddRemote: (String, String) -> Unit = { _, _ -> },
     val onRemoveRemote: (String) -> Unit = {}, val onPublish: () -> Unit = {}, val onPullRequest: () -> Unit = {},
     val onEditGitignore: () -> Unit = {}, val onAccounts: () -> Unit = {}, val onDismissToast: () -> Unit = {},
@@ -168,7 +168,7 @@ fun GitScreen(ws: Workspace, onAccounts: () -> Unit = {}) {
             onCommit = { m, amend, push -> ctl.commit(m, amend, push) },
             onFetch = { ctl.fetch() }, onPull = { ctl.pull(); ws.fsVersion++ }, onPush = { ctl.push() },
             onCheckout = { ctl.checkout(it); ws.fsVersion++ }, onNewBranch = { ctl.createBranch(it) }, onDeleteBranch = { ctl.deleteBranch(it) },
-            onStash = { ctl.stash(); ws.fsVersion++ }, onStashPop = { ctl.stashPop(); ws.fsVersion++ },
+            onStash = { ctl.stash(); ws.fsVersion++ }, onStashPop = { ctl.stashPop(); ws.fsVersion++ }, onCherryPick = { ctl.cherryPick(it); ws.fsVersion++ },
             onMerge = { ctl.merge(it); ws.fsVersion++ }, onAbortMerge = { ctl.abortMerge(); ws.fsVersion++ },
             onOpenCommit = { c -> scope.launch { diff = (c.shortId + " · " + c.message) to ctl.commitDiff(c.id) } },
             onAddRemote = { n, u -> ctl.setRemote(n, u) }, onRemoveRemote = { ctl.removeRemote(it) },
@@ -709,6 +709,8 @@ private fun BranchRow(b: GitBranch, a: GitActions, onDelete: (String) -> Unit) {
                 onClick = { menu = false; a.onCheckout(b.shortName) })
             if (!b.current) DropdownMenuItem(text = { Text(stringResource(R.string.git_merge_into_current), color = c.text1) }, leadingIcon = { SIcon(Lucide.GitMerge, size = 16.dp) },
                 onClick = { menu = false; a.onMerge(b.shortName) })
+            if (!b.current) DropdownMenuItem(text = { Text(stringResource(R.string.git_cherry_pick_tip), color = c.text1) }, leadingIcon = { SIcon(Lucide.GitBranch, size = 16.dp) },
+                onClick = { menu = false; a.onCherryPick(b.shortName) })
             if (!b.current && !b.remote) DropdownMenuItem(text = { Text(stringResource(R.string.delete), color = c.danger) }, leadingIcon = { SIcon(Lucide.Trash2, size = 16.dp, tint = c.danger) },
                 onClick = { menu = false; onDelete(b.shortName) })
             if (b.current) DropdownMenuItem(text = { Text(stringResource(R.string.git_current_branch), color = c.text3) }, onClick = { menu = false })
