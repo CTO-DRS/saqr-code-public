@@ -1328,6 +1328,7 @@ private fun ProviderItem(def: ProviderDef, cfg: ProviderConfig, active: Boolean,
     val savedText = stringResource(R.string.saved)
     val modelsFmt = stringResource(R.string.n_models)
     val keyRemovedText = stringResource(R.string.key_removed)
+    val fetchCtx = androidx.compose.ui.platform.LocalContext.current
 
     Column {
         ListRow(
