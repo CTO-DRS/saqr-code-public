@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.40] — 2026-11-27 — Who changed this line · من غيّر هذا السطر
+
+- **Blame sheet in the editor:** with a file open, a history button next to Save opens a sheet listing each block of the file with its commit, author, age and line range, for example `a1b2c3d · Sara · 3 d ago · line 4-9`. It is read-only and changes nothing.
+- A file that was never committed shows a clear message instead of a list. Arabic and English, western digits.
+- This completes the blame engine shipped in 0.1.38.
+- Audit note: the chat already shows session tokens and cost (tap for the usage sheet, with day and month totals and budgets), so the per-turn cost caption was left out; it would need per-turn usage tracking inside the agent loop.
+- versionName 0.1.40, versionCode 79.
+
 ## [0.1.39] — 2026-11-27 — Accessibility pass · تحسين إمكانية الوصول
 
 - **TalkBack now announces status messages:** the chat backup and restore result, sync errors, "pushed" confirmations and "no matching settings" are live regions, so they are read out when they appear.
