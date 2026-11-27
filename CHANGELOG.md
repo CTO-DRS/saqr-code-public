@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.60] — 2026-11-28 — A dropped stream keeps what arrived · انقطاع البث يُبقي ما وصل
+
+- **Internal, no visible change.** Whole-loop test: a reply that dies halfway (connection reset after some text) keeps the partial text in the chat, shows the error notice, and the next message you send builds a valid request (starts and ends with a user message, no orphan tool results).
+- If this test fails on CI, the loop has a real bug and it is fixed in the same release.
+- versionName 0.1.60, versionCode 99.
+- اختبار: عند انقطاع البث يبقى النص الجزئي ويعمل الإرسال التالي بسلام.
+
 ## [0.1.59] — 2026-11-28 — Busy-provider errors retry and read right · أخطاء انشغال المزود تُعاد وتُشرح
 
 - **Reliability fix.** Providers sometimes fail in the middle of a reply with a short message such as "Overloaded" or "rate_limit_error" and no HTTP code. The app treated those as unknown errors and did not retry. They are now classified (server busy, rate limit) so the chat explains them, and they get the usual one retry with backoff and the fallback model if you set one. Auth errors and unknown errors are still never retried.
