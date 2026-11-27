@@ -16,7 +16,7 @@
 
 **الحالة / Status (0.1.17, versionCode 56, 616 tests green):** plan mode, notifications, PR review/merge/undo from the phone, Gulf-dialect voice commands, model duel (/compare), live cost + daily cap, live preview, nested AGENTS.md, learning mode (/learn). Test suite stable (JVM fork every 40 classes). Performance review found no hot spot.
 
-**Shipped since 0.1.17 / مُنجز:** 0.1.18 plain-words errors · 0.1.19 light-theme contrast (WCAG AA) · 0.1.20 TalkBack labels + 48dp targets · 0.1.21 file:line diagnostics digest in the self-fix loop + privacy page · 0.1.22 merge-conflict resolver · 0.1.23 Sentinel morning digest · 0.1.24 Quick Settings tile · 0.1.25 home-screen widget. · 0.1.26 first-run tips + FAQ · 0.1.27 large-text layout · 0.1.28 git stash · 0.1.29 git cherry-pick · audited as already shipped and tested: Material You accent (DynamicAccent), haptics tokens, visual editor v1 (element picker, computed-style chips, edit sheet to the agent), sync via the user's own repo, image attachments with per-model vision, multi-file change preview in approval cards · 0.1.30 local crash report · 0.1.31 upload-gating rule · 0.1.32 settings search · 0.1.33 chat backup · 0.1.34 perf baselines · 0.1.35 agent scenario tests (wire layer)
+**Shipped since 0.1.17 / مُنجز:** 0.1.18 plain-words errors · 0.1.19 light-theme contrast (WCAG AA) · 0.1.20 TalkBack labels + 48dp targets · 0.1.21 file:line diagnostics digest in the self-fix loop + privacy page · 0.1.22 merge-conflict resolver · 0.1.23 Sentinel morning digest · 0.1.24 Quick Settings tile · 0.1.25 home-screen widget. · 0.1.26 first-run tips + FAQ · 0.1.27 large-text layout · 0.1.28 git stash · 0.1.29 git cherry-pick · audited as already shipped and tested: Material You accent (DynamicAccent), haptics tokens, visual editor v1 (element picker, computed-style chips, edit sheet to the agent), sync via the user's own repo, image attachments with per-model vision, multi-file change preview in approval cards · 0.1.30 local crash report · 0.1.31 upload-gating rule · 0.1.32 settings search · 0.1.33 chat backup · 0.1.34 perf baselines · 0.1.35 agent scenario tests (wire layer) · 0.1.36 chat keyboard shortcuts
 **Open, needs the owner / مفتوح عند المالك:** Play Console account and pricing; stable-signing approval per release; device matrix and device QA of 0.1.20 to 0.1.29; gallery PR merge; GitHub Actions budget on the private repo (currently $0 with no card). **Open, autonomous / مفتوح ذاتيًا:** git blame in the editor (low impact, deferred).
 
 ### الموجة أ · الموثوقية والصقل / Wave A: reliability and polish (autonomous, first)
@@ -56,6 +56,17 @@ Audit basis: 36.6k lines of Kotlin, 80 test classes, release build not minified,
 8. **(0.1.33, shipped; settings part already existed in sync) Backup and restore:** one-tap encrypted export of sessions and settings to a file, complementing repo sync.
 
 **Rule:** every item ships with tests, EN+AR strings, a bilingual CHANGELOG entry and a mirrored public release; the order inside each wave follows impact, and this section is updated in the same commit as each release.
+
+### الموجة هـ · الصقل والوصول / Wave E: polish and reach (autonomous, from the 0.1.35 audit)
+Audit basis: hardware-keyboard shortcuts exist only inside the code editor; no large-screen layout (no window size classes); git blame still missing; no contributor map.
+1. **(0.1.35, shipped with this plan) Contributor map:** `docs/ARCHITECTURE.md`.
+2. **(0.1.36, shipped) Keyboard shortcuts:** Ctrl+Enter to send, Ctrl+F in chat search, Esc to stop, for external keyboards and tablets (pure key-mapping, tested).
+3. **Large-screen layout:** two-pane chat plus preview or editor on tablets and foldables (window size classes).
+4. **Git blame in the editor:** per-line author and age through JGit.
+5. **Accessibility pass** on the newest screens (settings search, chat backup, crash card): TalkBack order, 200% font, contrast.
+6. **Per-turn cost summary** in the chat, from the existing usage ledger.
+7. **Whole-loop agent harness:** make `AgentSession` take an injectable model and environment, then scenario tests for edit, fix-loop, approval, cancel and resume.
+
 
 ---
 

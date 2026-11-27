@@ -44,6 +44,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.DropdownMenu
@@ -1058,7 +1063,9 @@ private fun Composer(
     ) {
         if (state.pendingImages.isNotEmpty()) PendingImagesStrip(state.pendingImages, state.imageToCode, onRemoveImage)
         BasicTextField(
-            input, onInput, Modifier.fillMaxWidth().heightIn(min = 30.dp, max = 168.dp).padding(horizontal = Sp.xs),
+            input, onInput,
+            Modifier.fillMaxWidth().heightIn(min = 30.dp, max = 168.dp).padding(horizontal = Sp.xs)
+                .chatKeys(state.running, (input.isNotBlank() || state.pendingImages.isNotEmpty()) && state.ready, onSend, onStop),
             textStyle = Saqr.type.body.copy(color = c.text1, textDirection = TextDirection.Content),
             cursorBrush = SolidColor(c.accent), maxLines = 7,
             decorationBox = { inner ->
@@ -1300,3 +1307,21 @@ internal fun BranchSwitcher(current: Int, total: Int, onPrev: () -> Unit, onNext
         ) { SIcon(Lucide.ChevronRight, size = 18.dp, tint = c.text2, contentDescription = stringResource(R.string.branch_next)) }
     }
 }
+
+
+/** Wave E: Ctrl/Cmd+Enter sends, Esc stops (see [ChatKeys]); everything else is left to the text field. */
+private fun Modifier.chatKeys(running: Boolean, canSend: Boolean, onSend: () -> Unit, onStop: () -> Unit): Modifier =
+    this.onPreviewKeyEvent { e ->
+        if (e.type != androidx.compose.ui.input.key.KeyEventType.KeyDown) return@onPreviewKeyEvent false
+        val action = ChatKeys.decide(
+            ctrlOrMeta = e.isCtrlPressed || e.isMetaPressed,
+            enter = e.key == androidx.compose.ui.input.key.Key.Enter || e.key == androidx.compose.ui.input.key.Key.NumPadEnter,
+            escape = e.key == androidx.compose.ui.input.key.Key.Escape,
+            running = running, canSend = canSend,
+        )
+        when (action) {
+            ChatKeys.Action.SEND -> { onSend(); true }
+            ChatKeys.Action.STOP -> { onStop(); true }
+            ChatKeys.Action.NONE -> false
+        }
+    }
