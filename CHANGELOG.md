@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.44] — 2026-11-27 — Approval and stop tests · اختبارات الموافقة والإيقاف
+
+- **Internal, no visible change:** three more whole-loop scenarios run against the fake model: stopping a call in flight leaves a stopped notice; rejecting a file change writes nothing and tells the model; approving it writes the file.
+- versionName 0.1.44, versionCode 83.
+
 ## [0.1.43] — 2026-11-27 — Whole-loop tests · اختبارات الحلقة كاملة
 
 - **Internal, no visible change:** the full agent loop now runs in unit tests with a scripted fake model and no network. Three scenarios: a plain reply, a read-only tool call whose result goes back to the model, and a provider failure that ends the run with an error notice.
