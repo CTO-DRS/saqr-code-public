@@ -1219,4 +1219,17 @@
     <string name="blame_loading">Reading history…</string>
     <string name="blame_none">No history for this file yet. Commit it first, then blame can show who changed each part.</string>
     <string name="turn_caption_desc">Tokens and cost of this reply: %1$s</string>
+    <string name="guide_section">User guide</string>
+    <string name="guide_1_title">First steps</string>
+    <string name="guide_1_body">Open Settings → Providers and add your model key. Create a project, then describe what you want in the chat. The agent reads your files, makes changes and shows them to you.</string>
+    <string name="guide_2_title">Approvals and safety</string>
+    <string name="guide_2_body">Risky steps, like deleting files, pushing or running unknown commands, ask first. Changes to two or more files arrive as one plan. If you reject it, nothing is written. Each turn is saved, so you can restore an earlier point from the chat.</string>
+    <string name="guide_3_title">Budgets and cost</string>
+    <string name="guide_3_body">Every reply shows its tokens and cost under it. Settings → Usage has the totals and lets you set a daily or monthly cap, so a run stops before it passes your limit.</string>
+    <string name="guide_4_title">Backup and restore</string>
+    <string name="guide_4_body">Sync keeps your settings in your own repository. You can also export an encrypted backup of your chats and restore it on another device. Your keys are never part of the backup.</string>
+    <string name="guide_5_title">Keyboard shortcuts</string>
+    <string name="guide_5_body">With an external keyboard: Ctrl+Enter sends, Ctrl+F searches the chat, Esc stops the agent.</string>
+    <string name="guide_6_title">Working offline</string>
+    <string name="guide_6_body">The editor, files, git and terminal work without internet. The agent needs a connection to reach your model. Desert mode pauses cloud turns and tells you why.</string>
 </resources>

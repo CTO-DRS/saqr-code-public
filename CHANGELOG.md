@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.46] — 2026-11-27 — User guide in the app · دليل الاستخدام داخل التطبيق
+
+- **User guide in Settings:** six short topics, tap to open: first steps, approvals and safety, budgets and cost, backup and restore, keyboard shortcuts, working offline. Arabic and English.
+- Settings search finds the guide, by topic title or by words in the text.
+- versionName 0.1.46, versionCode 85.
+
 ## [0.1.45] — 2026-11-27 — Cost under every reply · التكلفة تحت كل رد
 
 - **Per-reply caption:** a small line under each answer shows its tokens and cost, for example `1.2k · $0.0041`. A `~` means the provider sent no usage and the number is an estimate. The cost is left out when the model has no price in your price table.
