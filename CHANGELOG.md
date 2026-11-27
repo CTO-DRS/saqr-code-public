@@ -1,5 +1,15 @@
 # Changelog · سجل التغييرات
 
+## [0.1.11] — 2026-11-27 — PR review, merge and undo from the phone · مراجعة ودمج الطلبات
+
+- **A new PRs tab in Git (ديوان)** when origin is a GitHub repo: every open pull request with its number, title, head → base, author and draft badge.
+- **Review on the phone:** a PR opens its counts (files, +/−, mergeable) and "View changes" renders the whole diff in the existing diff viewer, with old/new line numbers.
+- **Merge from the phone:** merge commit, squash or rebase — confirmed in a dialog that warns the merge happens on GitHub right away. Drafts and conflicted PRs refuse.
+- **Undo:** the merge that Saqr just made stays in a gold banner with "Undo merge" — safe while the base branch tip is still that merge commit (re-checked on every load and right before undoing); the record survives restarts. Once the branch moves on, the banner says so instead.
+- EN + AR, RTL, 48dp targets, labelled controls.
+- **Tests:** `V0112PrMergeTest` (6): payload parsing, combined diff through the viewer parser, undo safety states, merge-record persistence, the merge API (pre-merge head + merge commit captured), the force ref reset.
+- versionName 0.1.11, versionCode 50.
+
 ## [0.1.10] — 2026-11-27 — Background completion report · تقرير الإنجاز
 
 - **The completion notification now carries the run's report.** When a task you started finishes while the app is closed, the notification expands to a second line: active time, steps, files changed, commands run, tokens and priced cost — e.g. "3:12 · 14 steps · 3 files · 2 commands · 12.4k tokens · $0.03". Unknown prices and empty parts drop out; estimated token counts show "~".

@@ -85,6 +85,7 @@ object Lucide {
     val BookMarked: ImageVector by lazy { stroked("book-marked", false, "M10 2v8l3-3 3 3V2", "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20") }
     val CheckCheck: ImageVector by lazy { stroked("check-check", false, "M18 6 7 17l-5-5", "m22 10-7.5 7.5L13 16") }
     val ChevronsUpDown: ImageVector by lazy { stroked("chevrons-up-down", false, "m7 15 5 5 5-5", "m7 9 5-5 5 5") }
+    val Circle: ImageVector by lazy { stroked("circle", false, "M2.0,12.0a10.0,10.0 0 1,0 20.0,0a10.0,10.0 0 1,0 -20.0,0") }
     val CircleDot: ImageVector by lazy { stroked("circle-dot", false, "M2.0,12.0a10.0,10.0 0 1,0 20.0,0a10.0,10.0 0 1,0 -20.0,0", "M11.0,12.0a1.0,1.0 0 1,0 2.0,0a1.0,1.0 0 1,0 -2.0,0") }
     val ClipboardPaste: ImageVector by lazy { stroked("clipboard-paste", false, "M15 2H9a1 1 0 0 0-1 1v2c0 .6.4 1 1 1h6c.6 0 1-.4 1-1V3c0-.6-.4-1-1-1Z", "M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2M16 4h2a2 2 0 0 1 2 2v2M11 14h10", "m17 10 4 4-4 4") }
     val CloudDownload: ImageVector by lazy { stroked("cloud-download", false, "M12 13v8l-4-4", "m12 21 4-4", "M4.393 15.269A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.436 8.284") }

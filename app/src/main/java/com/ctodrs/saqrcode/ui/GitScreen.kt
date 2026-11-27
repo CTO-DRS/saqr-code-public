@@ -79,6 +79,8 @@ import com.ctodrs.saqrcode.git.GitFileStatus
 import com.ctodrs.saqrcode.git.GitRemote
 import com.ctodrs.saqrcode.git.GitStatus
 import com.ctodrs.saqrcode.git.GitToast
+import com.ctodrs.saqrcode.git.PrInfo
+import com.ctodrs.saqrcode.git.MergeRecord
 import com.ctodrs.saqrcode.ui.components.Chip
 import com.ctodrs.saqrcode.ui.components.DiffChip
 import com.ctodrs.saqrcode.ui.components.EmptyState
@@ -109,6 +111,10 @@ data class GitUiState(
     val toast: GitToast? = null,
     val githubLogin: String? = null,
     val identity: String = "",
+    /** v0.1.11: open PRs of the GitHub origin (null = not loaded yet) and the merge that can still be undone. */
+    val prs: List<PrInfo>? = null,
+    val pendingMerge: MergeRecord? = null,
+    val pendingMergeReady: Boolean = false,
 )
 
 class GitActions(
@@ -123,9 +129,11 @@ class GitActions(
     val onRemoveRemote: (String) -> Unit = {}, val onPublish: () -> Unit = {}, val onPullRequest: () -> Unit = {},
     val onEditGitignore: () -> Unit = {}, val onAccounts: () -> Unit = {}, val onDismissToast: () -> Unit = {},
     val onOpenLink: (String) -> Unit = {},
+    /** v0.1.11: pull requests. */
+    val onOpenPr: (PrInfo) -> Unit = {}, val onUndoMerge: () -> Unit = {},
 )
 
-object GitTab { const val CHANGES = 0; const val HISTORY = 1; const val BRANCHES = 2 }
+object GitTab { const val CHANGES = 0; const val HISTORY = 1; const val BRANCHES = 2; const val PULLS = 3 }
 
 @Composable
 fun GitScreen(ws: Workspace, onAccounts: () -> Unit = {}) {
@@ -134,13 +142,17 @@ fun GitScreen(ws: Workspace, onAccounts: () -> Unit = {}) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     LaunchedEffect(ws.fsVersion) { ctl.refresh() }
+    LaunchedEffect(ws.gitTab) { if (ws.gitTab == GitTab.PULLS) ctl.loadPrs() }
     var diff by remember { mutableStateOf<Pair<String, String>?>(null) }
     var publish by remember { mutableStateOf(false) }
     var pr by remember { mutableStateOf(false) }
+    var openPr by remember { mutableStateOf<PrInfo?>(null) }
+    var mergeFor by remember { mutableStateOf<PrInfo?>(null) }
     val settings = app.settings
     val state = GitUiState(
         status = ctl.status, log = ctl.log, branches = ctl.branches, remotes = ctl.remotes, busy = ctl.busy, toast = ctl.toast,
         githubLogin = settings.accounts.github?.login, identity = listOf(settings.gitName, settings.gitEmail).filter { it.isNotBlank() }.joinToString(" · "),
+        prs = ctl.prs, pendingMerge = ctl.pendingMerge, pendingMergeReady = ctl.pendingMergeReady,
     )
     GitScreenContent(
         state, ws.gitTab, { ws.gitTab = it },
@@ -159,8 +171,23 @@ fun GitScreen(ws: Workspace, onAccounts: () -> Unit = {}) {
             onEditGitignore = { ctl.git.ensureGitignore(ws.dir); ws.open(".gitignore"); ws.tab = Pane.FILES; ws.fsVersion++ },
             onAccounts = onAccounts, onDismissToast = { ctl.toast = null },
             onOpenLink = { runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) } },
+            onOpenPr = { openPr = it }, onUndoMerge = { ctl.undoMerge() },
         ),
     )
+    openPr?.let { p ->
+        PrDetailDialog(p, ctl,
+            onDismiss = { openPr = null },
+            onMerge = { mergeFor = p },
+            onViewDiff = { scope.launch { diff = ("PR #${p.number} · " + p.title) to ctl.prDiff(p) } },
+            onOpenLink = { runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(p.htmlUrl))) } },
+        )
+    }
+    mergeFor?.let { p ->
+        PrMergeDialog(p, onDismiss = { mergeFor = null }) { method ->
+            mergeFor = null; openPr = null
+            ctl.mergePr(p, method)
+        }
+    }
     diff?.let { (title, text) -> DiffViewerDialog(title, text) { diff = null } }
     if (publish) PublishDialog(ws.name, settings.accounts, onDismiss = { publish = false }) { host, name, priv, desc ->
         publish = false
@@ -207,19 +234,23 @@ fun GitScreenContent(state: GitUiState, tab: Int, onTab: (Int) -> Unit, a: GitAc
     Column(Modifier.fillMaxSize().padding(horizontal = Sp.lg)) {
         RepoHeader(state, a)
         Spacer(Modifier.height(Sp.md))
-        Segmented(
-            listOf(
-                stringResource(R.string.git_tab_changes) + if (s.files.isNotEmpty()) "  ${s.files.size}" else "",
-                stringResource(R.string.git_tab_history),
-                stringResource(R.string.git_tab_branches),
-            ), tab, onTab,
-        )
+        // v0.1.11: the PR tab joins when origin is a GitHub repo
+        val ghOrigin = com.ctodrs.saqrcode.git.GitService.githubSlug((state.remotes.firstOrNull { it.name == "origin" } ?: state.remotes.firstOrNull())?.url)
+        val tabLabels = buildList {
+            add(stringResource(R.string.git_tab_changes) + if (s.files.isNotEmpty()) "  ${s.files.size}" else "")
+            add(stringResource(R.string.git_tab_history))
+            add(stringResource(R.string.git_tab_branches))
+            if (ghOrigin != null) add(stringResource(R.string.git_tab_prs))
+        }
+        val safeTab = tab.coerceAtMost(tabLabels.size - 1)
+        Segmented(tabLabels, safeTab, onTab)
         Spacer(Modifier.height(Sp.sm))
         state.toast?.let { ToastBar(it, a) }
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            when (tab) {
+            when (safeTab) {
                 GitTab.HISTORY -> HistoryList(state.log, a)
                 GitTab.BRANCHES -> BranchesList(state, a)
+                GitTab.PULLS -> PrsList(state, a)
                 else -> ChangesList(state, a)
             }
         }
@@ -868,3 +899,165 @@ object UnifiedDiff {
     }
 }
 
+
+// ------------------------------------------------------------------ v0.1.11: pull requests
+
+@Composable
+fun PrsList(state: GitUiState, a: GitActions) {
+    val c = Saqr.colors
+    val prs = state.prs
+    LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Sp.sm), contentPadding = PaddingValues(vertical = Sp.sm)) {
+        state.pendingMerge?.let { m ->
+            item(key = "undo-banner") {
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.md)).background(c.accentSoft)
+                        .border(1.dp, c.accent.copy(alpha = 0.35f), RoundedCornerShape(Radius.md)).padding(horizontal = Sp.md, vertical = Sp.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SIcon(Lucide.GitMerge, size = 16.dp, tint = c.accentText)
+                    Spacer(Modifier.width(Sp.sm))
+                    Text(stringResource(R.string.git_pr_merged_banner, m.number.toString()), style = Saqr.type.bodySmall, color = c.text1, modifier = Modifier.weight(1f))
+                    if (state.pendingMergeReady) {
+                        Text(stringResource(R.string.git_pr_undo), style = Saqr.type.caption.copy(fontWeight = FontWeight.SemiBold), color = c.accentText,
+                            modifier = Modifier.minimumInteractiveComponentSize().clip(RoundedCornerShape(6.dp))
+                                .clickable(role = Role.Button, onClickLabel = stringResource(R.string.git_pr_undo)) { a.onUndoMerge() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                    } else {
+                        Text(stringResource(R.string.git_pr_undo_gone), style = Saqr.type.monoMicro, color = c.text3)
+                    }
+                }
+            }
+        }
+        when {
+            prs == null -> item(key = "loading") {
+                Row(Modifier.fillMaxWidth().padding(Sp.xl), horizontalArrangement = Arrangement.Center) { Spinner(20.dp) }
+            }
+            prs.isEmpty() -> item(key = "empty") {
+                Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                    EmptyState(stringResource(R.string.git_prs_empty_title), stringResource(R.string.git_prs_empty_body), icon = Lucide.GitPullRequest)
+                }
+            }
+            else -> items(prs.size, key = { prs[it].number }) { PrRow(prs[it], a) }
+        }
+    }
+}
+
+@Composable
+fun PrRow(pr: PrInfo, a: GitActions) {
+    val c = Saqr.colors
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.md)).background(c.surface1).border(1.dp, c.border, RoundedCornerShape(Radius.md))
+            .clickable(role = Role.Button, onClickLabel = "#${pr.number} ${pr.title}") { a.onOpenPr(pr) }.padding(Sp.md),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SIcon(Lucide.GitPullRequest, size = 18.dp, tint = c.accentText)
+        Spacer(Modifier.width(Sp.sm))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Text("#${pr.number}", style = Saqr.type.monoMicro, color = c.text3)
+                }
+                Spacer(Modifier.width(6.dp))
+                Text(pr.title, style = Saqr.type.bodySmall.copy(fontWeight = FontWeight.Medium), color = c.text1, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false))
+                if (pr.draft) {
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.git_pr_draft), style = Saqr.type.monoMicro, color = c.text3,
+                        modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(c.surface3).padding(horizontal = 4.dp, vertical = 1.dp))
+                }
+            }
+            Spacer(Modifier.height(2.dp))
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Text("${pr.headRef} → ${pr.baseRef}" + if (pr.author.isNotBlank()) " · ${pr.author}" else "",
+                    style = Saqr.type.monoMicro, color = c.text3, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        SIcon(Lucide.ChevronRight, size = 16.dp, tint = c.text3)
+    }
+}
+
+/** PR sheet: counts, mergeable state, View changes / Merge / Open on GitHub. */
+@Composable
+fun PrDetailDialog(pr: PrInfo, ctl: GitController, onDismiss: () -> Unit, onMerge: () -> Unit, onViewDiff: () -> Unit, onOpenLink: () -> Unit) {
+    val c = Saqr.colors
+    var detail by remember(pr.number) { mutableStateOf<com.ctodrs.saqrcode.git.PrDetail?>(null) }
+    var failed by remember(pr.number) { mutableStateOf(false) }
+    LaunchedEffect(pr.number) {
+        detail = runCatching { ctl.prDetail(pr) }.getOrElse { failed = true; null }
+    }
+    val d = detail
+    AlertDialog(
+        onDismissRequest = onDismiss, containerColor = c.surface1,
+        icon = { SIcon(Lucide.GitPullRequest, size = 24.dp, tint = c.accentText) },
+        title = { Text("#${pr.number} · ${pr.title}", style = Saqr.type.title2, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Text("${pr.headRef} → ${pr.baseRef}", style = Saqr.type.mono, color = c.text2)
+                }
+                when {
+                    failed -> Text(stringResource(R.string.git_pr_undo_gone), style = Saqr.type.bodySmall, color = c.text3)
+                    d == null -> Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), verticalAlignment = Alignment.CenterVertically) { Spinner(16.dp) }
+                    else -> Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.git_pr_files, d.changedFiles.toString(), d.additions.toString(), d.deletions.toString()), style = Saqr.type.monoSmall, color = c.text2)
+                        d.mergeable?.let {
+                            Spacer(Modifier.width(Sp.sm))
+                            Text(stringResource(if (it) R.string.git_pr_mergeable else R.string.git_pr_conflicts), style = Saqr.type.monoMicro,
+                                color = if (it) c.diffAdd else c.diffDel,
+                                modifier = Modifier.clip(RoundedCornerShape(4.dp)).background((if (it) c.diffAddBg else c.diffDelBg)).padding(horizontal = 4.dp, vertical = 1.dp))
+                        }
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                    GhostButton(stringResource(R.string.git_pr_view_changes), onViewDiff, icon = Lucide.FileDiff)
+                    GhostButton(stringResource(R.string.git_pr_open_github), onOpenLink, icon = Lucide.ExternalLink)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = !pr.draft && d?.mergeable != false, onClick = onMerge) { Text(stringResource(R.string.git_pr_merge), color = c.accentText) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
+    )
+}
+
+/** The merge method radio list + warning, shared by the dialog and the screenshot test. */
+@Composable
+fun PrMergeContent(method: String, onMethod: (String) -> Unit) {
+    val c = Saqr.colors
+    val methods = listOf(
+        "merge" to stringResource(R.string.git_pr_merge_merge),
+        "squash" to stringResource(R.string.git_pr_merge_squash),
+        "rebase" to stringResource(R.string.git_pr_merge_rebase),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
+        methods.forEach { (id, label) ->
+            Row(
+                Modifier.fillMaxWidth().minimumInteractiveComponentSize().clip(RoundedCornerShape(Radius.sm))
+                    .background(if (method == id) c.accentSoft else Color.Transparent)
+                    .clickable(role = Role.RadioButton, onClickLabel = label) { onMethod(id) }.padding(horizontal = Sp.sm, vertical = Sp.xs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SIcon(if (method == id) Lucide.CircleDot else Lucide.Circle, size = 16.dp, tint = if (method == id) c.accentText else c.text3)
+                Spacer(Modifier.width(Sp.sm))
+                Text(label, style = Saqr.type.bodySmall, color = c.text1)
+            }
+        }
+        Spacer(Modifier.height(Sp.xs))
+        Text(stringResource(R.string.git_pr_merge_warn), style = Saqr.type.caption, color = c.text3)
+    }
+}
+
+/** Merge confirmation with the method choice; the actual merge runs on GitHub at once. */
+@Composable
+fun PrMergeDialog(pr: PrInfo, onDismiss: () -> Unit, onOk: (String) -> Unit) {
+    val c = Saqr.colors
+    var method by remember { mutableStateOf("squash") }
+    AlertDialog(
+        onDismissRequest = onDismiss, containerColor = c.surface1,
+        icon = { SIcon(Lucide.GitMerge, size = 24.dp, tint = c.accentText) },
+        title = { Text(stringResource(R.string.git_pr_merge_title, pr.number.toString()), style = Saqr.type.title2) },
+        text = { PrMergeContent(method, { method = it }) },
+        confirmButton = { TextButton(onClick = { onOk(method) }) { Text(stringResource(R.string.git_pr_merge), color = c.accentText) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
+    )
+}

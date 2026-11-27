@@ -62,6 +62,42 @@ class GitHubApi(
         return GhPull(o.getInt("number"), o.getString("html_url"), o.optString("title"))
     }
 
+    // ---- v0.1.11: review & merge pull requests
+
+    /** Open PRs of a repo, newest first (up to 50). */
+    fun listPulls(owner: String, repo: String): List<PrInfo> =
+        PrCodec.list(JSONArray(call(req("/repos/$owner/$repo/pulls?state=open&per_page=50")).first))
+
+    /** The single-PR payload: adds counts and the mergeable flag to the list row. */
+    fun pull(owner: String, repo: String, number: Int): PrDetail =
+        PrCodec.detail(JSONObject(call(req("/repos/$owner/$repo/pulls/$number")).first))
+
+    /** The PR's changed files with their patches (up to 100; very large files come without a patch). */
+    fun pullFiles(owner: String, repo: String, number: Int): List<PrFile> =
+        PrCodec.files(JSONArray(call(req("/repos/$owner/$repo/pulls/$number/files?per_page=100")).first))
+
+    /**
+     * Merges the PR on GitHub with [method] (merge / squash / rebase) and returns the record the
+     * undo needs: the base branch's head just before the merge plus the merge commit GitHub made.
+     */
+    fun mergePull(owner: String, repo: String, number: Int, baseRef: String, method: String, now: Long = System.currentTimeMillis()): MergeRecord {
+        val pre = refSha(owner, repo, baseRef)
+        val b = JSONObject().put("merge_method", method)
+        val o = JSONObject(call(req("/repos/$owner/$repo/pulls/$number/merge").put(b.toString().toRequestBody(JSON))).first)
+        if (!o.optBoolean("merged")) throw GhException(409, "GitHub: " + o.optString("message", "not merged"))
+        return PrCodec.mergeRecord(o, owner, repo, number, baseRef, pre, method, now)
+    }
+
+    /** The current head sha of a branch. */
+    fun refSha(owner: String, repo: String, branch: String): String =
+        PrCodec.refSha(JSONObject(call(req("/repos/$owner/$repo/git/ref/heads/$branch")).first))
+
+    /** Force-moves a branch back to an earlier sha — the merge undo, guarded by PrMerge.undoState. */
+    fun resetRef(owner: String, repo: String, branch: String, sha: String) {
+        val b = JSONObject().put("sha", sha).put("force", true)
+        call(req("/repos/$owner/$repo/git/refs/heads/$branch").patch(b.toString().toRequestBody(JSON)))
+    }
+
     private fun repo(o: JSONObject) = GhRepo(
         fullName = o.getString("full_name"), name = o.getString("name"), owner = o.getJSONObject("owner").getString("login"),
         private = o.optBoolean("private"), description = o.optString("description").takeIf { it.isNotBlank() && it != "null" },

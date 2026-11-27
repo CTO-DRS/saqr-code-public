@@ -18,7 +18,7 @@ data class GitToast(val text: String, val error: Boolean = false, val link: Stri
  * UI state holder for one project's repository. All JGit work happens on Dispatchers.IO;
  * the Compose screen only reads the snapshot fields below.
  */
-class GitController(val dir: File, private val settings: SettingsStore, homeDir: File) {
+class GitController(val dir: File, private val settings: SettingsStore, private val homeDir: File) {
     val git = GitService(homeDir, settings.accounts)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -178,6 +178,101 @@ class GitController(val dir: File, private val settings: SettingsStore, homeDir:
         }
         toast = GitToast("✓ MR/PR #${pr.number}", link = pr.htmlUrl)
         null
+    }
+
+    // ------------------------------------------------------------------ v0.1.11: pull requests (GitHub)
+
+    private val mergeStore by lazy { MergeRecords(File(homeDir, "pr_merges.json")) }
+
+    /** Open PRs of the GitHub origin; null = never loaded (the PR tab triggers the first load). */
+    var prs by mutableStateOf<List<PrInfo>?>(null)
+        private set
+    /** The merge that can still be undone, and whether the base branch is still at the merge commit. */
+    var pendingMerge by mutableStateOf<MergeRecord?>(null)
+        private set
+    var pendingMergeReady by mutableStateOf(false)
+        private set
+
+    private fun ghApi(): Pair<GitHubApi, Pair<String, String>>? {
+        val slug = githubSlug ?: return null
+        val token = settings.accounts.githubToken() ?: return null
+        return GitHubApi(token) to slug
+    }
+
+    /** Loads the open PRs and re-checks whether the last merge is still undoable. */
+    fun loadPrs() = scope.launch {
+        if (busy != null) return@launch
+        val (api, slug) = ghApi() ?: return@launch
+        busy = "prs"
+        try {
+            val r = withContext(Dispatchers.IO) {
+                val list = api.listPulls(slug.first, slug.second)
+                val p = mergeStore.pending(slug.first, slug.second)
+                val head = if (p != null) runCatching { api.refSha(slug.first, slug.second, p.baseRef) }.getOrNull() else null
+                Triple(list, p, head)
+            }
+            prs = r.first
+            pendingMerge = r.second
+            pendingMergeReady = r.second != null && PrMerge.undoState(r.second!!, r.third) == PrMerge.UndoState.READY
+        } catch (e: Exception) {
+            toast = GitToast(Redact.text(e.message ?: e.javaClass.simpleName, settings.githubToken), error = true)
+        } finally {
+            busy = null
+        }
+    }
+
+    /** The PR's counts (single fetch); throws on network errors. */
+    suspend fun prDetail(pr: PrInfo): PrDetail = withContext(Dispatchers.IO) {
+        val (api, slug) = ghApi() ?: throw GitException("Link your GitHub account first (Settings → Accounts).")
+        api.pull(slug.first, slug.second, pr.number)
+    }
+
+    /** The PR's whole diff as one unified-diff text for the diff viewer. */
+    suspend fun prDiff(pr: PrInfo): String = withContext(Dispatchers.IO) {
+        val (api, slug) = ghApi() ?: throw GitException("Link your GitHub account first (Settings → Accounts).")
+        PrMerge.combinedDiff(api.pullFiles(slug.first, slug.second, pr.number))
+    }
+
+    /** Merges on GitHub and stores the undo record; the banner offers Undo until the base branch moves. */
+    fun mergePr(pr: PrInfo, method: String) = scope.launch {
+        if (busy != null) return@launch
+        val (api, slug) = ghApi() ?: return@launch
+        busy = "merge"
+        try {
+            val rec = withContext(Dispatchers.IO) { api.mergePull(slug.first, slug.second, pr.number, pr.baseRef, method) }
+            mergeStore.add(rec)
+            pendingMerge = rec; pendingMergeReady = true
+            toast = GitToast("✓ Merged #${pr.number}", link = pr.htmlUrl)
+        } catch (e: Exception) {
+            toast = GitToast(Redact.text(e.message ?: e.javaClass.simpleName, settings.githubToken), error = true)
+        } finally {
+            busy = null
+            loadPrs()
+        }
+    }
+
+    /** Undoes the pending merge by moving the base branch back; refuses when the branch moved on. */
+    fun undoMerge() = scope.launch {
+        if (busy != null) return@launch
+        val (api, slug) = ghApi() ?: return@launch
+        val rec = pendingMerge ?: return@launch
+        busy = "undo"
+        try {
+            withContext(Dispatchers.IO) {
+                val head = api.refSha(slug.first, slug.second, rec.baseRef)
+                if (PrMerge.undoState(rec, head) != PrMerge.UndoState.READY)
+                    throw GitException("${rec.baseRef} moved on — undo is no longer safe.")
+                api.resetRef(slug.first, slug.second, rec.baseRef, rec.preMergeSha)
+            }
+            mergeStore.markUndone(rec)
+            pendingMerge = null; pendingMergeReady = false
+            toast = GitToast("✓ Merge of #${rec.number} undone")
+        } catch (e: Exception) {
+            toast = GitToast(Redact.text(e.message ?: e.javaClass.simpleName, settings.githubToken), error = true)
+        } finally {
+            busy = null
+            loadPrs()
+        }
     }
 
     suspend fun diffOf(path: String, staged: Boolean): String = withContext(Dispatchers.IO) {
