@@ -9,6 +9,42 @@
 
 ---
 
+## 0 · الطريق من 0.1.17 إلى 1.0 (محدّث 27 نوفمبر 2026)
+
+> ترقيم الشحن الفعلي صار 0.1.x (versionCode يرتفع دائمًا)؛ أسماء الإصدارات أدناه (v0.12...v1.0) هي مراحل المحتوى لا أرقام النسخ. الإصدار 1.0 يُعلن فقط بعد اكتمال بوابات الموجة ج.
+> Shipping versions are 0.1.x (versionCode always rising); the v0.12..v1.0 names below are content phases, not version numbers. 1.0 is declared only after the Wave C gates pass.
+
+**الحالة / Status (0.1.17, versionCode 56, 616 tests green):** plan mode, notifications, PR review/merge/undo from the phone, Gulf-dialect voice commands, model duel (/compare), live cost + daily cap, live preview, nested AGENTS.md, learning mode (/learn). Test suite stable (JVM fork every 40 classes). Performance review found no hot spot.
+
+### الموجة أ · الموثوقية والصقل / Wave A: reliability and polish (autonomous, first)
+1. Crash/ANR hardening: error and offline states on every network path, cancel-safe agent runs, process-death restore tests for sessions and tasks.
+2. Release-build smoke: R8 minified release assembled and verified in CI-less local script (keep rules, reflection, WebView, billing); APK verify step in release recipe.
+3. Accessibility pass: TalkBack order, 48dp targets, contrast audit of both themes, font-scale 200% layouts, RTL mirror audit with screenshots.
+4. Startup and memory: measured baselines (timing tests), lazy init of terminal/MCP/voice, session list paging for 500+ sessions.
+5. In-app help and first-run: guided first project in Arabic, contextual tips, an examples gallery of prompts.
+6. Docs: bilingual README refresh, privacy policy page, FAQ, security model write-up.
+
+### الموجة ب · القدرات / Wave B: capabilities (highest impact first)
+1. Agent quality: stronger edit tools (multi-file refactor with preview), diagnostics-aware fix loop (compiler/lint output into context), test-runner integration with pass/fail summaries, auto-resume after interruption.
+2. Git: merge-conflict resolver UI, stash/cherry-pick, blame in editor.
+3. Sentinel (scheduled local tasks): nightly tests, morning digest notification.
+4. Home-screen widget and Quick Tile for the running task.
+5. Dynamic color (Material You) option, motion tokens and haptics.
+6. Visual editor v1: live color/spacing/text edits from the preview mapped to code.
+7. Community gallery: templates pulled from the public saqr-gallery repo (first PR awaiting owner merge).
+8. Sync via the user's own private repo (settings, themes, commands), no central server.
+9. Image-to-UI and screenshot-driven fixes through the active vision-capable model.
+
+### الموجة ج · الإطلاق / Wave C: launch gates for 1.0
+1. Field numbers from a real device matrix (needs the owner's devices; QA list accumulates from his notes).
+2. Stable-signed releases with the new release key (needs his vault approval each time the password is used).
+3. Google Play Console account, store listing, screenshots, demo video, pricing: owner decisions (paid account), prepared by us as drafts.
+4. Crash-free >= 99.5% on closed beta; zero user data collected.
+
+**Rule:** every item ships with tests, EN+AR strings, a bilingual CHANGELOG entry and a mirrored public release; the order inside each wave follows impact, and this section is updated in the same commit as each release.
+
+---
+
 ## 1 · الرؤية والمبادئ الحاكمة
 
 صقر كود ليس «تطبيق محادثة مع ذكاء اصطناعي»؛ هو **استوديو برمجة متنقل كامل**: وكيل يخطط ويبرمج ويراجع، يبني APK موقّعًا على الجهاز، ينشر على المستودعات، ويحترم مفاتيح المستخدم وبياناته. هذه الخارطة — مرسومة من جديد بالكامل — تجعله خلال أربعة إصدارات **أجمل مظهرًا، أعمق ذكاءً، أوسع تكاملًا، ومتجرًا حقيقيًا على Play**.
