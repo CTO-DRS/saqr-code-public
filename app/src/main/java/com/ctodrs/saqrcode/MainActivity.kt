@@ -117,14 +117,14 @@ class MainActivity : AppCompatActivity() {
                     }
                     AnimatedContent(screen, transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) }, label = "nav") { s ->
                         when {
-                            s == "onboarding" -> OnboardingScreen(onDone = { openSettings ->
+                            s == "onboarding" -> com.ctodrs.saqrcode.ui.Capped { OnboardingScreen(onDone = { openSettings ->
                                 settings.onboarded = true
                                 returnTo = "home"
                                 screen = if (openSettings && !settings.activeReady()) "settings" else "home"
-                            })
-                            s == "settings" -> SettingsScreen(onBack = { screen = returnTo }, onAccounts = { accountsReturn = "settings"; screen = "accounts" }, onPaywall = { returnTo = "settings"; screen = "paywall" })
-                            s == "accounts" -> AccountsScreen(onBack = { screen = accountsReturn })
-                            s == "paywall" -> com.ctodrs.saqrcode.billing.PaywallScreen(onBack = { screen = returnTo }, settings = settings, play = play)
+                            }) }
+                            s == "settings" -> com.ctodrs.saqrcode.ui.Capped { SettingsScreen(onBack = { screen = returnTo }, onAccounts = { accountsReturn = "settings"; screen = "accounts" }, onPaywall = { returnTo = "settings"; screen = "paywall" }) }
+                            s == "accounts" -> com.ctodrs.saqrcode.ui.Capped { AccountsScreen(onBack = { screen = accountsReturn }) }
+                            s == "paywall" -> com.ctodrs.saqrcode.ui.Capped { com.ctodrs.saqrcode.billing.PaywallScreen(onBack = { screen = returnTo }, settings = settings, play = play) }
                             s.startsWith("project:") -> IdeScreen(
                                 projectName = s.removePrefix("project:"),
                                 onBack = { screen = "home" },
@@ -132,11 +132,11 @@ class MainActivity : AppCompatActivity() {
                                 onAccounts = { accountsReturn = s; screen = "accounts" },
                                 onPaywall = { returnTo = s; screen = "paywall" },
                             )
-                            else -> HomeScreen(
+                            else -> com.ctodrs.saqrcode.ui.Capped { HomeScreen(
                                 onOpen = { screen = "project:$it" },
                                 onSettings = { returnTo = "home"; screen = "settings" },
                                 onPaywall = { returnTo = "home"; screen = "paywall" },
-                            )
+                            ) }
                         }
                     }
                 }
