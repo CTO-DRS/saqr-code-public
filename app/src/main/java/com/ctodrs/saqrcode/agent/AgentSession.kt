@@ -181,6 +181,8 @@ class AgentSession(
     val store: SessionStore? = null,
     /** v0.6: the background runtime (foreground service, notifications). */
     private val hooks: RunHooks = RunHooks.NONE,
+    /** v0.1.42: how model clients are built; tests pass a fake. */
+    private val modelFactory: ModelFactory = ModelFactory.DEFAULT,
 ) {
     val items = mutableStateListOf<ChatItem>()
     var running by mutableStateOf(false); private set
@@ -779,12 +781,12 @@ class AgentSession(
         }
     }
 
-    private fun client(): Pair<LlmClient, String> {
+    private fun client(): Pair<ModelClient, String> {
         val id = settings.activeProvider
         val def = Providers.byId(id)
         val cfg = settings.config(id)
         require(cfg.model.isNotBlank()) { "No model selected for ${def.displayName}" }
-        return LlmClient(def, cfg.baseUrl, cfg.model, settings.apiKey(id)) to cfg.model
+        return modelFactory.create(def, cfg.baseUrl, cfg.model, settings.apiKey(id)) to cfg.model
     }
 
     private suspend fun loop(): RunOutcome {
@@ -907,7 +909,7 @@ class AgentSession(
      * Anything else — a bad key, a 400, a cancelled turn — surfaces exactly as before.
      */
     private suspend fun completeStep(
-        llm: LlmClient, model: String, sys: String, msgs: List<Msg>, tools: List<ToolSpec>, bubble: ChatItem.Assistant,
+        llm: ModelClient, model: String, sys: String, msgs: List<Msg>, tools: List<ToolSpec>, bubble: ChatItem.Assistant,
     ): Pair<Turn, String> {
         val streamed = StringBuffer()
         val listener = object : StreamListener {
@@ -962,7 +964,7 @@ class AgentSession(
         val fcfg = settings.config(fdef.id)
         items += ChatItem.Notice(fb.label, kind = ChatItem.Notice.Kind.FALLBACK)
         reset()
-        val fl = LlmClient(fdef, fcfg.baseUrl, fb.model, settings.apiKey(fdef.id))
+        val fl = modelFactory.create(fdef, fcfg.baseUrl, fb.model, settings.apiKey(fdef.id))
         return fl.complete(sys, msgs, tools, listener) to fb.model
     }
 
@@ -1317,14 +1319,14 @@ class AgentSession(
      * v0.13.2: the compaction client — the coder's own unless Falcon Router found a cheaper
      * capable model for summarising (compaction has no explicit per-stage pick).
      */
-    private fun compactClient(coderLlm: LlmClient, coderModel: String): Triple<LlmClient, String, Boolean> {
+    private fun compactClient(coderLlm: ModelClient, coderModel: String): Triple<ModelClient, String, Boolean> {
         val (model, routed) = stageModel(FalconRouter.Stage.COMPACTOR, "")
         if (model == coderModel) return Triple(coderLlm, coderModel, false)
         return Triple(clientFor(model), model, routed)
     }
 
     /** v0.7: summarise the oldest context into one note once it passes the threshold. */
-    private suspend fun maybeCompact(llm: LlmClient, model: String, routed: Boolean = false) {
+    private suspend fun maybeCompact(llm: ModelClient, model: String, routed: Boolean = false) {
         if (!settings.autoCompact) return
         val chars = history.sumOf { size(it) }.toLong()
         if (!ContextCompactor.needsCompact(chars, history.size)) return
@@ -1575,7 +1577,7 @@ class AgentSession(
     // ------------------------------------------------------------------ v0.16 agent team (Chief mode)
 
     /** The client the Chief's roles fall back to (the coder's own), set at the start of a Chief run. */
-    private var chiefCoderLlm: LlmClient? = null
+    private var chiefCoderLlm: ModelClient? = null
     private var chiefCoderModel: String = ""
 
     /** (model, routed) for [role]: the tier's explicit pick, else Falcon Router, else the coder's model. */
@@ -1596,7 +1598,7 @@ class AgentSession(
             (def.suggestedModels + cfg.model).distinct(), settings.prices())
     }
 
-    private fun roleClient(role: AgentRole): Triple<LlmClient, String, Boolean> {
+    private fun roleClient(role: AgentRole): Triple<ModelClient, String, Boolean> {
         val (m, routed) = roleModel(role)
         val coder = chiefCoderLlm
         if (coder != null && m == chiefCoderModel) return Triple(coder, chiefCoderModel, false)
@@ -1627,7 +1629,7 @@ class AgentSession(
      * needs; budgets, the completion gate, the audit log and the loop guard apply as in a
      * classic run. A restart resumes the saved graph instead of starting over.
      */
-    private suspend fun chiefLoop(llm: LlmClient, model: String): RunOutcome {
+    private suspend fun chiefLoop(llm: ModelClient, model: String): RunOutcome {
         chiefCoderLlm = llm; chiefCoderModel = model
         loadCapBase()
         if (spendCapHit() != SpendCap.Hit.NONE) return capStop("")
@@ -2079,10 +2081,10 @@ class AgentSession(
     }
 
     /** A client for [model] on the provider the router picked it from (the active provider otherwise). */
-    private fun clientFor(model: String): LlmClient {
+    private fun clientFor(model: String): ModelClient {
         val def = Providers.byId(routeProviders[model] ?: settings.activeProvider)
         val cfg = settings.config(def.id)
-        return LlmClient(def, cfg.baseUrl, model, settings.apiKey(def.id))
+        return modelFactory.create(def, cfg.baseUrl, model, settings.apiKey(def.id))
     }
 
     private suspend fun loadCapBase() {
