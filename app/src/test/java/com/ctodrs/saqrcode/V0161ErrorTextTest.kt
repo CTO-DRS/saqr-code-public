@@ -3,6 +3,7 @@ package com.ctodrs.saqrcode
 import com.ctodrs.saqrcode.agent.ErrorExplainer
 import com.ctodrs.saqrcode.agent.LlmException
 import com.ctodrs.saqrcode.ui.errorExplanationRes
+import com.ctodrs.saqrcode.ui.errorLine
 import java.net.UnknownHostException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -22,5 +23,11 @@ class V0161ErrorTextTest {
         assertEquals(R.string.err_offline, errorExplanationRes(ErrorExplainer.classify(UnknownHostException("api.x.com"))))
         assertEquals(R.string.err_rate_limit, errorExplanationRes(ErrorExplainer.classify(LlmException("HTTP 429: slow down"))))
         assertNull(errorExplanationRes(ErrorExplainer.classify(LlmException("weird"))))
+    }
+
+    @Test fun errorLineIsNeverBlank() {
+        assertEquals("boom", errorLine(RuntimeException("boom")))
+        assertEquals("IllegalStateException", errorLine(IllegalStateException()))
+        assertEquals("IllegalStateException", errorLine(IllegalStateException("  ")))
     }
 }

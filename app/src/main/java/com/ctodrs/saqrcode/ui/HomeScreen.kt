@@ -442,7 +442,7 @@ fun CreateProjectDialog(initial: Template, onDismiss: () -> Unit, onCreate: (Str
             }
         },
         confirmButton = {
-            PrimaryButton(stringResource(R.string.create), enabled = name.isNotBlank(), onClick = { onCreate(name, tpl).onFailure { error = it.message } })
+            PrimaryButton(stringResource(R.string.create), enabled = name.isNotBlank(), onClick = { onCreate(name, tpl).onFailure { error = errorLine(it) } })
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
     )
@@ -492,7 +492,7 @@ fun CreatePackDialog(pack: SaqrPack, onDismiss: () -> Unit, onCreate: (String, S
             }
         },
         confirmButton = {
-            PrimaryButton(stringResource(R.string.create), enabled = name.isNotBlank(), onClick = { onCreate(name, pack).onFailure { error = it.message } })
+            PrimaryButton(stringResource(R.string.create), enabled = name.isNotBlank(), onClick = { onCreate(name, pack).onFailure { error = errorLine(it) } })
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = c.text2) } },
     )

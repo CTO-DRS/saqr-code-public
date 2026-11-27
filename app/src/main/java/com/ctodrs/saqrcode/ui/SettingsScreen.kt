@@ -1370,7 +1370,7 @@ private fun ProviderItem(def: ProviderDef, cfg: ProviderConfig, active: Boolean,
                                 .fold({ list: List<String> -> models = list.ifEmpty { def.suggestedModels }; modelsFmt.format(list.size.toString()) }, { e: Throwable ->
                                     // Say why in plain words (key rejected, offline, rate limit); never a blank line.
                                     val why: String? = errorExplanationRes(com.ctodrs.saqrcode.agent.ErrorExplainer.classify(e))?.let { resId -> fetchCtx.getString(resId) }
-                                    why ?: e.message?.takeIf { m -> m.isNotBlank() } ?: e.javaClass.simpleName
+                                    why ?: errorLine(e)
                                 })
                         }
                     }, icon = Lucide.RefreshCw)

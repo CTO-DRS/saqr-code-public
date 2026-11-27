@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.62] — 2026-11-28 — Failures always say something · الفشل يقول شيئًا دائمًا
+
+- **Fix.** When creating a project failed with an error that had no message, the dialog showed nothing and it looked as if the tap did nothing. The same gap existed in the GitHub sign-in and device-code screens. Every one of these now shows the message, or the error type when there is none.
+- One shared helper and a test that it is never blank.
+- versionName 0.1.62, versionCode 101.
+- عند فشل إنشاء مشروع أو تسجيل الدخول دون رسالة، يظهر الآن نوع الخطأ بدل لا شيء.
+
 ## [0.1.61] — 2026-11-28 — "Fetch models" says why it failed · «جلب النماذج» يشرح سبب الفشل
 
 - **Fix.** When fetching the model list failed, Settings showed the raw error text, or nothing at all when the error had no message. It now uses the same plain-words explanations as the chat (key rejected, no connection, rate limit, and so on), and falls back to the raw text, then to the error type, so the line is never blank.
