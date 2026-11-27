@@ -27,6 +27,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,12 +65,15 @@ class UsageSummary(
     val month: Map<String, Usage>,
     val prices: List<ModelPrice>,
     val budget: Double?,
+    /** v0.1.15: the optional daily cap, shown with today's spend. */
+    val dailyBudget: Double? = null,
     /** v0.8 team mode: reviewer / planner spend of this session, shown as their own rows. */
     val review: Map<String, Usage> = emptyMap(),
     val planner: Map<String, Usage> = emptyMap(),
 ) {
     fun cost(m: Map<String, Usage>) = PriceTable.cost(m, prices)
     val monthSpent get() = cost(month) ?: 0.0
+    val todaySpent get() = cost(today) ?: 0.0
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -93,11 +101,18 @@ private fun SheetTitle(icon: androidx.compose.ui.graphics.vector.ImageVector, ti
 // ---------------------------------------------------------------- usage
 
 @Composable
-fun UsageSheet(summary: UsageSummary, onDismiss: () -> Unit) {
+fun UsageSheet(summary: UsageSummary, onDismiss: () -> Unit, runStats: (() -> com.ctodrs.saqrcode.agent.RunStats)? = null, running: Boolean = false) {
     val c = Saqr.colors
+    // live-refresh the per-task row while a run is in flight
+    var stats by remember { mutableStateOf(runStats?.invoke()) }
+    LaunchedEffect(running) {
+        while (running && runStats != null) { stats = runStats.invoke(); kotlinx.coroutines.delay(2_000) }
+        stats = runStats?.invoke()
+    }
     SaqrSheet(onDismiss) {
         SheetTitle(Lucide.Zap, stringResource(R.string.usage_title))
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+            stats?.let { RunRow(it) }
             UsageRow(stringResource(R.string.usage_session), summary.session, summary.cost(summary.session))
             if (summary.review.isNotEmpty()) UsageRow(stringResource(R.string.usage_review), summary.review, summary.cost(summary.review))
             if (summary.planner.isNotEmpty()) UsageRow(stringResource(R.string.usage_planner), summary.planner, summary.cost(summary.planner))
@@ -108,6 +123,16 @@ fun UsageSheet(summary: UsageSummary, onDismiss: () -> Unit) {
                 val level = Budget.level(spent, b)
                 Column(Modifier.fillMaxWidth().padding(top = Sp.xs)) {
                     Text(stringResource(R.string.usage_budget, ltr(formatUsd(spent)), ltr(formatUsd(b))), style = Saqr.type.label, color = c.text1)
+                    Spacer(Modifier.height(6.dp))
+                    ProgressLine(Budget.fraction(spent, b), Modifier.fillMaxWidth(),
+                        color = when (level) { Budget.Level.OVER -> c.danger; Budget.Level.WARN -> c.warning; else -> c.accent })
+                }
+            }
+            summary.dailyBudget?.let { b ->
+                val spent = summary.todaySpent
+                val level = Budget.level(spent, b)
+                Column(Modifier.fillMaxWidth().padding(top = Sp.xs)) {
+                    Text(stringResource(R.string.usage_budget_daily, ltr(formatUsd(spent)), ltr(formatUsd(b))), style = Saqr.type.label, color = c.text1)
                     Spacer(Modifier.height(6.dp))
                     ProgressLine(Budget.fraction(spent, b), Modifier.fillMaxWidth(),
                         color = when (level) { Budget.Level.OVER -> c.danger; Budget.Level.WARN -> c.warning; else -> c.accent })
@@ -148,6 +173,30 @@ private fun UsageRow(label: String, byModel: Map<String, Usage>, cost: Double?) 
                 }
             }
             if (cost == null) Text(stringResource(R.string.usage_no_price), style = Saqr.type.caption, color = c.text3, modifier = Modifier.padding(top = 4.dp))
+        }
+    }
+}
+
+/** v0.1.15: the current (or last) run's own numbers — time, steps, files, commands, tokens, cost. */
+@Composable
+private fun RunRow(stats: com.ctodrs.saqrcode.agent.RunStats) {
+    val c = Saqr.colors
+    val shape = RoundedCornerShape(Radius.md)
+    Column(Modifier.fillMaxWidth().clip(shape).background(c.surface2).border(1.dp, c.border, shape).padding(Sp.md)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.usage_run), style = Saqr.type.label.copy(fontWeight = FontWeight.SemiBold), color = c.text1, modifier = Modifier.weight(1f))
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Text(stats.cost?.let { formatUsd(it) } ?: "—", style = Saqr.type.mono.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (stats.cost != null) c.accentText else c.text3)
+            }
+        }
+        Spacer(Modifier.height(2.dp))
+        val parts = ArrayList<String>()
+        if (stats.activeMs > 0) parts += formatDuration(stats.activeMs)
+        parts += stringResource(R.string.usage_run_parts, stats.steps.toString(), stats.files.toString(), stats.commands.toString())
+        parts += (if (stats.estimatedTokens) "~" else "") + formatTokens(stats.tokens) + " " + stringResource(R.string.usage_tokens_word)
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Text(parts.joinToString(" · "), style = Saqr.type.caption, color = c.text2)
         }
     }
 }

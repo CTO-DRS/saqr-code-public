@@ -125,6 +125,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     var showUsage by remember { mutableStateOf(false) }
     var confirmRestore by remember { mutableStateOf<Pair<Checkpoints.Point, Checkpoints.Plan>?>(null) }
     var budgetPending by remember { mutableStateOf<String?>(null) }
+    var budgetKind by remember { mutableStateOf(com.ctodrs.saqrcode.agent.Budget.Kind.MONTHLY) }
     var input by remember { mutableStateOf("") }
     val arabicUi = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "ar"
     val ctx = LocalContext.current
@@ -476,6 +477,8 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                             plannerTokens = plannerTotal.total, plannerCost = com.ctodrs.saqrcode.agent.PriceTable.cost(ws.agent.plannerUsage.toMap(), prices),
                             budget = settings.monthlyBudget,
                             monthSpent = com.ctodrs.saqrcode.agent.PriceTable.cost(month, prices) ?: 0.0,
+                            todaySpent = com.ctodrs.saqrcode.agent.PriceTable.cost(ws.agent.ledger.day(), prices) ?: 0.0,
+                            dailyBudget = settings.dailyBudget,
                             pendingImages = pendingImages.toList(), imageToCode = imageToCode,
                             voice = com.ctodrs.saqrcode.ui.chat.VoiceUi(voice.available || continuous.available, voice.listening || continuous.listening, voiceLang, if (voice.listening) voice.level else continuous.level),
                             speakingKey = speaker.speakingKey,
@@ -483,8 +486,11 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                         sendRef[0] = { text ->
                             if (voice.listening) voice.cancel()
                             val local = SlashCommands.parse(text, state.customCommands)?.command?.action == SlashCommand.Action.CLEAR
-                            if (!local && Budget.needsConfirmation(state.monthSpent, state.budget)) budgetPending = text
-                            else { if (!local) beforeFirstBackgroundRun(); submit(text) }
+                            if (!local) {
+                                val hit = Budget.confirmation(state.monthSpent, state.budget, state.todaySpent, state.dailyBudget)
+                                if (hit != null) { budgetKind = hit; budgetPending = text }
+                                else { beforeFirstBackgroundRun(); submit(text) }
+                            } else submit(text)
                             input = ""
                         }
                         Box(Modifier.imePadding()) {
@@ -593,9 +599,10 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
         version
         val summary = UsageSummary(
             ws.agent.sessionUsage.toMap(), ws.agent.ledger.day(), ws.agent.ledger.month(), settings.prices(), settings.monthlyBudget,
+            dailyBudget = settings.dailyBudget,
             review = ws.agent.reviewUsage.toMap(), planner = ws.agent.plannerUsage.toMap(),
         )
-        UsageSheet(summary, onDismiss = { showUsage = false })
+        UsageSheet(summary, onDismiss = { showUsage = false }, runStats = { ws.agent.currentRunStats() }, running = ws.agent.running)
     }
     confirmRestore?.let { (p, plan) ->
         RestoreConfirmDialog(p, plan, onDismiss = { confirmRestore = null }, onConfirm = {
@@ -619,14 +626,16 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
     }
     budgetPending?.let { text ->
         val c = Saqr.colors
-        val budget = settings.monthlyBudget ?: 0.0
-        val spent = com.ctodrs.saqrcode.agent.PriceTable.cost(ws.agent.ledger.month(), settings.prices()) ?: 0.0
+        val daily = budgetKind == com.ctodrs.saqrcode.agent.Budget.Kind.DAILY
+        val budget = (if (daily) settings.dailyBudget else settings.monthlyBudget) ?: 0.0
+        val spent = com.ctodrs.saqrcode.agent.PriceTable.cost(
+            if (daily) ws.agent.ledger.day() else ws.agent.ledger.month(), settings.prices()) ?: 0.0
         AlertDialog(
             onDismissRequest = { budgetPending = null; input = text },
             containerColor = c.surface1,
             icon = { SIcon(Lucide.TriangleAlert, size = 24.dp, tint = c.danger) },
-            title = { Text(stringResource(R.string.budget_confirm_title), style = Saqr.type.title2) },
-            text = { Text(stringResource(R.string.budget_confirm_body, com.ctodrs.saqrcode.ui.chat.ltr(formatUsd(spent)), com.ctodrs.saqrcode.ui.chat.ltr(formatUsd(budget))), style = Saqr.type.body) },
+            title = { Text(stringResource(if (daily) R.string.budget_daily_title else R.string.budget_confirm_title), style = Saqr.type.title2) },
+            text = { Text(stringResource(if (daily) R.string.budget_daily_body else R.string.budget_confirm_body, com.ctodrs.saqrcode.ui.chat.ltr(formatUsd(spent)), com.ctodrs.saqrcode.ui.chat.ltr(formatUsd(budget))), style = Saqr.type.body) },
             confirmButton = { TextButton(onClick = { budgetPending = null; beforeFirstBackgroundRun(); submit(text) }) { Text(stringResource(R.string.send_anyway), color = c.danger) } },
             dismissButton = { TextButton(onClick = { budgetPending = null; input = text }) { Text(stringResource(R.string.cancel), color = c.text2) } },
         )

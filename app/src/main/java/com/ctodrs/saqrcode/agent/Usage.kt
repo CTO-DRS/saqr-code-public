@@ -189,4 +189,17 @@ object Budget {
 
     /** Sending needs an explicit confirmation once the budget is used up. */
     fun needsConfirmation(spent: Double, budget: Double?) = level(spent, budget) == Level.OVER
+
+    /** Which budget a send would trip, if any. */
+    enum class Kind { MONTHLY, DAILY }
+
+    /**
+     * v0.1.15: the budget that blocks this send, or null when neither is used up.
+     * Monthly wins when both are over so the bigger picture is answered first.
+     */
+    fun confirmation(monthSpent: Double, monthBudget: Double?, todaySpent: Double, dayBudget: Double?): Kind? = when {
+        needsConfirmation(monthSpent, monthBudget) -> Kind.MONTHLY
+        needsConfirmation(todaySpent, dayBudget) -> Kind.DAILY
+        else -> null
+    }
 }

@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.15] — 2026-11-27 — Per-task cost + daily spend cap · تكلفة المهمة وحد يومي
+
+- **This task, priced:** the Usage sheet gains a live “This task” row — active time, steps, files touched, commands, tokens and estimated cost — refreshing every two seconds while the agent works, kept after the run ends.
+- **Daily budget:** Settings → Usage &amp; budget gains a daily cap on top of the monthly one. Same rules: a warning banner at 80%, an explicit confirm before sending at 100%. The banner shows whichever cap is closer to its limit, and the confirmation dialog names the budget it tripped (monthly wins when both are over).
+- **Usage sheet** shows a second progress bar for the daily cap next to the monthly one. EN + AR, RTL, western digits.
+- **Tests:** `V0116BudgetDailyTest`: daily thresholds, the confirmation matrix (daily-only, monthly-only, both, neither), banner fractions, zeroed run stats.
+- versionName 0.1.15, versionCode 54.
+
 ## [0.1.14] — 2026-11-27 — Compare two model answers · قارن النماذج
 
 - **/compare «قارن»:** type /compare (or /قارن) followed by a question and two models answer it side by side — the current model against any other configured provider, switchable in the dialog. Plain completions, no tools, no file changes.

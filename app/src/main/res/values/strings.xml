@@ -312,12 +312,22 @@
     <string name="budget_over">Monthly budget reached (%1$s of %2$s). Sending asks for confirmation.</string>
     <string name="budget_confirm_title">Monthly budget reached</string>
     <string name="budget_confirm_body">You’ve spent %1$s of your %2$s monthly budget. Send anyway?</string>
+    <string name="budget_warn_daily">You’ve used %1$s of your daily budget (%2$s of %3$s).</string>
+    <string name="budget_over_daily">Daily budget reached (%1$s of %2$s). Sending asks for confirmation.</string>
+    <string name="budget_daily_title">Daily budget reached</string>
+    <string name="budget_daily_body">You’ve spent %1$s of your %2$s daily budget. Send anyway?</string>
     <string name="send_anyway">Send anyway</string>
     <string name="usage_section">Usage &amp; budget</string>
     <string name="falcon_savings">Saved by the router (this month)</string>
     <string name="falcon_savings_desc">Routed calls cost %1$s instead of %2$s on the coder’s model</string>
     <string name="monthly_budget">Monthly budget (USD)</string>
     <string name="monthly_budget_desc" formatted="false">Warns at 80%, asks before sending at 100%. Leave empty for no budget.</string>
+    <string name="daily_budget">Daily budget (USD)</string>
+    <string name="daily_budget_desc" formatted="false">Same rules per day, on top of the monthly cap. Leave empty for no daily budget.</string>
+    <string name="usage_run">This task</string>
+    <string name="usage_run_parts" formatted="false">%1$s steps · %2$s files · %3$s commands</string>
+    <string name="usage_tokens_word">tokens</string>
+    <string name="usage_budget_daily">Daily budget: %1$s of %2$s</string>
     <string name="prices_title">Prices (USD per 1M tokens)</string>
     <string name="prices_desc">Unknown models count tokens only. Set a price to 0 to hide its cost.</string>
     <string name="price_model">Model</string>

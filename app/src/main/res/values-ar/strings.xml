@@ -312,12 +312,22 @@
     <string name="budget_over">بلغت ميزانيتك الشهرية (%1$s من %2$s). سيُطلب تأكيد قبل الإرسال.</string>
     <string name="budget_confirm_title">بلغت الميزانية الشهرية</string>
     <string name="budget_confirm_body">أنفقت %1$s من ميزانيتك الشهرية البالغة %2$s. هل تريد الإرسال على أي حال؟</string>
+    <string name="budget_warn_daily">استهلكت %1$s من ميزانيتك اليومية (%2$s من %3$s).</string>
+    <string name="budget_over_daily">بلغت ميزانيتك اليومية (%1$s من %2$s). سيُطلب تأكيد قبل الإرسال.</string>
+    <string name="budget_daily_title">بلغت الميزانية اليومية</string>
+    <string name="budget_daily_body">أنفقت %1$s من ميزانيتك اليومية البالغة %2$s. هل تريد الإرسال على أي حال؟</string>
     <string name="send_anyway">أرسل على أي حال</string>
     <string name="usage_section">الاستهلاك والميزانية</string>
     <string name="falcon_savings">وفّره الموجّه (هذا الشهر)</string>
     <string name="falcon_savings_desc">كلفت النداءات الموجَّهة %1$s بدلاً من %2$s على نموذج المبرمج</string>
     <string name="monthly_budget">الميزانية الشهرية (دولار)</string>
     <string name="monthly_budget_desc" formatted="false">تنبيه عند 80٪، وتأكيد قبل الإرسال عند 100٪. اتركها فارغة لإلغاء الميزانية.</string>
+    <string name="daily_budget">الميزانية اليومية (دولار)</string>
+    <string name="daily_budget_desc" formatted="false">نفس القواعد لكل يوم، فوق الحد الشهري. اتركها فارغة لإلغاء الميزانية اليومية.</string>
+    <string name="usage_run">هذه المهمة</string>
+    <string name="usage_run_parts" formatted="false">%1$s خطوة · %2$s ملف · %3$s أمر</string>
+    <string name="usage_tokens_word">رمزًا</string>
+    <string name="usage_budget_daily">الميزانية اليومية: %1$s من %2$s</string>
     <string name="prices_title">الأسعار (دولار لكل مليون رمز)</string>
     <string name="prices_desc">النماذج غير المعروفة تُحتسب بالرموز فقط. ضع السعر 0 لإخفاء تكلفته.</string>
     <string name="price_model">النموذج</string>

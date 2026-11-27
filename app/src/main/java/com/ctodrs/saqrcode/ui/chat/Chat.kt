@@ -134,6 +134,9 @@ class ChatUiState(
     val plannerCost: Double? = null,
     val budget: Double? = null,
     val monthSpent: Double = 0.0,
+    /** v0.1.15: today's spend and the optional daily cap. */
+    val todaySpent: Double = 0.0,
+    val dailyBudget: Double? = null,
     /** Images attached in the composer, not sent yet. */
     val pendingImages: List<com.ctodrs.saqrcode.agent.ImagePart> = emptyList(),
     /** The pending images go out as an "Image → Code" request. */
@@ -144,6 +147,7 @@ class ChatUiState(
     val speakingKey: Long = -1L,
 ) {
     val budgetLevel get() = Budget.level(monthSpent, budget)
+    val dailyBudgetLevel get() = Budget.level(todaySpent, dailyBudget)
 }
 
 @Composable
@@ -237,7 +241,8 @@ fun ChatContent(
         }
         if (shown.isNotEmpty() || state.sessionTokens > 0) StepMeter(state, onMeter)
         if (state.voice.listening) ListeningBar(state.voice)
-        if (state.budgetLevel == Budget.Level.WARN || state.budgetLevel == Budget.Level.OVER) BudgetBanner(state, onMeter)
+        if (state.budgetLevel == Budget.Level.WARN || state.budgetLevel == Budget.Level.OVER ||
+            state.dailyBudgetLevel == Budget.Level.WARN || state.dailyBudgetLevel == Budget.Level.OVER) BudgetBanner(state, onMeter)
         // v0.13.5 desert mode: the composer names the state before the user wonders why a send does nothing.
         if (com.ctodrs.saqrcode.agent.DesertState.active) DesertBanner()
         val slash = remember(input, state.customCommands) { SlashCommands.suggestions(input, state.customCommands) }
@@ -941,13 +946,24 @@ private fun DesertBanner() {
 @Composable
 private fun BudgetBanner(state: ChatUiState, onClick: () -> Unit) {
     val c = Saqr.colors
-    val over = state.budgetLevel == Budget.Level.OVER
+    // v0.1.15: whichever cap is closer to its limit (or over it) shows
+    val daily = state.dailyBudgetLevel
+    val monthly = state.budgetLevel
+    val showDaily = daily.ordinal > monthly.ordinal || (daily == monthly && daily != Budget.Level.NONE &&
+        Budget.fraction(state.todaySpent, state.dailyBudget) > Budget.fraction(state.monthSpent, state.budget))
+    val level = if (showDaily) daily else monthly
+    val over = level == Budget.Level.OVER
     val fg = if (over) c.danger else c.warning
     val shape = RoundedCornerShape(Radius.md)
-    val budget = state.budget ?: return
-    val pct = ltr((state.monthSpent / budget * 100).toInt().toString() + "%")
-    val text = if (over) stringResource(R.string.budget_over, ltr(formatUsd(state.monthSpent)), ltr(formatUsd(budget)))
-        else stringResource(R.string.budget_warn, pct, ltr(formatUsd(state.monthSpent)), ltr(formatUsd(budget)))
+    val spent = if (showDaily) state.todaySpent else state.monthSpent
+    val budget = (if (showDaily) state.dailyBudget else state.budget) ?: return
+    val pct = ltr((spent / budget * 100).toInt().toString() + "%")
+    val text = when {
+        over && showDaily -> stringResource(R.string.budget_over_daily, ltr(formatUsd(spent)), ltr(formatUsd(budget)))
+        over -> stringResource(R.string.budget_over, ltr(formatUsd(spent)), ltr(formatUsd(budget)))
+        showDaily -> stringResource(R.string.budget_warn_daily, pct, ltr(formatUsd(spent)), ltr(formatUsd(budget)))
+        else -> stringResource(R.string.budget_warn, pct, ltr(formatUsd(spent)), ltr(formatUsd(budget)))
+    }
     Row(
         Modifier.fillMaxWidth().padding(horizontal = Sp.md, vertical = Sp.xs).clip(shape)
             .background(if (over) c.danger.copy(alpha = if (c.isDark) 0.10f else 0.07f) else c.warningBg)

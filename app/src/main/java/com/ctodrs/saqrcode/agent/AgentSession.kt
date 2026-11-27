@@ -614,6 +614,9 @@ class AgentSession(
         return RunStats(activeMs(), runSteps, turnTouched.size, runCommands, u.total, u.estimated, runCost())
     }
 
+    /** v0.1.15: live stats of the current (or last finished) run, for the usage sheet's per-task row. */
+    fun currentRunStats(): RunStats = runStats()
+
     /** Priced spend of this run (earlier segments included); null when no price is known. */
     private fun runCost(): Double? {
         val now: Double? = if (turnUsage.isEmpty()) 0.0 else PriceTable.cost(turnUsage.toMap(), settings.prices())

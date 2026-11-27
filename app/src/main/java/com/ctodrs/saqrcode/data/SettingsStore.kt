@@ -529,6 +529,11 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getString("monthly_budget_usd", null)?.toDoubleOrNull()?.takeIf { it > 0.0 }
         set(v) { prefs.edit().putString("monthly_budget_usd", v?.takeIf { it > 0.0 }?.toString()).apply(); bump() }
 
+    /** v0.1.15: optional daily budget in USD; null = no daily cap. */
+    var dailyBudget: Double?
+        get() = prefs.getString("daily_budget_usd", null)?.toDoubleOrNull()?.takeIf { it > 0.0 }
+        set(v) { prefs.edit().putString("daily_budget_usd", v?.takeIf { it > 0.0 }?.toString()).apply(); bump() }
+
     /** Per-model vision overrides ("on" / "off"); models without one use [com.ctodrs.saqrcode.agent.Vision.heuristic]. */
     var visionOverrides: Map<String, String>
         get() = com.ctodrs.saqrcode.agent.Vision.decode(prefs.getString("vision_overrides", null))

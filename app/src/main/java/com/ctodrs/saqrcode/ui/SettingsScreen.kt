@@ -118,6 +118,8 @@ class SettingsUi(
     val onDeleteCommand: (String) -> Unit = {},
     val monthlyBudget: Double? = null,
     val onBudget: (Double?) -> Unit = {},
+    val dailyBudget: Double? = null,
+    val onDailyBudget: (Double?) -> Unit = {},
     val prices: List<ModelPrice> = PriceTable.seeds,
     val onPrice: (ModelPrice) -> Unit = {},
     /** Active model and its vision setting (Vision.AUTO / ON / OFF). */
@@ -263,6 +265,8 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
         onDeleteCommand = { n -> settings.customCommands = settings.customCommands.filter { it.name != n } },
         monthlyBudget = settings.monthlyBudget,
         onBudget = { settings.monthlyBudget = it },
+        dailyBudget = settings.dailyBudget,
+        onDailyBudget = { settings.dailyBudget = it },
         prices = settings.prices(),
         onPrice = { settings.setPrice(it) },
         activeModel = settings.config(settings.activeProvider).model,
@@ -1385,6 +1389,17 @@ private fun BudgetEditor(ui: SettingsUi) {
             GhostButton(stringResource(R.string.save), { ui.onBudget(text.toDoubleOrNull()?.takeIf { it > 0 }); status = savedText }, icon = Lucide.Save)
         }
         status?.let { Text(it, style = Saqr.type.caption, color = c.text2) }
+
+        Spacer(Modifier.height(Sp.md))
+        var dayText by remember(ui.dailyBudget) { mutableStateOf(ui.dailyBudget?.let { fmtNum(it) } ?: "") }
+        LabeledIcon(Lucide.Sun, stringResource(R.string.daily_budget))
+        Text(stringResource(R.string.daily_budget_desc), style = Saqr.type.caption, color = c.text2)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SaqrField(dayText, { dayText = it.filter { ch -> ch.isDigit() || ch == '.' }; status = null }, Modifier.weight(1f), placeholder = "2", mono = true,
+                keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+            Spacer(Modifier.width(Sp.sm))
+            GhostButton(stringResource(R.string.save), { ui.onDailyBudget(dayText.toDoubleOrNull()?.takeIf { it > 0 }); status = savedText }, icon = Lucide.Save)
+        }
     }
 }
 
