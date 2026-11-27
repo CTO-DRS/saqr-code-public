@@ -38,6 +38,9 @@ object ErrorExplainer {
             http == 402 -> Kind.QUOTA
             http != null && http in 500..599 -> Kind.SERVER
             m.contains("insufficient_quota") || m.contains("exceeded your current quota") -> Kind.QUOTA
+            // Mid-stream provider errors arrive without an HTTP prefix ("overloaded_error", "rate_limit_error").
+            m.contains("rate_limit") || m.contains("rate limit") -> Kind.RATE_LIMIT
+            m.contains("overloaded") || m.contains("temporarily unavailable") || m.contains("server_error") -> Kind.SERVER
             m.contains("timeout") || m.contains("timed out") -> Kind.TIMEOUT
             m.contains("unable to resolve host") || m.contains("failed to connect") -> Kind.OFFLINE
             e is IOException && m.contains("connection") -> Kind.OFFLINE
