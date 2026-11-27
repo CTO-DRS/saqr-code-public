@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.19] — 2026-11-27 — Readable light theme · الثيم الفاتح أوضح
+
+- **Contrast fix (accessibility):** an audit of all three built-in themes found two pairs under WCAG AA in the light theme: gold link/label text on the background (4.3:1) and tertiary text (3.0:1). Both are slightly darker now (4.8:1 and 3.8:1). Dark and night themes already passed.
+- **Tests:** `V0122ThemeContrastTest` locks AA for every built-in theme (reading text 4.5:1 on all surfaces, accent text and button labels 4.5:1, status colors and tertiary text 3:1); `V0120StoreResilienceTest` covers the session store against corrupt index, truncated files and orphan entries.
+- versionName 0.1.19, versionCode 58.
+
 ## [0.1.18] — 2026-11-27 — Errors that explain themselves · أخطاء تشرح نفسها
 
 - **Plain-words failures:** when a turn fails (no internet, timeout, wrong API key, rate limit, out of quota, provider outage, TLS), the error card now says what happened and what to do, in the app language, with the raw detail kept underneath. Unknown errors still show the raw text.
