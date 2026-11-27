@@ -347,6 +347,9 @@
     <string name="slash_err_duplicate">يوجد أمر بهذا الاسم.</string>
     <string name="slash_err_template">لا يمكن أن يكون الطلب فارغًا.</string>
     <string name="slash_fix">إصلاح أخطاء الملف الحالي</string>
+    <string name="slash_learn">علّمني الملف أو المحدد سطرًا بسطر</string>
+    <string name="learning_mode">وضع التعلّم</string>
+    <string name="learning_mode_desc">بعد كل تعديل يشرح صقر الكود سطرًا بسطر: ماذا يفعل كل سطر ولماذا. أوقفه للعمل السريع</string>
     <string name="slash_explain">شرح الملف الحالي أو التحديد</string>
     <string name="slash_test">كتابة اختبارات وحدة للملف الحالي</string>
     <string name="slash_review">مراجعة التغييرات غير المودعة</string>

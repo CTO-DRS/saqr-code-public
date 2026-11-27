@@ -125,6 +125,11 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getBoolean("parallel_tools", true)
         set(v) { prefs.edit().putBoolean("parallel_tools", v).apply(); bump() }
 
+    /** v0.1.17: learning mode: the agent explains every change line by line. */
+    var learningMode: Boolean
+        get() = prefs.getBoolean("learning_mode", false)
+        set(v) { prefs.edit().putBoolean("learning_mode", v).apply(); bump() }
+
     /** v0.15: HIGH-risk terminal commands (rm -r, curl|sh, writes outside /workspace…) wait for the user's yes. */
     var confirmRiskyCommands: Boolean
         get() = prefs.getBoolean("confirm_risky_commands", true)

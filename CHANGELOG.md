@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.17] — 2026-11-27 — Learning mode (Arabic, line by line) · وضع التعلّم
+
+- **Learning mode:** a switch in Settings → Autonomy. When on, every change Saqr makes ends with a line-by-line walkthrough: what each line does and why, one concept per bullet, new terms defined once, a two-line summary and a small exercise. Explanations are in Arabic when the app is Arabic; code stays in English. The work itself (tools, edits, verification) is unchanged.
+- **/learn «علمني»:** teaches the current file or selection line by line, read-only.
+- EN + AR strings, RTL.
+- **Tests:** `V0118LearningModeTest`: the section appears only when on, language flag, work-unchanged wording, /learn and /علمني parse and stay read-only.
+- versionName 0.1.17, versionCode 56.
+
 ## [0.1.16] — 2026-11-27 — Live preview · معاينة حية
 
 - **Auto-refresh:** the preview pane now reloads itself (debounced) whenever the workspace changes — agent edits, git operations — so the page on screen is always the current code. A toolbar toggle turns live refresh on or off; it defaults on.

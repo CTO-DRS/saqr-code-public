@@ -44,6 +44,8 @@ import com.ctodrs.saqrcode.ui.theme.Sp
 class AutonomyUi(
     val parallelTools: Boolean = true,
     val onParallelTools: (Boolean) -> Unit = {},
+    val learningMode: Boolean = false,
+    val onLearningMode: (Boolean) -> Unit = {},
     val confirmRiskyCommands: Boolean = true,
     val onConfirmRiskyCommands: (Boolean) -> Unit = {},
     val smartLoopGuard: Boolean = true,
@@ -79,6 +81,7 @@ class AutonomyUi(
                 }
             return AutonomyUi(
                 parallelTools = settings.parallelTools, onParallelTools = { settings.parallelTools = it },
+                learningMode = settings.learningMode, onLearningMode = { settings.learningMode = it },
                 confirmRiskyCommands = settings.confirmRiskyCommands, onConfirmRiskyCommands = { settings.confirmRiskyCommands = it },
                 smartLoopGuard = settings.smartLoopGuard, onSmartLoopGuard = { settings.smartLoopGuard = it },
                 verifyBeforeDone = settings.verifyBeforeDone, onVerifyBeforeDone = { settings.verifyBeforeDone = it },
@@ -101,6 +104,9 @@ internal fun AutonomySection(ui: AutonomyUi, teamMode: Boolean) {
         Column {
             ListRow(stringResource(R.string.parallel_tools), stringResource(R.string.parallel_tools_desc), icon = Lucide.Layers,
                 trailing = { SaqrSwitch(ui.parallelTools, ui.onParallelTools) })
+            RowDivider()
+            ListRow(stringResource(R.string.learning_mode), stringResource(R.string.learning_mode_desc), icon = Lucide.BookMarked,
+                trailing = { SaqrSwitch(ui.learningMode, ui.onLearningMode) })
             RowDivider()
             ListRow(stringResource(R.string.confirm_risky_commands), stringResource(R.string.confirm_risky_commands_desc), icon = Lucide.ShieldCheck,
                 trailing = { SaqrSwitch(ui.confirmRiskyCommands, ui.onConfirmRiskyCommands) })

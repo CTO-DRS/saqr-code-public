@@ -347,6 +347,9 @@
     <string name="slash_err_duplicate">A command with that name already exists.</string>
     <string name="slash_err_template">The prompt can’t be empty.</string>
     <string name="slash_fix">Fix errors in the current file</string>
+    <string name="slash_learn">Teach me the current file or selection, line by line</string>
+    <string name="learning_mode">Learning mode</string>
+    <string name="learning_mode_desc">After every change Saqr explains the code line by line: what each line does and why. Turn it off for quick work</string>
     <string name="slash_explain">Explain the current file or selection</string>
     <string name="slash_test">Write unit tests for the current file</string>
     <string name="slash_review">Review the uncommitted changes</string>

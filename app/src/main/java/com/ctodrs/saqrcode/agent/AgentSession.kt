@@ -848,7 +848,7 @@ class AgentSession(
             val sys = withContext(Dispatchers.IO) {
                 SystemPrompt.build(projectDir, touched, linux.ready, team, mcpSpecs.map { it.name },
                     memory = memoryBlock(), untrusted = settings.untrustedMarking, riskyApproval = settings.confirmRiskyCommands,
-                    skills = skillSection(null))
+                    skills = skillSection(null), learning = settings.learningMode)
             }
             val inputChars = sys.length + history.sumOf { size(it) }
             contextTokens = (inputChars / 3.6).toInt()
@@ -1809,7 +1809,7 @@ class AgentSession(
                 val sys = withContext(Dispatchers.IO) {
                     SystemPrompt.build(projectDir, touched, linux.ready, false, roleMcp.map { it.name },
                         memory = memoryBlock(context), untrusted = settings.untrustedMarking, riskyApproval = settings.confirmRiskyCommands,
-                        skills = skillSection(role)) +
+                        skills = skillSection(role), learning = settings.learningMode) +
                         AgentRoles.systemSection(role, arabic)
                 }
                 val inputChars = sys.length + history.sumOf { size(it) }
@@ -2189,6 +2189,9 @@ object SystemPrompt {
         riskyApproval: Boolean = false,
         /** v0.18: the installed-skills section ([com.ctodrs.saqrcode.agent.skills.SkillRuntime.section]); empty = none. */
         skills: String = "",
+        /** v0.1.17: learning mode adds the line-by-line teaching section. */
+        learning: Boolean = false,
+        learningArabic: Boolean = true,
     ): String {
         val rules = ProjectRules.collect(projectDir, touched).takeIf { it.isNotBlank() }
         return buildString {
@@ -2246,6 +2249,10 @@ You operate on the user's project through tools. The project root is the current
                 appendLine()
                 appendLine("# FILES CREATED / MODIFIED IN THIS SESSION")
                 touched.forEach { appendLine("- $it") }
+            }
+            if (learning) {
+                appendLine()
+                appendLine(LearningMode.section(learningArabic))
             }
             if (rules != null) {
                 appendLine()

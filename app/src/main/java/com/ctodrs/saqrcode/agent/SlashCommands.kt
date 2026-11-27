@@ -46,6 +46,7 @@ object SlashCommands {
     const val SECURE = "secure"
     const val DEBUG = "debug"
     const val COMPARE = "compare"
+    const val LEARN = "learn"
 
     private const val MAX_SELECTION = 6000
 
@@ -54,6 +55,8 @@ object SlashCommands {
             listOf("اصلح"), builtin = true),
         SlashCommand(EXPLAIN, "Explain {target} {lang}. Cover what it does, how the main parts fit together, and anything non-obvious or risky. Read the code first. Do not modify any files.{args}",
             listOf("اشرح"), builtin = true),
+        SlashCommand(LEARN, "Teach me {target} {lang}. ${LearningMode.LESSON} Read the code first. Do not modify any files.{args}",
+            listOf("علمني"), builtin = true),
         SlashCommand(TEST, "Write unit tests for {file}. Use the project's existing test framework and conventions (or the standard one for the language if there is none), cover normal and edge cases, put the tests where the project keeps them, then run them and fix any failures.{args}",
             listOf("اختبر"), builtin = true),
         SlashCommand(REVIEW, "Review the current uncommitted changes. Call git_status and git_diff first, then give a concise code review: bugs, risks, missing tests and style issues, ordered by severity, with file:line references. Do not modify any files.{args}",

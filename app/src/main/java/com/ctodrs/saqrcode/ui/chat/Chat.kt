@@ -1011,6 +1011,7 @@ private fun SlashPopup(commands: List<SlashCommand>, onPick: (SlashCommand) -> U
 fun slashDescription(cmd: SlashCommand): String = if (!cmd.builtin) cmd.template.lineSequence().first().take(80) else stringResource(when (cmd.name) {
     SlashCommands.FIX -> R.string.slash_fix
     SlashCommands.EXPLAIN -> R.string.slash_explain
+    SlashCommands.LEARN -> R.string.slash_learn
     SlashCommands.TEST -> R.string.slash_test
     SlashCommands.REVIEW -> R.string.slash_review
     SlashCommands.PLAN -> R.string.slash_plan
