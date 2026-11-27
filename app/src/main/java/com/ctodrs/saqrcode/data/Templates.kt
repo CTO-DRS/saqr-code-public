@@ -32,8 +32,8 @@ object TemplateFiles {
             "app/build.gradle.kts" to fill(COMPOSE_APP, name),
             "app/src/main/AndroidManifest.xml" to COMPOSE_MANIFEST,
             "app/src/main/java/com/saqr/" + pkg(name) + "/MainActivity.kt" to fill(COMPOSE_MAIN, name),
-            "app/src/main/res/values/strings.xml" to COMPOSE_STRINGS_EN,
-            "app/src/main/res/values-ar/strings.xml" to COMPOSE_STRINGS_AR,
+            "app/src/main/res/values/strings.xml" to fill(COMPOSE_STRINGS_EN, name),
+            "app/src/main/res/values-ar/strings.xml" to fill(COMPOSE_STRINGS_AR, name),
             "app/src/main/res/values/themes.xml" to COMPOSE_THEMES,
         )
         return m
@@ -211,7 +211,7 @@ fun MainScreen() {
             "build.gradle.kts" to LITE_ROOT,
             "gradle.properties" to LITE_GRADLE_PROPS,
             "app/build.gradle.kts" to fill(LITE_APP, name),
-            "app/src/main/AndroidManifest.xml" to LITE_MANIFEST,
+            "app/src/main/AndroidManifest.xml" to fill(LITE_MANIFEST, name),
             "app/src/main/java/com/saqr/" + pkg(name) + "/MainActivity.kt" to LITE_MAIN,
             "app/src/main/assets/index.html" to fill(LITE_PAGE, name),
         )
@@ -352,8 +352,8 @@ class MainActivity : Activity() {
             "app/src/main/java/com/saqr/" + pkg(name) + "/ArabicImeService.kt" to fill(IME_SERVICE, name),
             "app/src/main/res/xml/method.xml" to IME_METHOD,
             "app/src/main/res/xml/arabic_keyboard.xml" to IME_KEYBOARD,
-            "app/src/main/res/values/strings.xml" to IME_STRINGS_EN,
-            "app/src/main/res/values-ar/strings.xml" to IME_STRINGS_AR,
+            "app/src/main/res/values/strings.xml" to fill(IME_STRINGS_EN, name),
+            "app/src/main/res/values-ar/strings.xml" to fill(IME_STRINGS_AR, name),
         )
         return m
     }
