@@ -18,3 +18,6 @@ fun errorExplanationRes(kind: ErrorExplainer.Kind): Int? = when (kind) {
     ErrorExplainer.Kind.TLS -> R.string.err_tls
     ErrorExplainer.Kind.OTHER -> null
 }
+
+/** A line to show for a failure: its message, or the error type when the message is null or blank. Never empty. */
+fun errorLine(e: Throwable): String = e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName

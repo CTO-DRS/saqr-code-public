@@ -261,7 +261,7 @@ private fun GitHubCard(ui: AccountsUi) {
                 if (busy || token.isBlank()) return@PrimaryButton
                 busy = true; error = null
                 scope.launch {
-                    ui.verifyGithub(token).onSuccess { token = "" }.onFailure { error = it.message ?: it.toString() }
+                    ui.verifyGithub(token).onSuccess { token = "" }.onFailure { error = errorLine(it) }
                     busy = false
                 }
             }, icon = Lucide.KeyRound, enabled = !busy && token.isNotBlank())
@@ -311,7 +311,7 @@ private fun DeviceFlowCard(ui: AccountsUi) {
                                 is com.ctodrs.saqrcode.git.GitHubDeviceFlow.Poll.Token -> {
                                     val r = ui.verifyDevice(p.accessToken)
                                     withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                        r.onFailure { error = it.message ?: it.toString() }
+                                        r.onFailure { error = errorLine(it) }
                                         code = null
                                         busy = false
                                     }
@@ -326,7 +326,7 @@ private fun DeviceFlowCard(ui: AccountsUi) {
                             }
                         }
                     } catch (e: Exception) {
-                        withContext(kotlinx.coroutines.Dispatchers.Main) { error = e.message ?: e.toString(); code = null; busy = false }
+                        withContext(kotlinx.coroutines.Dispatchers.Main) { error = errorLine(e); code = null; busy = false }
                     }
                 }
             }, icon = Lucide.Smartphone, enabled = !busy && clientId.isNotBlank())

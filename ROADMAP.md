@@ -120,6 +120,13 @@ Audit basis: ErrorExplainer and LlmRetry only understood errors that carry an HT
 
 ---
 
+### الموجة ل · لا فشل صامت / Wave L: no silent failures (autonomous, from the 0.1.62 audit)
+Audit basis: grep of every user-visible `message` use in ui/. Only null-message failures were silent (project create, GitHub sign-in); provider and Accounts paths already redact.
+1. **(0.1.62, shipped) `errorLine` helper** used by project create, sign-in and device flow.
+2. **(next) IDE model duel and build pane:** confirm the duel side error and build failures also use `errorLine` and never show a blank card.
+
+---
+
 ## 1 · الرؤية والمبادئ الحاكمة
 
 صقر كود ليس «تطبيق محادثة مع ذكاء اصطناعي»؛ هو **استوديو برمجة متنقل كامل**: وكيل يخطط ويبرمج ويراجع، يبني APK موقّعًا على الجهاز، ينشر على المستودعات، ويحترم مفاتيح المستخدم وبياناته. هذه الخارطة — مرسومة من جديد بالكامل — تجعله خلال أربعة إصدارات **أجمل مظهرًا، أعمق ذكاءً، أوسع تكاملًا، ومتجرًا حقيقيًا على Play**.
