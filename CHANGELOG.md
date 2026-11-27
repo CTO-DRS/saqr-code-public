@@ -2,7 +2,7 @@
 
 ## [0.1.48] — 2026-11-27 — Template checks · فحص القوالب
 
-- **Fixed a real bug the new tests found:** new Compose, keyboard and lite-web projects had the literal text `@@NAME@@` as the app name in their strings and manifest. The project name is now filled in.
+- **Fixed a real bug the new tests found:** new Compose, keyboard and lite-web projects had the literal text `@@NAME@@` as the app name in their strings, manifest and Gradle settings. The project name is now filled in.
 - **Web template now includes a README**, like the other starters.
 - **Template integrity tests:** every starter (web, Python, Node, Compose, keyboard, lite web, empty) is checked for a README, agent rules, its entry file, no empty files, no leftover placeholders and safe paths, for Latin, Arabic and digit-first project names.
 - versionName 0.1.48, versionCode 87.
