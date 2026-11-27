@@ -1366,10 +1366,10 @@ private fun ProviderItem(def: ProviderDef, cfg: ProviderConfig, active: Boolean,
                         status = "…"
                         scope.launch {
                             status = ui.fetchModels(def, baseUrl, model, key.ifBlank { null })
-                                .fold({ models = it.ifEmpty { def.suggestedModels }; modelsFmt.format(it.size.toString()) }, { e ->
+                                .fold({ list: List<String> -> models = list.ifEmpty { def.suggestedModels }; modelsFmt.format(list.size.toString()) }, { e: Throwable ->
                                     // Say why in plain words (key rejected, offline, rate limit); never a blank line.
-                                    val why = errorExplanationRes(com.ctodrs.saqrcode.agent.ErrorExplainer.classify(e))?.let { fetchCtx.getString(it) }
-                                    why ?: e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName
+                                    val why: String? = errorExplanationRes(com.ctodrs.saqrcode.agent.ErrorExplainer.classify(e))?.let { resId -> fetchCtx.getString(resId) }
+                                    why ?: e.message?.takeIf { m -> m.isNotBlank() } ?: e.javaClass.simpleName
                                 })
                         }
                     }, icon = Lucide.RefreshCw)
