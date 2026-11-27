@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.23] — 2026-11-27 — Sentinel: morning digest · الحارس: ملخص الصباح
+
+- **Morning digest (off by default):** Settings → Autonomy → "Morning digest". Every day at 08:00 local time Saqr posts one short notification: which projects have uncommitted changes (busiest first) and yesterday's model spend, with this month against your budget. It is computed on the phone, makes no network call, and stays silent when there is nothing to report.
+- Uses an inexact alarm (no special permission), re-armed after a reboot and when you flip the switch.
+- EN + AR, western digits.
+- **Tests:** `V0126SentinelTest` (6): next-fire before/after 08:00 and across month end, silence when empty, English and Arabic wording, spend-only digest.
+- versionName 0.1.23, versionCode 62.
+
 ## [0.1.22] — 2026-11-27 — Merge-conflict resolver · حلّ التعارضات
 
 - **Resolve conflicts on the phone:** tapping a conflicted file in Git (ديوان) now opens a resolver. Each conflict hunk shows your side and the incoming side, with Mine / Theirs / Both per hunk and "All mine" / "All theirs" shortcuts. "Resolve and stage" writes the file and stages it, so you can commit the merge. diff3 base sections are understood; unterminated markers are left untouched.

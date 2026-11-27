@@ -82,6 +82,7 @@ object Lucide {
     val ArrowDown: ImageVector by lazy { stroked("arrow-down", false, "M12 5v14", "m19 12-7 7-7-7") }
     val ArrowUpDown: ImageVector by lazy { stroked("arrow-up-down", false, "m21 16-4 4-4-4", "M17 20V4", "m3 8 4-4 4 4", "M7 4v16") }
     val ArrowUpFromLine: ImageVector by lazy { stroked("arrow-up-from-line", true, "m18 9-6-6-6 6", "M12 3v14", "M5 21h14") }
+    val Bell: ImageVector by lazy { stroked("bell", false, "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9", "M10.3 21a1.94 1.94 0 0 0 3.4 0") }
     val BookMarked: ImageVector by lazy { stroked("book-marked", false, "M10 2v8l3-3 3 3V2", "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20") }
     val CheckCheck: ImageVector by lazy { stroked("check-check", false, "M18 6 7 17l-5-5", "m22 10-7.5 7.5L13 16") }
     val ChevronsUpDown: ImageVector by lazy { stroked("chevrons-up-down", false, "m7 15 5 5 5-5", "m7 9 5-5 5 5") }

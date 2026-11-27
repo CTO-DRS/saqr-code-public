@@ -125,6 +125,11 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getBoolean("parallel_tools", true)
         set(v) { prefs.edit().putBoolean("parallel_tools", v).apply(); bump() }
 
+    /** v0.1.22 Sentinel: a daily 08:00 local digest notification (uncommitted work and spend). Off by default. */
+    var sentinelDigest: Boolean
+        get() = prefs.getBoolean("sentinel_digest", false)
+        set(v) { prefs.edit().putBoolean("sentinel_digest", v).apply(); bump() }
+
     /** v0.1.17: learning mode: the agent explains every change line by line. */
     var learningMode: Boolean
         get() = prefs.getBoolean("learning_mode", false)

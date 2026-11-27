@@ -1192,4 +1192,6 @@
     <string name="conflict_theirs">نسختهم</string>
     <string name="conflict_both">الاثنتين</string>
     <string name="conflict_apply">حلّ وجهّز</string>
+    <string name="sentinel_digest">ملخص الصباح</string>
+    <string name="sentinel_digest_desc">كل صباح الساعة 8:00 إشعار قصير: المشاريع اللي فيها شغل غير محفوظ وصرف النماذج أمس. يُحسب على جوالك ويُتجاوز إذا ما فيه شي يستاهل</string>
 </resources>

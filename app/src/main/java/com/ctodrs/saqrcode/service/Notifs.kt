@@ -133,6 +133,22 @@ object Notifs {
         runCatching { NotificationManagerCompat.from(ctx).notify(ID_RESUME, n) }
     }
 
+    private const val ID_DIGEST = 4103
+
+    /** v0.1.22: the Sentinel morning digest. */
+    fun digest(ctx: Context, title: String, body: String, lang: String) {
+        if (!canPost(ctx)) return
+        ensureChannels(ctx, lang)
+        val n = NotificationCompat.Builder(ctx, CH_DONE)
+            .setSmallIcon(R.drawable.ic_stat_saqr).setColor(GOLD)
+            .setContentTitle(title).setContentText(body.lineSequence().first())
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setAutoCancel(true)
+            .setContentIntent(openIntent(ctx, null, req = 7))
+            .build()
+        runCatching { NotificationManagerCompat.from(ctx).notify(ID_DIGEST, n) }
+    }
+
     fun cancelResumeOffer(ctx: Context) = NotificationManagerCompat.from(ctx).cancel(ID_RESUME)
 
     // ---- v0.13.4: hands-free dictation

@@ -1192,4 +1192,6 @@
     <string name="conflict_theirs">Theirs</string>
     <string name="conflict_both">Both</string>
     <string name="conflict_apply">Resolve and stage</string>
+    <string name="sentinel_digest">Morning digest</string>
+    <string name="sentinel_digest_desc">Every morning at 8:00 a short notification: projects with uncommitted work and yesterday\'s model spend. Computed on your phone; skipped when there is nothing to report</string>
 </resources>
