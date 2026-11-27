@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.50] — 2026-11-27 — Long-chat guard · حماية المحادثات الطويلة
+
+- **Internal, no visible change.** Audit result: the chat list already uses a stable key per item and hides tool-only replies with one pass over the list, so nothing needed changing.
+- New guard tests on a 2,000-item chat: list keys stay unique, hiding blank replies stays fast, and saving then loading loses no item and stays fast. The time limits are generous so a slow build machine does not fail them.
+- versionName 0.1.50, versionCode 89.
+
 ## [0.1.49] — 2026-11-27 — File history · سجل الملف
 
 - **File history:** the history button in the editor now also lists the commits that changed the open file, newest first, under the blame rows: `a1b2c3d · Sara · 3 d ago · Fix login`. Read-only.
