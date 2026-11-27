@@ -61,6 +61,9 @@ class LlmClient(
         .writeTimeout(60, TimeUnit.SECONDS)
         .build()
 
+    /** Provider error text can echo the request's key ("Incorrect API key: sk-..."); scrub it before it reaches the chat, history or logs. */
+    private fun llmError(msg: String) = LlmException(safeError(msg, apiKey))
+
     override suspend fun complete(system: String, messages: List<Msg>, tools: List<ToolSpec>, l: StreamListener): Turn =
         withContext(Dispatchers.IO) {
             when (def.kind) {
@@ -112,9 +115,9 @@ class LlmClient(
             call.execute().use { resp ->
                 if (!resp.isSuccessful) {
                     val err = resp.body?.string()?.take(800) ?: ""
-                    throw LlmException("HTTP ${resp.code}: ${extractError(err)}")
+                    throw llmError("HTTP ${resp.code}: ${extractError(err)}")
                 }
-                val source = resp.body?.source() ?: throw LlmException("Empty response")
+                val source = resp.body?.source() ?: throw llmError("Empty response")
                 val parser = SseParser(onEvent)
                 while (true) {
                     val line = source.readUtf8Line() ?: break
@@ -137,7 +140,7 @@ class LlmClient(
         }
         http.newCall(req).execute().use { resp ->
             val txt = resp.body?.string() ?: ""
-            if (!resp.isSuccessful) throw LlmException("HTTP ${resp.code}: ${extractError(txt)}")
+            if (!resp.isSuccessful) throw llmError("HTTP ${resp.code}: ${extractError(txt)}")
             val arr = JSONObject(txt).optJSONArray("data") ?: JSONArray()
             (0 until arr.length()).mapNotNull { arr.optJSONObject(it)?.optString("id") }
                 .map { it.removePrefix("models/") }.sorted()
@@ -149,6 +152,8 @@ class LlmClient(
 
         /** Providers known to accept `stream_options.include_usage`; others may reject unknown fields. */
         val USAGE_STREAM_OPTION = setOf("openai", "openrouter", "deepseek")
+
+        fun safeError(msg: String, apiKey: String?): String = AuditLog.redact(msg, apiKey)
 
         fun extractError(body: String): String = try {
             val o = JSONObject(body)
@@ -215,7 +220,7 @@ object OpenAiFormat {
         fun onData(data: String) {
             if (data.trim() == "[DONE]") return
             val o = try { JSONObject(data) } catch (_: Exception) { return }
-            o.optJSONObject("error")?.let { throw LlmException(it.optString("message", data)) }
+            o.optJSONObject("error")?.let { throw llmError(it.optString("message", data)) }
             UsageParser.any(o)?.let { usage = it }
             val choices = o.optJSONArray("choices") ?: return
             for (i in 0 until choices.length()) {
@@ -312,7 +317,7 @@ object AnthropicFormat {
                 if (u.output > 0 || outTokens < 0) outTokens = u.output
             }
             when (o.optString("type", event ?: "")) {
-                "error" -> throw LlmException(o.optJSONObject("error")?.optString("message") ?: data)
+                "error" -> throw llmError(o.optJSONObject("error")?.optString("message") ?: data)
                 "content_block_start" -> {
                     val idx = o.optInt("index")
                     val cb = o.optJSONObject("content_block") ?: return
