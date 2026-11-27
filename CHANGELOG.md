@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.53] — 2026-11-28 — Failure notices scrub secrets too · إشعارات الفشل تُخفي الأسرار
+
+- **Security hardening.** The red failure notice at the end of a turn, the reviewer-failed line sent to the model and the router failover line in the audit log now remove your API keys and GitHub token, like tool output already did.
+- One new whole-loop test: a provider error that contains the saved key shows no key in the chat notice.
+- versionName 0.1.53, versionCode 92.
+- إشعار الفشل وسطر المراجع وسجل التبديل صارت تخفي مفاتيحك.
+
 ## [0.1.52] — 2026-11-27 — Provider errors never echo your key · أخطاء المزود لا تكرر مفتاحك
 
 - **Security hardening.** Some providers repeat the API key inside their error text ("Incorrect API key provided: ..."). That text went into the chat notice, back to the model and into logs. It is now scrubbed in the model client before anything else sees it. Ordinary error text, such as context-length messages, is unchanged.

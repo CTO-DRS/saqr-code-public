@@ -533,7 +533,7 @@ class AgentSession(
             }
             catch (e: CancellationException) { items += ChatItem.Notice("⏹", kind = ChatItem.Notice.Kind.STOPPED); outcome = RunOutcome(RunOutcome.Kind.STOPPED) }
             catch (e: Exception) {
-                val msg = e.message ?: e.toString()
+                val msg = safeMsg(e.message ?: e.toString())
                 items += ChatItem.Notice(msg, isError = true, count = ErrorExplainer.classify(e).ordinal); outcome = RunOutcome(RunOutcome.Kind.ERROR, msg)
             }
             finally {
@@ -955,7 +955,7 @@ class AgentSession(
             reset()
             val (turn, used) = Failover.run(chain, onSwitch = { from, to, e ->
                 items += ChatItem.Notice(to.label, kind = ChatItem.Notice.Kind.FALLBACK)
-                audit("router", Risk.SAFE, AuditEntry.Decision.AUTO, true, 0, "failover ${from.label} → ${to.label} (${(e.message ?: "error").take(80)})")
+                audit("router", Risk.SAFE, AuditEntry.Decision.AUTO, true, 0, "failover ${from.label} → ${to.label} (${safeMsg(e.message ?: "error").take(80)})")
                 reset()
             }) { t ->
                 routeProviders[t.model] = t.provider
@@ -1302,7 +1302,7 @@ class AgentSession(
         }
         out.onFailure { e ->
             card.finish(null)
-            history += Msg.User("[Reviewer] The review call failed (${(e.message ?: "error").take(120)}); continue with your best judgement.")
+            history += Msg.User("[Reviewer] The review call failed (${safeMsg(e.message ?: "error").take(120)}); continue with your best judgement.")
         }
         markDirty()
     }
@@ -1994,6 +1994,9 @@ class AgentSession(
         sessionSummary = next
         markDirty()
     }
+
+    /** Error text for the chat, the model and the audit log, with the user's keys and tokens scrubbed. */
+    private fun safeMsg(s: String): String = AuditLog.redact(s, *memorySecrets())
 
     /** The user's configured secrets the memory guard checks every layer against (never stored, never logged). */
     private fun memorySecrets(): Array<String?> =
