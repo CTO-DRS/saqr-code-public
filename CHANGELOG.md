@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.34] — 2026-11-27 — Performance baselines · خطوط أساس الأداء
+
+- **Startup audit:** the app's startup only builds light stores and one network watcher. The terminal, MCP servers, voice and sync already start on first use, so nothing needed to change.
+- **Budgets enforced by tests:** a 2000-message session encodes and decodes in seconds, 100 sessions save, list and full-text search quickly, a 50-session backup builds and restores, and the command policy checks 5000 commands plus a very long hostile one without slow-downs. Budgets are about 10x the measured time, so a future slow loop fails CI instead of reaching a phone.
+- **Tests:** `V0134PerfBaselineTest`. No user-visible change.
+- versionName 0.1.34, versionCode 73.
+
 ## [0.1.33] — 2026-11-27 — Chat backup · نسخ المحادثات احتياطيًا
 
 - **Back up and restore your chats:** Settings, Repository sync now has "Back up chats" and "Restore chats". All chats of all projects, with their images, go into one file encrypted with your passphrase (same AES-GCM and PBKDF2 as sync; the passphrase is never stored).
