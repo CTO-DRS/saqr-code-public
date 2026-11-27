@@ -42,7 +42,7 @@ class V0142AgentLoopTest {
         }
     }
 
-    private fun session(fake: Fake): AgentSession {
+    private fun session(fake: Fake, override: ModelClient? = null): AgentSession {
         val app = RuntimeEnvironment.getApplication()
         // Robolectric leaves nativeLibraryDir null; LinuxEnv reads it at construction.
         app.applicationInfo.nativeLibraryDir = app.cacheDir.absolutePath
@@ -51,15 +51,35 @@ class V0142AgentLoopTest {
         settings.activeProvider = id
         settings.saveProvider(id, Providers.byId(id).defaultBaseUrl, "test-model", "test-key")
         settings.retryLlm = false
+        settings.approveAll = true
         val root = File(app.cacheDir, "loop-${System.nanoTime()}").apply { mkdirs() }
         val project = File(root, "proj").apply { mkdirs() }
         File(project, "hello.txt").writeText("hi")
+        lastProject = project
         return AgentSession(
             projectName = "proj", projectDir = project, checkpointRoot = File(root, "cp"),
             settings = settings, linux = LinuxEnv(app),
-            modelFactory = ModelFactory { _, _, _, _ -> fake },
+            modelFactory = ModelFactory { _, _, _, _ -> override ?: fake },
         )
     }
+
+    private fun awaitUntil(what: String, cond: () -> Boolean) {
+        val end = System.currentTimeMillis() + 30_000
+        do {
+            shadowOf(Looper.getMainLooper()).idle()
+            if (cond()) return
+            Thread.sleep(20)
+        } while (System.currentTimeMillis() < end)
+        throw AssertionError("timed out waiting for $what")
+    }
+
+    private lateinit var lastProject: File
+
+    private fun projectFile(s: AgentSession, name: String): File {
+        return File(lastProject, name)
+    }
+
+    private val writeCall = ToolCall("w1", "write_file", """{"path":"new.txt","content":"fresh"}""")
 
     private fun AgentSession.await() {
         val end = System.currentTimeMillis() + 30_000
@@ -100,5 +120,41 @@ class V0142AgentLoopTest {
         s.await()
         assertTrue(!s.running)
         assertTrue(s.items.filterIsInstance<ChatItem.Notice>().any { it.kind == ChatItem.Notice.Kind.ERROR })
+    }
+
+    @Test fun `stop cancels a model call in flight and leaves a stopped notice`() {
+        val gate = object : ModelClient {
+            override suspend fun complete(system: String, messages: List<Msg>, tools: List<ToolSpec>, l: StreamListener): Turn =
+                kotlinx.coroutines.awaitCancellation()
+        }
+        val s = session(Fake(emptyList()), gate)
+        s.send("hello")
+        awaitUntil("run to start") { s.running }
+        s.stop()
+        s.await()
+        assertTrue(s.items.filterIsInstance<ChatItem.Notice>().any { it.kind == ChatItem.Notice.Kind.STOPPED })
+    }
+
+    @Test fun `rejecting a file change writes nothing and tells the model`() {
+        val fake = Fake(listOf({ Turn("", listOf(writeCall), "tool_use") }, { Turn("ok", emptyList(), "stop") }))
+        val s = session(fake)
+        s.send("make a file")
+        awaitUntil("approval card") { s.items.any { it is ChatItem.Approval } }
+        s.decide(s.items.filterIsInstance<ChatItem.Approval>().first(), false)
+        s.await()
+        assertTrue(!projectFile(s, "new.txt").exists())
+        val result = fake.seen.last().filterIsInstance<Msg.ToolResult>().first()
+        assertTrue(result.content.contains("REJECTED"))
+    }
+
+    @Test fun `approving a file change writes it`() {
+        val fake = Fake(listOf({ Turn("", listOf(writeCall), "tool_use") }, { Turn("ok", emptyList(), "stop") }))
+        val s = session(fake)
+        s.send("make a file")
+        awaitUntil("approval card") { s.items.any { it is ChatItem.Approval } }
+        s.decide(s.items.filterIsInstance<ChatItem.Approval>().first(), true)
+        s.await()
+        assertEquals("fresh", projectFile(s, "new.txt").readText())
+        assertTrue(fake.seen.last().filterIsInstance<Msg.ToolResult>().first().content.startsWith("OK"))
     }
 }
