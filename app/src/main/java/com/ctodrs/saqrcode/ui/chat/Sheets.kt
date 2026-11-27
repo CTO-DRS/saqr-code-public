@@ -102,6 +102,12 @@ private fun SheetTitle(icon: androidx.compose.ui.graphics.vector.ImageVector, ti
 
 @Composable
 fun UsageSheet(summary: UsageSummary, onDismiss: () -> Unit, runStats: (() -> com.ctodrs.saqrcode.agent.RunStats)? = null, running: Boolean = false) {
+    SaqrSheet(onDismiss) { UsageSheetContent(summary, runStats, running) }
+}
+
+/** v0.1.15: sheet body on its own so visual tests can render it without the modal wrapper. */
+@Composable
+fun UsageSheetContent(summary: UsageSummary, runStats: (() -> com.ctodrs.saqrcode.agent.RunStats)? = null, running: Boolean = false) {
     val c = Saqr.colors
     // live-refresh the per-task row while a run is in flight
     var stats by remember { mutableStateOf(runStats?.invoke()) }
@@ -109,7 +115,7 @@ fun UsageSheet(summary: UsageSummary, onDismiss: () -> Unit, runStats: (() -> co
         while (running && runStats != null) { stats = runStats.invoke(); kotlinx.coroutines.delay(2_000) }
         stats = runStats?.invoke()
     }
-    SaqrSheet(onDismiss) {
+    Column {
         SheetTitle(Lucide.Zap, stringResource(R.string.usage_title))
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
             stats?.let { RunRow(it) }
