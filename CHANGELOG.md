@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.32] — 2026-11-27 — Settings search · بحث الإعدادات
+
+- **Search box at the top of Settings:** type a word (Arabic or English, with or without diacritics) and see the sections that contain it. Tap one to jump straight to it.
+- Matches section names and the setting names inside them. Several words must all match.
+- **Tests:** `V0132SettingsSearchTest` (case, Arabic letter variants, multi-word, ranking).
+- Session export to Markdown was already shipped (Majlis, chat header share button), so that roadmap item is closed.
+- EN + AR. versionName 0.1.32, versionCode 71.
+
 ## [0.1.31] — 2026-11-27 — Prompt-injection hardening · تحصين ضد حقن الأوامر
 
 - **New approval rule:** shell commands that upload a local file to a server (`curl -d @file`, `-F file=@`, `--upload-file`, `wget --post-file`, `nc host port < file`) now need your explicit yes. This closes the one exfiltration route a hostile web page or tool result could try that the old rules let through.

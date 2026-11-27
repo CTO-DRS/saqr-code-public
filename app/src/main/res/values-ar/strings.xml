@@ -1204,4 +1204,6 @@
     <string name="sentinel_digest">ملخص الصباح</string>
     <string name="sentinel_digest_desc">كل صباح الساعة 8:00 إشعار قصير: المشاريع اللي فيها شغل غير محفوظ وصرف النماذج أمس. يُحسب على جوالك ويُتجاوز إذا ما فيه شي يستاهل</string>
     <string name="widget_desc">يعرض هل صقر شغال؛ اضغط للفتح</string>
+    <string name="settings_search">ابحث في الإعدادات</string>
+    <string name="settings_search_none">لا توجد إعدادات مطابقة</string>
 </resources>

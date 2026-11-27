@@ -16,7 +16,7 @@
 
 **الحالة / Status (0.1.17, versionCode 56, 616 tests green):** plan mode, notifications, PR review/merge/undo from the phone, Gulf-dialect voice commands, model duel (/compare), live cost + daily cap, live preview, nested AGENTS.md, learning mode (/learn). Test suite stable (JVM fork every 40 classes). Performance review found no hot spot.
 
-**Shipped since 0.1.17 / مُنجز:** 0.1.18 plain-words errors · 0.1.19 light-theme contrast (WCAG AA) · 0.1.20 TalkBack labels + 48dp targets · 0.1.21 file:line diagnostics digest in the self-fix loop + privacy page · 0.1.22 merge-conflict resolver · 0.1.23 Sentinel morning digest · 0.1.24 Quick Settings tile · 0.1.25 home-screen widget. · 0.1.26 first-run tips + FAQ · 0.1.27 large-text layout · 0.1.28 git stash · 0.1.29 git cherry-pick · audited as already shipped and tested: Material You accent (DynamicAccent), haptics tokens, visual editor v1 (element picker, computed-style chips, edit sheet to the agent), sync via the user's own repo, image attachments with per-model vision, multi-file change preview in approval cards · 0.1.30 local crash report · 0.1.31 upload-gating rule
+**Shipped since 0.1.17 / مُنجز:** 0.1.18 plain-words errors · 0.1.19 light-theme contrast (WCAG AA) · 0.1.20 TalkBack labels + 48dp targets · 0.1.21 file:line diagnostics digest in the self-fix loop + privacy page · 0.1.22 merge-conflict resolver · 0.1.23 Sentinel morning digest · 0.1.24 Quick Settings tile · 0.1.25 home-screen widget. · 0.1.26 first-run tips + FAQ · 0.1.27 large-text layout · 0.1.28 git stash · 0.1.29 git cherry-pick · audited as already shipped and tested: Material You accent (DynamicAccent), haptics tokens, visual editor v1 (element picker, computed-style chips, edit sheet to the agent), sync via the user's own repo, image attachments with per-model vision, multi-file change preview in approval cards · 0.1.30 local crash report · 0.1.31 upload-gating rule · 0.1.32 settings search
 **Open, needs the owner / مفتوح عند المالك:** Play Console account and pricing; stable-signing approval per release; device matrix and device QA of 0.1.20 to 0.1.29; gallery PR merge; GitHub Actions budget on the private repo (currently $0 with no card). **Open, autonomous / مفتوح ذاتيًا:** git blame in the editor (low impact, deferred).
 
 ### الموجة أ · الموثوقية والصقل / Wave A: reliability and polish (autonomous, first)
@@ -48,8 +48,8 @@
 Audit basis: 36.6k lines of Kotlin, 80 test classes, release build not minified, no crash visibility, no agent regression suite, no startup baseline.
 1. **Crash visibility (0.1.30, shipped):** local crash recorder with a share-or-clear card; makes the crash-free gate measurable with no telemetry.
 2. **Agent regression suite:** scripted-LLM scenario tests (edit, fix-loop, approval, cancel, resume) so prompt or tool changes cannot silently break the loop.
-3. **Session export:** share a finished session as Markdown (prompts, plan, changed files, summary), secrets scrubbed.
-4. **Settings search:** one search box over the 2k-line settings screen.
+3. **(already shipped in Majlis, audited 0.1.32) Session export:** share a finished session as Markdown (prompts, plan, changed files, summary), secrets scrubbed.
+4. **(0.1.32, shipped) Settings search:** one search box over the 2k-line settings screen.
 5. **Performance baselines:** cold-start and first-message timing tests with budgets; lazy init of terminal, MCP and voice.
 6. **Release hardening:** enable R8 (keep rules already written) behind a CI build plus startup smoke; ships only after the owner's device QA passes. Needs a device, so parked until QA.
 7. **(0.1.31, shipped) Prompt-injection hardening:** tests that web and MCP tool output cannot trigger approvals or secret reads; extends the existing SafetyPolicy tests.
