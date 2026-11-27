@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.55] — 2026-11-28 — Sync drops keys in MCP server URLs · المزامنة تحذف المفاتيح في روابط MCP
+
+- **Security fix.** Some MCP servers take the key in the address (`...?api_key=...`). Sync wrote that address as is. It now blanks the value of credential-looking parameters (key, token, api_key, secret, password, sig and similar). Applying a sync on another device refills them from that device's own copy of the same server.
+- Audit note: the chat backup is already encrypted with your passphrase and holds only your chats, so it needed no change.
+- New test covers stripping and refilling.
+- versionName 0.1.55, versionCode 94.
+- بعض خوادم MCP تضع المفتاح في الرابط؛ المزامنة صارت تُفرغ قيمته وتعيده من نسخة الجهاز المحلية.
+
 ## [0.1.54] — 2026-11-28 — Sync no longer carries MCP environment secrets · المزامنة لا تنقل أسرار بيئة MCP
 
 - **Security fix.** The environment text of a stdio MCP server (often `GITHUB_TOKEN=...` or an API key) was saved as plain text in the settings sync file. Sync now keeps the variable names and drops the values. When you apply a sync on another device, each server keeps that device's own values for the same variable names.

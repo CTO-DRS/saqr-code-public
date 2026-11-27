@@ -105,4 +105,19 @@ class V019SyncTest {
         assertFalse(env.contains("ghp_SECRETVALUE_9999"))
         assertEquals("npx srv", dst.mcpStdioServers.single().command)
     }
+
+    @Test
+    fun `mcp server url secrets are stripped for sync and refilled from the local copy`() {
+        assertEquals("https://x.io/mcp?key=&mode=a#f", com.ctodrs.saqrcode.agent.Mcp.stripUrlSecrets("https://x.io/mcp?key=abc123&mode=a#f"))
+        assertEquals("https://x.io/mcp", com.ctodrs.saqrcode.agent.Mcp.stripUrlSecrets("https://x.io/mcp"))
+        val src = settings()
+        src.mcpServers = listOf(com.ctodrs.saqrcode.agent.Mcp.Server("srv", "https://x.io/mcp?api_key=SECRETURLVALUE&v=2"))
+        val text = SyncKit.toJson(SyncKit.snapshot(src, "d", "0.1.55", 1L))
+        assertFalse(text.contains("SECRETURLVALUE"))
+        assertTrue(text.contains("api_key="))
+        val dst = settings()
+        dst.mcpServers = listOf(com.ctodrs.saqrcode.agent.Mcp.Server("srv", "https://old.io/mcp?api_key=localkey1"))
+        SyncKit.apply(SyncKit.parse(text)!!, dst)
+        assertEquals("https://x.io/mcp?api_key=localkey1&v=2", dst.mcpServers.single().url)
+    }
 }

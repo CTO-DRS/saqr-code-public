@@ -55,6 +55,38 @@ object Mcp {
         servers.forEach { put(JSONObject().put("name", it.name).put("url", it.url)) }
     }.toString()
 
+    private val SECRET_PARAM = Regex("""(?i)^(key|api[_-]?key|apikey|token|access[_-]?token|auth|authorization|secret|password|pwd|sig|signature)$""")
+
+    /** One query pair is secret when its name looks like a credential. */
+    private fun secretPair(pair: String) = SECRET_PARAM.matches(pair.substringBefore('='))
+
+    /** A server URL with the values of credential-looking query parameters removed (`?key=abc` becomes `?key=`). */
+    fun stripUrlSecrets(url: String): String {
+        val q = url.indexOf('?')
+        if (q < 0) return url
+        val frag = url.indexOf('#', q).let { if (it < 0) url.length else it }
+        val query = url.substring(q + 1, frag).split('&').joinToString("&") { if (secretPair(it) && it.contains('=')) it.substringBefore('=') + "=" else it }
+        return url.substring(0, q + 1) + query + url.substring(frag)
+    }
+
+    /** Sync apply: refill emptied credential parameters from the same-named local server's URL. */
+    fun mergeLocalUrlSecrets(incoming: List<Server>, local: List<Server>): List<Server> = incoming.map { inc ->
+        val q = inc.url.indexOf('?')
+        val have = local.firstOrNull { it.name == inc.name }?.url?.let { u ->
+            val lq = u.indexOf('?')
+            if (lq < 0) emptyMap() else u.substring(lq + 1).substringBefore('#').split('&').filter { secretPair(it) && it.contains('=') }
+                .associate { it.substringBefore('=') to it.substringAfter('=') }
+        }.orEmpty()
+        if (q < 0 || have.isEmpty()) inc else {
+            val frag = inc.url.indexOf('#', q).let { if (it < 0) inc.url.length else it }
+            val query = inc.url.substring(q + 1, frag).split('&').joinToString("&") { pair ->
+                val k = pair.substringBefore('=')
+                if (secretPair(pair) && pair.endsWith("=") && have[k] != null) k + "=" + have[k] else pair
+            }
+            inc.copy(url = inc.url.substring(0, q + 1) + query + inc.url.substring(frag))
+        }
+    }
+
     fun decodeConfig(json: String?): List<Server> = runCatching {
         val arr = JSONArray(json ?: return emptyList())
         (0 until arr.length()).mapNotNull { i ->
