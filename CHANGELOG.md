@@ -1,5 +1,11 @@
 # Changelog · سجل التغييرات
 
+## [0.1.47] — 2026-11-27 — Resume test · اختبار الاستئناف
+
+- **Internal, no visible change:** a whole-loop test now kills a turn mid-call, reopens the saved chat as a new session, checks the "interrupted" state, resumes, and checks the model sees the original request again. This finishes the agent-loop scenario set: reply, tool call, failure, stop, reject, approve, resume.
+- Roadmap: Wave G added.
+- versionName 0.1.47, versionCode 86.
+
 ## [0.1.46] — 2026-11-27 — User guide in the app · دليل الاستخدام داخل التطبيق
 
 - **User guide in Settings:** six short topics, tap to open: first steps, approvals and safety, budgets and cost, backup and restore, keyboard shortcuts, working offline. Arabic and English.

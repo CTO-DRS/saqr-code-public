@@ -42,7 +42,7 @@ class V0142AgentLoopTest {
         }
     }
 
-    private fun session(fake: Fake, override: ModelClient? = null): AgentSession {
+    private fun session(fake: Fake, override: ModelClient? = null, rootDir: File? = null): AgentSession {
         val app = RuntimeEnvironment.getApplication()
         // Robolectric leaves nativeLibraryDir null; LinuxEnv reads it at construction.
         app.applicationInfo.nativeLibraryDir = app.cacheDir.absolutePath
@@ -52,13 +52,14 @@ class V0142AgentLoopTest {
         settings.saveProvider(id, Providers.byId(id).defaultBaseUrl, "test-model", "test-key")
         settings.retryLlm = false
         settings.approveAll = true
-        val root = File(app.cacheDir, "loop-${System.nanoTime()}").apply { mkdirs() }
+        val root = (rootDir ?: File(app.cacheDir, "loop-${System.nanoTime()}")).apply { mkdirs() }
         val project = File(root, "proj").apply { mkdirs() }
         File(project, "hello.txt").writeText("hi")
         lastProject = project
         return AgentSession(
             projectName = "proj", projectDir = project, checkpointRoot = File(root, "cp"),
             settings = settings, linux = LinuxEnv(app),
+            store = rootDir?.let { com.ctodrs.saqrcode.agent.SessionStore(File(it, "sessions")) },
             modelFactory = ModelFactory { _, _, _, _ -> override ?: fake },
         )
     }
@@ -166,5 +167,29 @@ class V0142AgentLoopTest {
         val reply = s.items.filterIsInstance<ChatItem.Assistant>().last()
         assertEquals(120L, reply.usage?.total)
         assertTrue(reply.costUsd == null) // "test-model" has no price
+    }
+
+    @Test fun `a turn cut off by a restart is resumed from the saved chat`() {
+        val app = RuntimeEnvironment.getApplication()
+        val root = File(app.cacheDir, "resume-${System.nanoTime()}")
+        // first process: the model call never returns, as if the app was killed mid-turn
+        val hang = object : ModelClient {
+            override suspend fun complete(system: String, messages: List<Msg>, tools: List<ToolSpec>, l: StreamListener): Turn =
+                kotlinx.coroutines.awaitCancellation()
+        }
+        val first = session(Fake(emptyList()), hang, root)
+        first.send("build me a page")
+        awaitUntil("run to start") { first.running }
+        // second process: a new session over the same saved chat
+        val fake = Fake(listOf({ Turn("finished", emptyList(), "stop") }))
+        val second = session(fake, null, root)
+        assertTrue(second.interrupted)
+        assertTrue(second.items.filterIsInstance<ChatItem.Notice>().any { it.kind == ChatItem.Notice.Kind.INTERRUPTED })
+        assertTrue(second.resumeInterrupted())
+        second.await()
+        assertEquals("finished", second.items.filterIsInstance<ChatItem.Assistant>().last().text)
+        // the model saw the original request again
+        assertTrue(fake.seen.first().filterIsInstance<Msg.User>().any { it.text.contains("build me a page") })
+        first.stop()
     }
 }
