@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -447,6 +448,7 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
     SettingsContent(ui, onBack)
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: String? = null) {
     val c = Saqr.colors
@@ -456,12 +458,43 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             Spacer(Modifier.width(Sp.md))
             Text(stringResource(R.string.settings), style = Saqr.type.title1, color = c.text1)
         }
+        var query by remember { mutableStateOf("") }
+        var pending by remember { mutableStateOf<String?>(null) }
+        val jump = remember { SectionJump() }
+        val sections = settingsSectionIndex()
+        LaunchedEffect(pending, query.isBlank()) {
+            val k = pending
+            if (k != null && query.isBlank()) {
+                androidx.compose.runtime.withFrameNanos { }
+                jump.reqs[k]?.bringIntoView()
+                pending = null
+            }
+        }
+        SaqrField(
+            query, { query = it }, Modifier.padding(horizontal = Sp.lg).padding(bottom = Sp.sm),
+            placeholder = stringResource(R.string.settings_search),
+        )
+        val results = SettingsSearch.match(sections, query)
+        if (query.isNotBlank()) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Sp.lg).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                if (results.isEmpty()) Text(stringResource(R.string.settings_search_none), style = Saqr.type.body, color = c.text3, modifier = Modifier.padding(Sp.lg))
+                else Group {
+                    Column {
+                        results.forEachIndexed { i, k ->
+                            if (i > 0) RowDivider()
+                            ListRow(title = sections.first { it.key == k }.title, icon = Lucide.Search, onClick = { pending = k; query = "" })
+                        }
+                    }
+                }
+            }
+            return@Column
+        }
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Sp.lg).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(Sp.sm),
         ) {
             // ---- appearance
-            SectionLabel(stringResource(R.string.appearance), Modifier.padding(top = Sp.xs))
+            JumpLabel(jump, "appearance", stringResource(R.string.appearance), Modifier.padding(top = Sp.xs))
             Group {
                 Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
                     LabeledIcon(Lucide.Palette, stringResource(R.string.theme))
@@ -487,7 +520,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             }
 
             // ---- editor (v0.12)
-            SectionLabel(stringResource(R.string.editor_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "editor_section", stringResource(R.string.editor_section), Modifier.padding(top = Sp.md))
             Group {
                 Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
                     LabeledIcon(Lucide.CodeXml, stringResource(R.string.editor_font))
@@ -502,7 +535,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             }
 
             // ---- providers
-            SectionLabel(stringResource(R.string.providers), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "providers", stringResource(R.string.providers), Modifier.padding(top = Sp.md))
             Group {
                 Column {
                     ui.providers.forEachIndexed { i, (def, cfg) ->
@@ -518,7 +551,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             }
 
             // ---- agent
-            SectionLabel(stringResource(R.string.agent_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "agent_section", stringResource(R.string.agent_section), Modifier.padding(top = Sp.md))
             Group {
                 ListRow(
                     title = stringResource(R.string.approval_mode), subtitle = stringResource(R.string.approval_mode_desc), icon = Lucide.ListChecks,
@@ -563,7 +596,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             // ---- v0.17 Memory engine & smart router
             MemoryRouterSection(ui.memoryRouter)
             // ---- v0.8/v0.9 MCP servers
-            SectionLabel(stringResource(R.string.mcp_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "mcp_section", stringResource(R.string.mcp_section), Modifier.padding(top = Sp.md))
             var browsingServer by remember { mutableStateOf<com.ctodrs.saqrcode.agent.Mcp.Server?>(null) }
             if (ui.mcpServers.isNotEmpty()) {
                 Group {
@@ -624,7 +657,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 )
             }
             // ---- v0.8 on-device build
-            SectionLabel(stringResource(R.string.build_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "build_section", stringResource(R.string.build_section), Modifier.padding(top = Sp.md))
             Group { Aapt2MirrorEditor(ui) }
             Group {
                 Column {
@@ -649,7 +682,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             }
 
             // ---- voice
-            SectionLabel(stringResource(R.string.voice_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "voice_section", stringResource(R.string.voice_section), Modifier.padding(top = Sp.md))
             Group {
                 Column {
                     Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
@@ -677,7 +710,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             }
 
             // ---- desert mode (v0.13.5): offline-first rationing with a live status line
-            SectionLabel(stringResource(R.string.desert_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "desert_section", stringResource(R.string.desert_section), Modifier.padding(top = Sp.md))
             Group {
                 Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
                     LabeledIcon(Lucide.WifiOff, stringResource(R.string.desert_title))
@@ -701,33 +734,33 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             }
 
             // ---- slash commands
-            SectionLabel(stringResource(R.string.slash_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "slash_section", stringResource(R.string.slash_section), Modifier.padding(top = Sp.md))
             Group { SlashCommandsEditor(ui) }
 
             // ---- v0.14 skill packs: one-tap .saqrpack install
-            SectionLabel(stringResource(R.string.pack_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "pack_section", stringResource(R.string.pack_section), Modifier.padding(top = Sp.md))
             Group { SaqrPacksCard(ui) }
 
             // ---- v0.14.3 community gallery: browse + one-tap install from the public repo
-            SectionLabel(stringResource(R.string.gallery_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "gallery_section", stringResource(R.string.gallery_section), Modifier.padding(top = Sp.md))
             Group { GallerySection(ui) }
 
             // ---- v0.18 agent skills: switches + the skills manager (list, search, details, update, export)
-            SectionLabel(stringResource(R.string.skills_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "skills_section", stringResource(R.string.skills_section), Modifier.padding(top = Sp.md))
             Group { SkillsSection(ui.skills) }
 
             // ---- v0.14.4 repository sync: encrypted snapshot → the user's own private repo or a file
-            SectionLabel(stringResource(R.string.sync_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "sync_section", stringResource(R.string.sync_section), Modifier.padding(top = Sp.md))
             Group { SyncSection(ui) }
 
             // ---- usage & budget
-            SectionLabel(stringResource(R.string.usage_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "usage_section", stringResource(R.string.usage_section), Modifier.padding(top = Sp.md))
             Group { BudgetEditor(ui) }
             Group { FalconSavingsRow() }
             Group { PricesEditor(ui) }
 
             // ---- accounts
-            SectionLabel(stringResource(R.string.accounts), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "accounts", stringResource(R.string.accounts), Modifier.padding(top = Sp.md))
             Group {
                 ListRow(
                     title = stringResource(R.string.github),
@@ -745,7 +778,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             }
 
             // ---- v0.11 billing & licensing
-            SectionLabel(stringResource(R.string.billing_section), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "billing_section", stringResource(R.string.billing_section), Modifier.padding(top = Sp.md))
             Group {
                 Column {
                     ListRow(
@@ -771,7 +804,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             Group { com.ctodrs.saqrcode.billing.MerchantToolsCard(settings = SaqrApp.instance.settings) }
 
             // ---- v0.13.3 Saqr Coach
-            SectionLabel(stringResource(R.string.coach_title), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "coach_title", stringResource(R.string.coach_title), Modifier.padding(top = Sp.md))
             Group {
                 ListRow(
                     title = stringResource(R.string.coach_row_title),
@@ -791,7 +824,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             }
 
             // ---- about
-            SectionLabel(stringResource(R.string.about), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "about", stringResource(R.string.about), Modifier.padding(top = Sp.md))
             Group {
                 Row(Modifier.padding(Sp.lg), verticalAlignment = Alignment.CenterVertically) {
                     FalconMark(44.dp)
@@ -829,7 +862,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     }
                 }
             }
-            SectionLabel(stringResource(R.string.about_developer), Modifier.padding(top = Sp.md))
+            JumpLabel(jump, "about_developer", stringResource(R.string.about_developer), Modifier.padding(top = Sp.md))
             val dctx = androidx.compose.ui.platform.LocalContext.current
             val ver = remember { runCatching { dctx.packageManager.getPackageInfo(dctx.packageName, 0).versionName }.getOrNull().orEmpty() }
             val banners = remember { DeveloperBanners.load(dctx) }
@@ -2155,3 +2188,43 @@ private fun imagePixels(ctx: android.content.Context, uri: android.net.Uri): Int
     if (src != bmp) src.recycle()
     px
 }.getOrNull()
+
+/** Section id to scroll target, filled as the section labels compose. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+internal class SectionJump { val reqs = mutableMapOf<String, androidx.compose.foundation.relocation.BringIntoViewRequester>() }
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun JumpLabel(jump: SectionJump, key: String, text: String, modifier: Modifier = Modifier) {
+    val r = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+    jump.reqs[key] = r
+    SectionLabel(text, modifier.bringIntoViewRequester(r))
+}
+
+/** One entry per section: its label plus the row titles inside it, in the current language. */
+@Composable
+private fun settingsSectionIndex(): List<SettingsSearch.Entry> {
+    fun e(key: String, title: Int, vararg rows: Int) = Triple(key, title, rows.toList())
+    val defs = listOf(
+        e("appearance", R.string.appearance, R.string.theme, R.string.language),
+        e("editor_section", R.string.editor_section, R.string.editor_font, R.string.editor_wrap),
+        e("providers", R.string.providers, R.string.keys_secure_note),
+        e("agent_section", R.string.agent_section, R.string.approval_mode, R.string.team_mode, R.string.auto_compact, R.string.review_auto_tests, R.string.falcon_router),
+        e("mcp_section", R.string.mcp_section),
+        e("build_section", R.string.build_section, R.string.keep_last_apk, R.string.keep_background, R.string.battery_title),
+        e("voice_section", R.string.voice_section, R.string.hands_free, R.string.voice_auto_send, R.string.voice_language),
+        e("desert_section", R.string.desert_section, R.string.desert_title),
+        e("slash_section", R.string.slash_section),
+        e("pack_section", R.string.pack_section),
+        e("gallery_section", R.string.gallery_section),
+        e("skills_section", R.string.skills_section),
+        e("sync_section", R.string.sync_section),
+        e("usage_section", R.string.usage_section),
+        e("accounts", R.string.accounts, R.string.github),
+        e("billing_section", R.string.billing_section),
+        e("coach_title", R.string.coach_title, R.string.coach_row_title),
+        e("about", R.string.about, R.string.crash_title),
+        e("about_developer", R.string.about_developer),
+    )
+    return defs.map { (k, t, rows) -> SettingsSearch.Entry(k, stringResource(t), rows.map { stringResource(it) }) }
+}

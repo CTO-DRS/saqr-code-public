@@ -1204,4 +1204,6 @@
     <string name="sentinel_digest">Morning digest</string>
     <string name="sentinel_digest_desc">Every morning at 8:00 a short notification: projects with uncommitted work and yesterday\'s model spend. Computed on your phone; skipped when there is nothing to report</string>
     <string name="widget_desc">Shows whether Saqr is running; tap to open</string>
+    <string name="settings_search">Search settings</string>
+    <string name="settings_search_none">No matching settings</string>
 </resources>
