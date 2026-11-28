@@ -435,3 +435,5 @@ The owner's spec (14:24, wamid ...QTUyQzBB...) adapted to Saqr's real stack: one
 | 8 Release | Security tests, Android version matrix, APK | planned |
 
 Feasibility notes: Shizuku itself is on Maven Central (dev.rikka.shizuku 13.1.5) and fits. It controls only the local phone; each remote phone needs its own ADB session. Root exists only on rooted devices. USB ADB needs USB host mode and a second device. None of the Shizuku, Root or wireless parts can be tested in CI: they compile and unit-test the logic, and the real behaviour needs a device (owner QA). The spec's module tree (core/, engines/, features/) becomes packages inside the one app module to keep CI fast; splitting into Gradle modules is possible later.
+
+**0.1.79 cloud pairing is automatic:** the proxy now accepts the per-install Free AI token on cloud routes with server-side limits (Durable Object counters: 20 min and 3 machines per install per day, 60 machines and 100 min per day overall, 10 registrations per IP per day) and machine ownership checks. Owner pairing links still work for bigger limits.

@@ -125,7 +125,7 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
 
     /** v0.1.65 cloud workspace: off by default; the proxy URL is ours, never a vendor key. */
     var cloudEnabled: Boolean
-        get() = prefs.getBoolean("cloud_enabled", cloudProxyToken.isNotBlank())
+        get() = prefs.getBoolean("cloud_enabled", cloudToken.isNotBlank())
         set(v) { prefs.edit().putBoolean("cloud_enabled", v).apply(); bump() }
     var cloudProxyUrl: String
         get() = prefs.getString("cloud_proxy_url", "https://saqr-cloud.nexus-link.workers.dev") ?: ""
@@ -155,8 +155,10 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
     var cloudProxyToken: String
         get() = secure.get("cloud_proxy_token").orEmpty()
         set(v) { secure.put("cloud_proxy_token", v.trim().ifBlank { null }); bump() }
+    /** v0.1.79: the token the cloud actually uses. An owner-paired or pasted token wins; otherwise the per-install Free AI token, which the proxy limits per install and per day. */
+    val cloudToken: String get() = cloudProxyToken.ifBlank { freeAiToken }
     var cloudDailyMinutes: Int
-        get() = prefs.getInt("cloud_daily_minutes", 30).coerceIn(1, 240)
+        get() = prefs.getInt("cloud_daily_minutes", 20).coerceIn(1, 240)
         set(v) { prefs.edit().putInt("cloud_daily_minutes", v.coerceIn(1, 240)).apply(); bump() }
 
     /** v0.15: run consecutive read-only SAFE tool calls side by side (max 3, per-tool timeout). */

@@ -1267,7 +1267,7 @@
     <string name="cloud_status_ready">Ready. The agent can use the cloud computer.</string>
     <string name="cloud_status_off">Off. Turn it on below.</string>
     <string name="cloud_status_needs_token">Needs an access token. Paste it below to connect.</string>
-    <string name="cloud_computer_about">The agent runs heavy builds and tests on a cloud machine instead of your phone. It asks your OK on first use in a chat. Project files are copied; secrets never are.</string>
+    <string name="cloud_computer_about">The agent runs heavy builds and tests on a cloud machine instead of your phone. It asks your OK on first use in a chat. Project files are copied; secrets never are. It is set up automatically; each install gets its own machine with a free daily allowance (about 20 minutes).</string>
     <string name="pair_done">Cloud computer connected.</string>
     <string name="pair_failed">Pairing failed or the code expired. Ask for a new link.</string>
     <string name="cat_device">Device control</string>
