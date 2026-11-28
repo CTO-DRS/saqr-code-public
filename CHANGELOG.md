@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.68] — 2026-11-28 — Chat works on first launch · الدردشة تعمل من أول تشغيل
+
+- **No setup.** A fresh install (or an update with no model connected) switches to Saqr Free AI by itself and gets its own token from the proxy in the background. No key to paste, no empty "connect a model" screen. It never overrides a provider you already set up.
+- The per-install token only unlocks the free AI route, never the cloud machine.
+- **New accent:** teal instead of gold across the app (dark, light and OLED). The app icon is unchanged for now.
+- versionName 0.1.68, versionCode 107.
+- الدردشة تعمل فورًا: التثبيت الجديد أو التحديث بلا نموذج يتحول تلقائيًا إلى «صقر مجاني» دون إدخال مفتاح. لون التمييز صار أخضر مزرقًا بدل الذهبي.
+
 ## [0.1.67] — 2026-11-28 — Saqr Free AI · الذكاء المجاني
 
 - **New provider: Saqr Free AI.** Pick it in Settings and chat with no key to paste. It goes through the same cloud access token as the cloud workspace and the proxy tries several free providers in turn, switching automatically when one hits its limit.

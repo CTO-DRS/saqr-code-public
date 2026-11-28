@@ -8,6 +8,7 @@ import com.ctodrs.saqrcode.terminal.LinuxEnv
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /** Tiny manual DI container. */
 class SaqrApp : Application() {
@@ -32,6 +33,14 @@ class SaqrApp : Application() {
             com.ctodrs.saqrcode.agent.DesertMode.Mode.from(settings.desert)
         com.ctodrs.saqrcode.data.CrashLog.install(this, BuildConfig.VERSION_NAME)
         registerConnectivityWatcher()
+        // v0.1.67: zero-setup Free AI. Switch an unconfigured install to it, then fetch its token in the background.
+        if (settings.adoptFreeAiIfNothingReady() || settings.activeProvider == com.ctodrs.saqrcode.cloud.FreeAi.PROVIDER_ID) {
+            appScope.launch {
+                if (settings.apiKey(com.ctodrs.saqrcode.cloud.FreeAi.PROVIDER_ID) == null) {
+                    com.ctodrs.saqrcode.cloud.FreeAi.register(settings.cloudProxyUrl, settings.freeAiInstallId)?.let { settings.freeAiToken = it }
+                }
+            }
+        }
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityStarted(a: android.app.Activity) { com.ctodrs.saqrcode.service.AgentRuntime.visibleActivities++ }
             override fun onActivityStopped(a: android.app.Activity) {

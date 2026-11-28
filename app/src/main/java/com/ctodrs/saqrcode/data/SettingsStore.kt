@@ -130,6 +130,28 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
     var cloudProxyUrl: String
         get() = prefs.getString("cloud_proxy_url", "https://saqr-cloud.nexus-link.workers.dev") ?: ""
         set(v) { prefs.edit().putString("cloud_proxy_url", v.trim()).apply(); bump() }
+    /** v0.1.67: the per-install Free AI token, obtained from the proxy on first launch. */
+    var freeAiToken: String
+        get() = secure.get("free_ai_token").orEmpty()
+        set(v) { secure.put("free_ai_token", v.trim().ifBlank { null }); bump() }
+    var freeAiInstallId: String
+        get() = prefs.getString("free_ai_install", null) ?: com.ctodrs.saqrcode.cloud.FreeAi.newInstallId().also { prefs.edit().putString("free_ai_install", it).apply() }
+        set(v) { prefs.edit().putString("free_ai_install", v).apply() }
+
+    /**
+     * v0.1.67: a fresh install, or an older build with no usable provider, switches to the built-in
+     * Free AI so chat works with zero setup. Never overrides a provider that already has a key.
+     */
+    fun adoptFreeAiIfNothingReady(): Boolean {
+        val def = Providers.byId(activeProvider)
+        val ready = (def.kind == ProviderKind.OPENAI_COMPAT && def.keyOptional && def.id != "custom") || secure.has("key_${def.id}") || (def.id == "saqr-free")
+        if (ready) return false
+        val anyKey = Providers.all.any { it.id != "saqr-free" && secure.has("key_${it.id}") }
+        if (anyKey) return false
+        activeProvider = "saqr-free"
+        return true
+    }
+
     var cloudProxyToken: String
         get() = secure.get("cloud_proxy_token").orEmpty()
         set(v) { secure.put("cloud_proxy_token", v.trim().ifBlank { null }); bump() }
@@ -638,13 +660,13 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
             id = id,
             baseUrl = prefs.getString("base_$id", null)?.takeIf { it.isNotBlank() } ?: def.defaultBaseUrl,
             model = prefs.getString("model_$id", null)?.takeIf { it.isNotBlank() } ?: def.defaultModel,
-            hasKey = if (id == "saqr-free") cloudProxyToken.isNotBlank() else secure.has("key_$id"),
+            hasKey = if (id == "saqr-free") apiKey(id) != null else secure.has("key_$id"),
         )
     }
 
     /** The built-in free provider authenticates with the cloud access token, so nothing extra to paste. */
     fun apiKey(id: String): String? =
-        if (id == "saqr-free") cloudProxyToken.ifBlank { null } else secure.get("key_$id")
+        if (id == "saqr-free") cloudProxyToken.ifBlank { freeAiToken }.ifBlank { null } else secure.get("key_$id")
 
     fun saveProvider(id: String, baseUrl: String, model: String, apiKey: String?) {
         prefs.edit().putString("base_$id", baseUrl.trim()).putString("model_$id", model.trim()).apply()
