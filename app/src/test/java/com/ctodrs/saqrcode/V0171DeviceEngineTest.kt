@@ -114,7 +114,7 @@ class V0172DeviceControlTest {
     }
 
     @Test fun diagnosticsAreAllSafe() {
-        com.ctodrs.saqrcode.device.DeviceDiagnostics(CommandEngine(emptyList(), DeviceAuditLog(File.createTempFile("a", ".j"))) { _, _ -> false }).items.forEach {
+        com.ctodrs.saqrcode.device.DeviceDiagnostics(CommandEngine(emptyList(), DeviceAuditLog(File.createTempFile("aud", ".j"))) { _, _ -> false }).items.forEach {
             assertEquals(it.command, AdbRisk.SAFE, AdbRiskClassifier.classify(it.command).risk)
         }
     }
