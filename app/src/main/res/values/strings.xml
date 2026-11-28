@@ -1280,6 +1280,7 @@
     <string name="device_root_no">Not available on this phone.</string>
     <string name="device_grant">Grant Shizuku permission</string>
     <string name="device_recheck">Re-check engines</string>
+    <string name="device_check_crashes">Check recent crashes</string>
     <string name="device_run_diag">Run read-only diagnostics</string>
     <string name="device_audit">Recent commands</string>
 </resources>

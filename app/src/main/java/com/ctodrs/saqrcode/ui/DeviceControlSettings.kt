@@ -40,6 +40,7 @@ internal fun DeviceControlSection() {
     var root by remember { mutableStateOf<Boolean?>(null) }
     var lines by remember { mutableStateOf<List<DeviceDiagnostics.Line>>(emptyList()) }
     var busy by remember { mutableStateOf(false) }
+    var crashText by remember { mutableStateOf("") }
     val audit = remember { DeviceAuditLog(java.io.File(ctx.filesDir, "device-audit.jsonl")) }
     var recent by remember { mutableStateOf(audit.entries(8)) }
 
@@ -77,6 +78,17 @@ internal fun DeviceControlSection() {
                 shizuku = ShizukuProbe.state(ctx)
                 scope.launch { root = RootEngine().available() }
             })
+            SecondaryButton(stringResource(R.string.device_check_crashes), {
+                if (!busy) scope.launch {
+                    busy = true
+                    val ce = CommandEngine(listOf(ShizukuEngine(ctx), LocalShellEngine()), audit) { _, _ -> false }
+                    val r = ce.run(com.ctodrs.saqrcode.device.LogcatAnalyzer.COMMAND, null, 15_000)
+                    crashText = if (r.success) com.ctodrs.saqrcode.device.LogcatAnalyzer.describe(com.ctodrs.saqrcode.device.LogcatAnalyzer.analyze(r.output)) else (r.refused ?: r.error).take(200)
+                    recent = audit.entries(8)
+                    busy = false
+                }
+            })
+            if (crashText.isNotEmpty()) Text(crashText, style = Saqr.type.caption, color = Saqr.colors.text2)
             PrimaryButton(stringResource(R.string.device_run_diag), {
                 if (!busy) scope.launch {
                     busy = true
