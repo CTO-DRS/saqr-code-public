@@ -2,8 +2,9 @@
 
 ## [0.1.69] — 2026-11-28 — Settings reorganised · إعدادات مرتبة
 
-- Settings is now a short hub with 7 pages: Models & usage, Agent, Tools & skills, Build & sync, Appearance & input, Account & plan, Help & about. Each old section sits in exactly one page. Search still finds every row and jumps to its page. Back returns to the hub.
-- الإعدادات صارت شاشة رئيسية قصيرة بسبع صفحات: النماذج والاستخدام، الوكيل، الأدوات والمهارات، البناء والمزامنة، المظهر والإدخال، الحساب والخطة، المساعدة وحول. البحث يعمل كما كان.
+- **Cloud computer** now has its own page (status line, switch, access token) and a drawer entry in every project. It turns itself on once an access token is saved.
+- Settings is now a short hub with 8 pages: Models & usage, Cloud computer, Agent, Tools & skills, Build & sync, Appearance & input, Account & plan, Help & about. Each old section sits in exactly one page. Search still finds every row and jumps to its page. Back returns to the hub.
+- الإعدادات صارت شاشة رئيسية قصيرة بثماني صفحات: النماذج والاستخدام، الحاسوب السحابي، الوكيل، الأدوات والمهارات، البناء والمزامنة، المظهر والإدخال، الحساب والخطة، المساعدة وحول. البحث يعمل كما كان.
 
 ## [0.1.68] — 2026-11-28 — Chat works on first launch · الدردشة تعمل من أول تشغيل
 

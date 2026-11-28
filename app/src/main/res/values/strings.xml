@@ -1256,4 +1256,10 @@
     <string name="cat_account_d">GitHub, billing and licence</string>
     <string name="cat_help">Help &amp; about</string>
     <string name="cat_help_d">Coach, user guide, crash report, about</string>
+    <string name="cat_cloud">Cloud computer</string>
+    <string name="cat_cloud_d">A cloud machine for builds and tests: switch, access token, daily limit</string>
+    <string name="cloud_status_ready">Ready. The agent can use the cloud computer.</string>
+    <string name="cloud_status_off">Off. Turn it on below.</string>
+    <string name="cloud_status_needs_token">Needs an access token. Paste it below to connect.</string>
+    <string name="cloud_computer_about">The agent runs heavy builds and tests on a cloud machine instead of your phone. It asks your OK on first use in a chat. Project files are copied; secrets never are.</string>
 </resources>

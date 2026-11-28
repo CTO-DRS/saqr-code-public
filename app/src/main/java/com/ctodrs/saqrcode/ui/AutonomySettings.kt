@@ -107,9 +107,17 @@ class AutonomyUi(
     }
 }
 
+/** v0.1.69: the cloud computer gets its own page (it used to hide inside the autonomy list). */
 @Composable
-internal fun AutonomySection(ui: AutonomyUi, teamMode: Boolean) {
-    SectionLabel(stringResource(R.string.autonomy_section), Modifier.padding(top = Sp.md))
+internal fun CloudSection(ui: AutonomyUi) {
+    Group {
+        Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
+            val ready = ui.cloudEnabled && ui.cloudTokenSet
+            Text(stringResource(if (ready) R.string.cloud_status_ready else if (ui.cloudTokenSet) R.string.cloud_status_off else R.string.cloud_status_needs_token),
+                style = Saqr.type.body.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = Saqr.colors.text1)
+            Text(stringResource(R.string.cloud_computer_about), style = Saqr.type.caption, color = Saqr.colors.text2)
+        }
+    }
     Group {
         Column {
             var cloudToken by remember { mutableStateOf("") }
@@ -125,6 +133,11 @@ internal fun AutonomySection(ui: AutonomyUi, teamMode: Boolean) {
             }
         }
     }
+}
+
+@Composable
+internal fun AutonomySection(ui: AutonomyUi, teamMode: Boolean) {
+    SectionLabel(stringResource(R.string.autonomy_section), Modifier.padding(top = Sp.md))
     Group {
         Column {
             ListRow(stringResource(R.string.parallel_tools), stringResource(R.string.parallel_tools_desc), icon = Lucide.Layers,

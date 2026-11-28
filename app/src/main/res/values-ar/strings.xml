@@ -1256,4 +1256,10 @@
     <string name="cat_account_d">GitHub والفوترة والترخيص</string>
     <string name="cat_help">المساعدة وحول</string>
     <string name="cat_help_d">المدرب، دليل الاستخدام، تقرير الأعطال، حول التطبيق</string>
+    <string name="cat_cloud">الحاسوب السحابي</string>
+    <string name="cat_cloud_d">جهاز سحابي للبناء والاختبار: المفتاح، رمز الوصول، الحد اليومي</string>
+    <string name="cloud_status_ready">جاهز. يستطيع الوكيل استخدام الحاسوب السحابي.</string>
+    <string name="cloud_status_off">متوقف. فعّله بالأسفل.</string>
+    <string name="cloud_status_needs_token">يحتاج رمز وصول. الصقه بالأسفل للاتصال.</string>
+    <string name="cloud_computer_about">ينفذ الوكيل البناء والاختبارات الثقيلة على جهاز سحابي بدل هاتفك. يطلب موافقتك أول استخدام في كل محادثة. تُنسخ ملفات المشروع ولا تُنسخ الأسرار أبدًا.</string>
 </resources>

@@ -431,6 +431,7 @@ fun IdeScreen(projectName: String, onBack: () -> Unit, onSettings: () -> Unit, o
                 onRestore = { showCheckpoints = true; scope.launch { drawer.close() } },
                 onSessions = { showSessions = true; ws.tab = Pane.AGENT; scope.launch { drawer.close() } },
                 onSettings = { scope.launch { drawer.close() }; onSettings() },
+                onCloud = { scope.launch { drawer.close() }; SettingsNav.startPage = "cloud"; onSettings() },
                 onProjects = { scope.launch { drawer.close() }; onBack() },
             )
         },
@@ -785,7 +786,7 @@ fun paneMeta(pane: Int): Pair<ImageVector, Int> = when (pane) {
 @Composable
 fun IdeDrawer(
     projectName: String, current: Int, onPane: (Int) -> Unit, onNewChat: () -> Unit, onRestore: () -> Unit,
-    onSettings: () -> Unit, onProjects: () -> Unit, onSessions: () -> Unit = {},
+    onSettings: () -> Unit, onProjects: () -> Unit, onSessions: () -> Unit = {}, onCloud: () -> Unit = {},
 ) {
     val c = Saqr.colors
     ModalDrawerSheet(
@@ -812,6 +813,7 @@ fun IdeDrawer(
             }
             Spacer(Modifier.height(Sp.lg))
             Text(stringResource(R.string.more), style = Saqr.type.micro, color = c.text3, modifier = Modifier.padding(horizontal = Sp.md, vertical = Sp.xs))
+            DrawerItem(Lucide.CloudUpload, stringResource(R.string.cat_cloud), false, onCloud)
             DrawerItem(Lucide.MessagesSquare, stringResource(R.string.sessions), false, onSessions)
             DrawerItem(Lucide.History, stringResource(R.string.checkpoints), false, onRestore)
             DrawerItem(Lucide.Settings, stringResource(R.string.settings), false, onSettings)
