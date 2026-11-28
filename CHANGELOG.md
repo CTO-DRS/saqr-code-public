@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.73] — 2026-11-28 — Long cloud runs · تشغيلات سحابية طويلة
+
+- Cloud commands can now run up to 40 minutes: the job starts in the background on the cloud machine and the app polls it, streaming output, so a long build survives a sleeping phone.
+- يمكن لأوامر الحاسوب السحابي أن تعمل حتى 40 دقيقة: تبدأ المهمة في الخلفية ويتابعها التطبيق ويعرض المخرجات أولًا بأول.
+
 ## [0.1.72] — 2026-11-28 — Device control page · صفحة التحكم بالجهاز
 
 - New "Device control" page in Settings: engine status for the local shell, Shizuku and Root, a one-tap Shizuku permission request, a read-only diagnostics run (Android version, model, battery, memory, uptime) and the recent audit log.
