@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.67] — 2026-11-28 — Saqr Free AI · الذكاء المجاني
+
+- **New provider: Saqr Free AI.** Pick it in Settings and chat with no key to paste. It goes through the same cloud access token as the cloud workspace and the proxy tries several free providers in turn, switching automatically when one hits its limit.
+- A privacy note in its card: Google Gemini and Mistral free tiers may use prompts for training.
+- versionName 0.1.67, versionCode 106.
+- مزود جديد «الذكاء المجاني»: بلا مفتاح تلصقه، ويتبدل الوسيط بين مزودين مجانيين تلقائيًا عند بلوغ حدّ أحدهم، مع ملاحظة خصوصية.
+
 ## [0.1.66] — 2026-11-28 — Cloud workspace connected · الحاسوب السحابي متصل
 
 - **Connected.** The cloud workspace now talks to a free token proxy (a Cloudflare Worker) in front of Daytona. The cloud service key never reaches the phone; the app holds only an access token, stored encrypted.

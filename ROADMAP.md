@@ -140,7 +140,9 @@ Plan: provider interface + fake provider, then Daytona behind a free token proxy
 1. **(0.1.65, shipped) Core:** `cloud_run` / `cloud_test` / `cloud_sync`, snapshot with secret filter, daily cap, per-command timeout, kill at turn end, approval on first use, off by default.
 2. **(0.1.66, shipped) Daytona provider + token proxy:** Cloudflare Worker (free tier) in front of Daytona; key stays in the Worker.
 3. **(0.1.66 partial) Settings:** switch + token field. **Next:** live meter, daily minutes field, result card with log tail.
-4. **(later) Preview URLs, APK artifact download, persistent workspaces.**
+4. **(phase 2, owner request) Live desktop:** "show the computer". `/desktop` proxy route starts Daytona's desktop (noVNC), WebView viewer, then desktop tools (`cloud_screenshot`, `cloud_click`, `cloud_type`, `cloud_key`) so the owner watches Saqr work in real time.
+5. **(phase 3, owner request) Secrets vault:** Keystore-backed encrypted entries managed by the user (logins, passwords, tokens). Injected into cloud runs as env vars through the proxy, never returned in output (the secret filter also scrubs these values), same approval plan, never shown in chat.
+6. **(later) Preview URLs, APK artifact download, persistent workspaces.**
 
 ---
 

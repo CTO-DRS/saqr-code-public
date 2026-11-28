@@ -638,11 +638,13 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
             id = id,
             baseUrl = prefs.getString("base_$id", null)?.takeIf { it.isNotBlank() } ?: def.defaultBaseUrl,
             model = prefs.getString("model_$id", null)?.takeIf { it.isNotBlank() } ?: def.defaultModel,
-            hasKey = secure.has("key_$id"),
+            hasKey = if (id == "saqr-free") cloudProxyToken.isNotBlank() else secure.has("key_$id"),
         )
     }
 
-    fun apiKey(id: String): String? = secure.get("key_$id")
+    /** The built-in free provider authenticates with the cloud access token, so nothing extra to paste. */
+    fun apiKey(id: String): String? =
+        if (id == "saqr-free") cloudProxyToken.ifBlank { null } else secure.get("key_$id")
 
     fun saveProvider(id: String, baseUrl: String, model: String, apiKey: String?) {
         prefs.edit().putString("base_$id", baseUrl.trim()).putString("model_$id", model.trim()).apply()
