@@ -12,7 +12,7 @@ object LogcatAnalyzer {
 
     private val fatal = Regex("""FATAL EXCEPTION""")
     private val proc = Regex("""Process:\s*([\w.]+)""")
-    private val exc = Regex("""^\S*\s*[A-Z]?\s*[\w/.\-]*\(?\s*\d*\)?:?\s*((?:[\w$]+\.)+[\w$]*(?:Exception|Error)[^\n]*)""")
+    private val exc = Regex("""((?:[\w$]+\.)+[\w$]*(?:Exception|Error)\b.*)""")
     private val anr = Regex("""ANR in ([\w.]+)""")
 
     fun analyze(log: String): List<Finding> {
