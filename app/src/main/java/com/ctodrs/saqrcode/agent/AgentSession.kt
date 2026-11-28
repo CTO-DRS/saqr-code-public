@@ -1292,6 +1292,7 @@ class AgentSession(
             val what = when (name) {
                 Tools.CLOUD_RUN -> "cloud_run: " + a.optString("command").lineSequence().firstOrNull().orEmpty().take(120)
                 Tools.CLOUD_TEST -> "cloud_test"
+                Tools.CLOUD_DESKTOP -> "cloud_desktop: " + a.optString("action") + " " + a.optString("text").take(60)
                 else -> "cloud_sync"
             }
             val card = ChatItem.Approval(emptyList(),
@@ -1306,6 +1307,7 @@ class AgentSession(
             when (name) {
                 Tools.CLOUD_RUN -> ws.run(a.optString("command"), a.optInt("timeout_sec", 0).takeIf { it > 0 })
                 Tools.CLOUD_TEST -> ws.test(a.optInt("timeout_sec", 0).takeIf { it > 0 })
+                Tools.CLOUD_DESKTOP -> ws.desktop(a.optString("action"), a)
                 else -> ws.sync()
             }
         }

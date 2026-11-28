@@ -15,6 +15,7 @@ object Tools {
     const val CLOUD_RUN = "cloud_run"
     const val CLOUD_TEST = "cloud_test"
     const val CLOUD_SYNC = "cloud_sync"
+    const val CLOUD_DESKTOP = "cloud_desktop"
     const val DEVICE_RUN = "device_run"
     const val DELETE = "delete_file"
     const val RUN = "run_command"
@@ -38,7 +39,7 @@ object Tools {
 
     val GIT = setOf(GIT_STATUS, GIT_DIFF, GIT_LOG, GIT_COMMIT, GIT_BRANCH, GIT_PULL, GIT_PUSH)
 
-    val CLOUD = setOf(CLOUD_RUN, CLOUD_TEST, CLOUD_SYNC)
+    val CLOUD = setOf(CLOUD_RUN, CLOUD_TEST, CLOUD_SYNC, CLOUD_DESKTOP)
 
     val MUTATING = setOf(WRITE, EDIT, MULTI_EDIT, MOVE, DELETE)
 
@@ -89,6 +90,14 @@ object Tools {
                 .put("timeout_sec", p("integer", "Max seconds (default 30, cap 120)")), listOf("command"))),
         ToolSpec(CLOUD_TEST, "Detect the project's test command (gradlew, npm, pytest) and run it in the cloud workspace. Returns pass/fail output.",
             schema(JSONObject().put("timeout_sec", p("integer", "Max seconds (default 600)")), emptyList())),
+        ToolSpec(CLOUD_DESKTOP, "Drive a live Linux desktop (1024x768) on the user's cloud machine, for sites or apps with no API. Actions: start (once), look (a vision model describes the screen and lists clickable things with estimated x,y; use ask to focus), click (x,y), type (text), key (e.g. Return, ctrl+l). Look after every click. Never type passwords or secrets the user has not given you; never sign in by guessing. Counts against the free cloud minutes.",
+            schema(JSONObject()
+                .put("action", p("string", "start | look | click | type | key"))
+                .put("x", p("integer", "click x, 0-1023"))
+                .put("y", p("integer", "click y, 0-767"))
+                .put("text", p("string", "text to type (max 500 chars)"))
+                .put("key", p("string", "key name or combo"))
+                .put("ask", p("string", "what to look for")), listOf("action"))),
         ToolSpec(CLOUD_SYNC, "Copy the current project to the cloud workspace now (cloud_run and cloud_test already do this automatically when files changed).",
             schema(JSONObject(), emptyList())),
         ToolSpec(DELETE, "Delete a file in the project.",
@@ -286,6 +295,7 @@ object Tools {
         CLOUD_RUN -> args.optString("command")
         CLOUD_TEST -> "tests"
         CLOUD_SYNC -> "sync"
+        CLOUD_DESKTOP -> args.optString("action") + " " + args.optString("text").take(40)
         DEVICE_RUN -> args.optString("command")
         else -> args.optString("path")
     }

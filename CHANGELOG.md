@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.81] — 2026-11-28 — Live desktop on the cloud machine · سطح مكتب حي سحابي
+
+- New agent tool cloud_desktop: the agent can open a Linux desktop on your cloud machine, look at it (a free vision model describes the screen), click, type and press keys, for sites with no API. Counts against the free cloud minutes. Coordinates from the description are estimates, so the agent looks again after each click. Screenshots go to Google's free vision model, which may train on them.
+- أداة جديدة cloud_desktop: يفتح الوكيل سطح مكتب لينكس على حاسوبك السحابي ويراه (نموذج رؤية مجاني يصف الشاشة) وينقر ويكتب. تُحتسب من الدقائق المجانية. الإحداثيات تقديرية فيعيد النظر بعد كل نقرة. تُرسل اللقطات إلى نموذج رؤية مجاني من جوجل وقد يتدرّب عليها.
+
 ## [0.1.80] — 2026-11-28 — Installed apps list · قائمة التطبيقات
 
 - Device page: "List installed apps" shows how many user apps are installed and their names (read-only; Android may hide other apps without Shizuku).
