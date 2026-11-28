@@ -429,7 +429,7 @@ fun FalconMark(size: Dp = 40.dp, glow: Boolean = false) {
         Box(
             Modifier.size(size).clip(RoundedCornerShape(size * 0.28f))
                 .background(Brush.linearGradient(listOf(Color(0xFF1C2027), Color(0xFF0C0E11))))
-                .border(1.dp, Color(0x33E9B44C), RoundedCornerShape(size * 0.28f)),
+                .border(1.dp, Color(0x333FC7B8), RoundedCornerShape(size * 0.28f)),
             contentAlignment = Alignment.Center,
         ) {
             Image(painterResource(R.drawable.ic_saqr_mark), null, Modifier.size(size))

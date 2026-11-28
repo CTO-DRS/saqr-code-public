@@ -26,7 +26,7 @@ object Notifs {
     const val CH_DONE = "agent_done"
     const val ID_ONGOING = 4100
     private const val ID_RESUME = 4101
-    const val GOLD = 0xFFE9B44C.toInt()
+    const val GOLD = 0xFF3FC7B8.toInt()
 
     private fun idFor(project: String, kind: Int) = 5000 + (project.hashCode() and 0xFFFF) * 4 + kind
 

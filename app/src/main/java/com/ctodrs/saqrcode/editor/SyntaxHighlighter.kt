@@ -15,15 +15,15 @@ data class CodePalette(
     val keyword: Color, val string: Color, val comment: Color, val number: Color, val tag: Color, val type: Color,
     val annotation: Color = tag, val operator: Color = comment, val attr: Color = type,
     val heading: Color = keyword, val link: Color = number, val code: Color = string,
-    val match: Color = Color(0x40E9B44C), val currentMatch: Color = Color(0x99E9B44C), val currentLine: Color = Color(0x0FFFFFFF),
+    val match: Color = Color(0x403FC7B8), val currentMatch: Color = Color(0x993FC7B8), val currentLine: Color = Color(0x0FFFFFFF),
 ) {
     companion object {
         val Dark = CodePalette(
             keyword = Color(0xFFF0B85A), string = Color(0xFF9BD08F), comment = Color(0xFF6B7380),
             number = Color(0xFF7CC4F2), tag = Color(0xFFF08A73), type = Color(0xFF6CCBB6),
             annotation = Color(0xFFD7A0E6), operator = Color(0xFFB7BDC6), attr = Color(0xFFE8CF8A),
-            heading = Color(0xFFEDBE5E), link = Color(0xFF7CC4F2), code = Color(0xFF9BD08F),
-            match = Color(0x40E9B44C), currentMatch = Color(0x99E9B44C), currentLine = Color(0x0FFFFFFF),
+            heading = Color(0xFF6FDDD0), link = Color(0xFF7CC4F2), code = Color(0xFF9BD08F),
+            match = Color(0x403FC7B8), currentMatch = Color(0x993FC7B8), currentLine = Color(0x0FFFFFFF),
         )
         val Light = CodePalette(
             keyword = Color(0xFF9A5B00), string = Color(0xFF2F7D32), comment = Color(0xFF8A8F97),
