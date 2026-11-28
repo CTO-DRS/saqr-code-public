@@ -198,6 +198,7 @@ class AgentSession(
     var contextTokens by mutableIntStateOf(0); private set
     val plan = mutableStateListOf<PlanItem>()
     val checkpoints = Checkpoints(projectDir, File(checkpointRoot, projectName))
+    private val cloudUsageFile = File(checkpointRoot.parentFile ?: checkpointRoot, "usage/cloud_usage.json")
     /** v0.13: this project's memory bank — auto-recalled each turn, edited by the model and the user. */
     private val memory = MemoryBank(File(projectDir, ".saqr"))
     val memoryBank: MemoryBank get() = memory
@@ -538,6 +539,7 @@ class AgentSession(
                 items += ChatItem.Notice(msg, isError = true, count = ErrorExplainer.classify(e).ordinal); outcome = RunOutcome(RunOutcome.Kind.ERROR, msg)
             }
             finally {
+                runCatching { kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) { cloud?.close() } } // v0.1.65: no sandbox outlives a turn
                 endTask(outcome)
                 items.filterIsInstance<ChatItem.Approval>().filter { it.decision == null }.forEach { it.deferred.cancel(); it.decision = false }
                 items.filterIsInstance<ChatItem.AskUser>().filter { it.status == ChatItem.AskUser.Status.PENDING && !it.restored }.forEach {
@@ -1174,6 +1176,7 @@ class AgentSession(
                 def == null -> { decision = AuditEntry.Decision.BLOCKED; ToolRegistry.unknownToolMessage(c.name) }
                 c.name == Tools.GIT_PUSH -> gitPush(args).also { decision = approvalDecision(it) }
                 c.name == Tools.GIT_COMMIT -> gitCommit(args).also { if (!it.startsWith("Error")) decision = approvalDecision(it) }
+                c.name in Tools.CLOUD -> runCloud(c.name, args).also { decision = if (it.startsWith("The user REJECTED")) AuditEntry.Decision.REJECTED else AuditEntry.Decision.AUTO }
                 c.name == Tools.RUN -> {
                     val (o, d) = runCommandGated(args)
                     if (d != AuditEntry.Decision.REJECTED && d != AuditEntry.Decision.BLOCKED) runCommands++
@@ -1267,6 +1270,44 @@ class AgentSession(
      * `confirmRiskyCommands` is on. Only the user's tap completes that card — the model has
      * no tool that can approve anything.
      */
+    private var cloud: com.ctodrs.saqrcode.cloud.CloudWorkspace? = null
+    private var cloudApproved = false
+
+    /** v0.1.65: cloud_run / cloud_test / cloud_sync. Off by default; the first use in a chat needs the user's OK. */
+    private suspend fun runCloud(name: String, a: JSONObject): String {
+        DesertMode.cloudTool(name)?.let { f -> if (DesertState.active) return DesertMode.toolMessage(f) }
+        if (!settings.cloudEnabled) return "Error: the cloud workspace is off. Tell the user it can be turned on in Settings, and continue with run_command and run_tests on the phone."
+        val limits = com.ctodrs.saqrcode.cloud.CloudLimits(dailyMinutes = settings.cloudDailyMinutes)
+        val ws = cloud ?: run {
+            com.ctodrs.saqrcode.cloud.CloudProviders.token = settings.cloudProxyToken
+            val provider = com.ctodrs.saqrcode.cloud.CloudProviders.create(settings.cloudProxyUrl)
+                ?: return "Error: the cloud workspace is turned on but not connected yet (no cloud service address or token set). Continue on the phone."
+            val cloudLedger = com.ctodrs.saqrcode.cloud.CloudLedger(cloudUsageFile)
+            com.ctodrs.saqrcode.cloud.CloudWorkspace(provider, cloudLedger, limits, projectDir, { Redact.text(it, settings.githubToken) }).also { cloud = it }
+        }
+        if (!cloudApproved) {
+            val what = when (name) {
+                Tools.CLOUD_RUN -> "cloud_run: " + a.optString("command").lineSequence().firstOrNull().orEmpty().take(120)
+                Tools.CLOUD_TEST -> "cloud_test"
+                else -> "cloud_sync"
+            }
+            val card = ChatItem.Approval(emptyList(),
+                action = "Use the cloud workspace for this chat (up to ${limits.dailyMinutes} min a day; project files are copied, secrets never are).\n$what",
+                actionKind = ChatItem.Approval.ActionKind.COMMAND)
+            items += card
+            val ok = awaitApproval(card, RunWait.Kind.COMMAND, what)
+            if (!ok) return "The user REJECTED using the cloud workspace. Nothing was uploaded or run. Continue on the phone or ask what they prefer."
+            cloudApproved = true
+        }
+        return withContext(Dispatchers.IO) {
+            when (name) {
+                Tools.CLOUD_RUN -> ws.run(a.optString("command"), a.optInt("timeout_sec", 0).takeIf { it > 0 })
+                Tools.CLOUD_TEST -> ws.test(a.optInt("timeout_sec", 0).takeIf { it > 0 })
+                else -> ws.sync()
+            }
+        }
+    }
+
     private suspend fun runCommandGated(a: JSONObject): Pair<String, AuditEntry.Decision> {
         val cmd = a.optString("command")
         if (settings.confirmRiskyCommands) {
@@ -2233,7 +2274,8 @@ You operate on the user's project through tools. The project root is the current
 
 # How to work
 - Explore first when the request depends on existing code (list_files, search, read_file). Don't guess file contents.
-- Make changes with write_file (new files / full rewrites), edit_file (one targeted edit) or multi_edit_file (several edits to one file in one call). Rename or move a file with move_file. Always put `path` first in arguments.
+- Make changes with write_file (new files / full rewrites), edit_file (one targeted edit) or multi_edit_file (several edits to one file in one call). Rename or move a file with move_file.
+- Heavy work (installs, Gradle or npm builds, full test runs) belongs in the cloud workspace when it is on: cloud_test, cloud_run. If a cloud tool says it is off, stay on run_command. Always put `path` first in arguments.
 - ZERO LAZY CODE: never write placeholders such as "// ...rest unchanged" or "TODO: implement". Write complete, working files. Split very large files into several smaller files.
 - Group related file changes in the same turn: changes touching 2+ files are shown to the user as one plan for approval. If the user rejects, stop and ask what they want.
 - Verify when practical by running commands (tests, linters, `node file.js`, `python3 file.py`).

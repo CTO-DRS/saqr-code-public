@@ -123,6 +123,20 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
 
     // ------------------------------------------------ v0.15 Autonomous Core (النواة المستقلة)
 
+    /** v0.1.65 cloud workspace: off by default; the proxy URL is ours, never a vendor key. */
+    var cloudEnabled: Boolean
+        get() = prefs.getBoolean("cloud_enabled", false)
+        set(v) { prefs.edit().putBoolean("cloud_enabled", v).apply(); bump() }
+    var cloudProxyUrl: String
+        get() = prefs.getString("cloud_proxy_url", "https://saqr-cloud.nexus-link.workers.dev") ?: ""
+        set(v) { prefs.edit().putString("cloud_proxy_url", v.trim()).apply(); bump() }
+    var cloudProxyToken: String
+        get() = secure.get("cloud_proxy_token").orEmpty()
+        set(v) { secure.put("cloud_proxy_token", v.trim().ifBlank { null }); bump() }
+    var cloudDailyMinutes: Int
+        get() = prefs.getInt("cloud_daily_minutes", 30).coerceIn(1, 240)
+        set(v) { prefs.edit().putInt("cloud_daily_minutes", v.coerceIn(1, 240)).apply(); bump() }
+
     /** v0.15: run consecutive read-only SAFE tool calls side by side (max 3, per-tool timeout). */
     var parallelTools: Boolean
         get() = prefs.getBoolean("parallel_tools", true)

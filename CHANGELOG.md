@@ -1,5 +1,21 @@
 # Changelog · سجل التغييرات
 
+## [0.1.66] — 2026-11-28 — Cloud workspace connected · الحاسوب السحابي متصل
+
+- **Connected.** The cloud workspace now talks to a free token proxy (a Cloudflare Worker) in front of Daytona. The cloud service key never reaches the phone; the app holds only an access token, stored encrypted.
+- **Settings:** a Cloud workspace switch (off by default) and a field for the access token.
+- Project files go up as one zip; secrets and build output are excluded. The sandbox is deleted at the end of every turn. Package registries are the only allowed outbound sites where the plan supports it.
+- versionName 0.1.66, versionCode 105.
+- الحاسوب السحابي صار متصلًا عبر وسيط مجاني؛ مفتاح الخدمة لا يصل إلى الهاتف. مفتاح في الإعدادات وزر تشغيل، وهو مطفأ افتراضيًا.
+
+## [0.1.65] — 2026-11-28 — Cloud workspace, first layer · مساحة العمل السحابية، الطبقة الأولى
+
+- **New (off by default, not connected yet).** The agent gets three tools, `cloud_run`, `cloud_test` and `cloud_sync`, that run builds and tests on a cloud machine instead of the phone. The first use in a chat asks for your OK. Project files are copied; secrets (.env, keystores, local.properties, google-services.json, keys) and build output never are.
+- Guard rails: a daily minutes cap (default 30), a per-command timeout, the sandbox is closed when the turn ends, and a visible usage meter with a cost estimate.
+- This build contains the engine and its tests. The cloud service itself is connected in the next build, so the tools answer "not connected yet" until then.
+- versionName 0.1.65, versionCode 104.
+- أدوات جديدة لتشغيل البناء والاختبار على جهاز سحابي مع موافقتك، وحدود يومية، ولا تُرفع الأسرار أبدًا. الخدمة نفسها تُوصَل في الإصدار القادم.
+
 ## [0.1.64] — 2026-11-28 — Rename and move files · إعادة تسمية ونقل الملفات
 
 - **New tool.** `move_file` renames or moves a text file. It shows in the approval plan as one delete plus one create, so you see it, approve it and can undo it from the checkpoint like any other change. It refuses when the destination already exists.

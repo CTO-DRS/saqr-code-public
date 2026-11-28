@@ -1236,4 +1236,9 @@
     <string name="guide_6_title">العمل بلا إنترنت</string>
     <string name="guide_6_body">المحرر والملفات وgit والطرفية تعمل بلا إنترنت. أما الوكيل فيحتاج اتصالاً بالنموذج. وضع الصحراء يوقف أدوار السحابة ويخبرك بالسبب.</string>
     <string name="history_heading">الإيداعات التي غيّرت هذا الملف</string>
+    <string name="cloud_workspace">مساحة العمل السحابية</string>
+    <string name="cloud_workspace_desc">تسمح للوكيل بتشغيل البناء والاختبارات على جهاز سحابي بموافقتك عند أول استخدام. تُنسخ ملفات المشروع ولا تُنسخ الأسرار أبدًا. بحد يومي.</string>
+    <string name="cloud_token">رمز الوصول السحابي</string>
+    <string name="cloud_token_saved">محفوظ. الصق رمزًا جديدًا لاستبداله</string>
+    <string name="cloud_token_hint">يُخزَّن مشفرًا على هذا الهاتف فقط.</string>
 </resources>

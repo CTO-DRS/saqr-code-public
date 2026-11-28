@@ -70,6 +70,10 @@ class AutonomyUi(
     val maxMinutes: Int = 0,
     val maxCostUsd: Double = 0.0,
     val onBudgets: (Int, Int, Double) -> Unit = { _, _, _ -> },
+    val cloudEnabled: Boolean = false,
+    val onCloudEnabled: (Boolean) -> Unit = {},
+    val cloudTokenSet: Boolean = false,
+    val onCloudToken: (String) -> Unit = {},
 ) {
     companion object {
         /** Wires the holder to the store. Fallback options never include a provider without a key. */
@@ -96,6 +100,8 @@ class AutonomyUi(
                 untrustedMarking = settings.untrustedMarking, onUntrustedMarking = { settings.untrustedMarking = it },
                 maxSteps = settings.maxSteps, maxMinutes = settings.maxMinutes, maxCostUsd = settings.maxCostUsd,
                 onBudgets = { s, m, c -> settings.maxSteps = s; settings.maxMinutes = m; settings.maxCostUsd = c },
+                cloudEnabled = settings.cloudEnabled, onCloudEnabled = { settings.cloudEnabled = it },
+                cloudTokenSet = settings.cloudProxyToken.isNotBlank(), onCloudToken = { settings.cloudProxyToken = it },
             )
         }
     }
@@ -104,6 +110,21 @@ class AutonomyUi(
 @Composable
 internal fun AutonomySection(ui: AutonomyUi, teamMode: Boolean) {
     SectionLabel(stringResource(R.string.autonomy_section), Modifier.padding(top = Sp.md))
+    Group {
+        Column {
+            var cloudToken by remember { mutableStateOf("") }
+            ListRow(stringResource(R.string.cloud_workspace), stringResource(R.string.cloud_workspace_desc), icon = Lucide.CloudUpload,
+                trailing = { SaqrSwitch(ui.cloudEnabled, ui.onCloudEnabled) })
+            if (ui.cloudEnabled) {
+                Column(Modifier.padding(horizontal = Sp.lg, vertical = Sp.sm), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                    SaqrField(cloudToken, { cloudToken = it.trim() }, label = stringResource(R.string.cloud_token),
+                        placeholder = if (ui.cloudTokenSet) stringResource(R.string.cloud_token_saved) else null, mono = true,
+                        supporting = stringResource(R.string.cloud_token_hint))
+                    PrimaryButton(stringResource(R.string.save), { ui.onCloudToken(cloudToken); cloudToken = "" })
+                }
+            }
+        }
+    }
     Group {
         Column {
             ListRow(stringResource(R.string.parallel_tools), stringResource(R.string.parallel_tools_desc), icon = Lucide.Layers,
