@@ -1241,4 +1241,5 @@
     <string name="cloud_token">Cloud access token</string>
     <string name="cloud_token_saved">Saved. Paste a new one to replace it</string>
     <string name="cloud_token_hint">Stored encrypted on this phone only.</string>
+    <string name="free_ai_privacy">Free AI uses several free providers and switches automatically when one is busy. Some providers (Google Gemini, Mistral) may use free-tier prompts to train their models, so do not send secrets or private code through it. Choose another provider for sensitive work.</string>
 </resources>

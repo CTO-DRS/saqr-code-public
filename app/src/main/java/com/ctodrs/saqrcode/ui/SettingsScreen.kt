@@ -1350,6 +1350,9 @@ private fun ProviderItem(def: ProviderDef, cfg: ProviderConfig, active: Boolean,
             Column(Modifier.padding(start = Sp.lg, end = Sp.lg, bottom = Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
                 SaqrField(baseUrl, { baseUrl = it }, label = stringResource(R.string.base_url), mono = true,
                     keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri))
+                if (def.id == "saqr-free") {
+                    Text(stringResource(R.string.free_ai_privacy), style = Saqr.type.caption, color = c.text2)
+                }
                 SaqrField(key, { key = it }, label = stringResource(R.string.api_key),
                     placeholder = if (cfg.hasKey) "••••••••  " + stringResource(R.string.key_set) else def.keyUrl.removePrefix("https://"),
                     visual = PasswordVisualTransformation(), keyboard = KeyboardOptions(keyboardType = KeyboardType.Password), mono = true)

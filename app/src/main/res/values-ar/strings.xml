@@ -1241,4 +1241,5 @@
     <string name="cloud_token">رمز الوصول السحابي</string>
     <string name="cloud_token_saved">محفوظ. الصق رمزًا جديدًا لاستبداله</string>
     <string name="cloud_token_hint">يُخزَّن مشفرًا على هذا الهاتف فقط.</string>
+    <string name="free_ai_privacy">الذكاء الاصطناعي المجاني يستخدم عدة مزودين مجانيين ويتبدل تلقائيًا عند انشغال أحدهم. بعض المزودين (Google Gemini وMistral) قد يستخدمون مطالبات الباقة المجانية لتدريب نماذجهم، فلا ترسل أسرارًا أو شيفرة خاصة عبره. اختر مزودًا آخر للأعمال الحساسة.</string>
 </resources>

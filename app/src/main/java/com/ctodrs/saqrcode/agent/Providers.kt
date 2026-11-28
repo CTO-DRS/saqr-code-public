@@ -53,6 +53,11 @@ object Providers {
             keyUrl = "https://platform.deepseek.com/api_keys",
         ),
         ProviderDef(
+            "saqr-free", "Saqr Free AI", ProviderKind.OPENAI_COMPAT,
+            "https://saqr-cloud.nexus-link.workers.dev/ai/v1", "auto",
+            emptyList(), baseUrlEditable = true,
+        ),
+        ProviderDef(
             "custom", "Custom (OpenAI-compatible)", ProviderKind.OPENAI_COMPAT,
             "https://", "", emptyList(), keyOptional = true, baseUrlEditable = true,
         ),
