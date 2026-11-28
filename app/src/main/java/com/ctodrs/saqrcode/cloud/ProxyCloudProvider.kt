@@ -21,7 +21,7 @@ class ProxyCloudProvider(private val baseUrl: String, private val token: String)
     override suspend fun open(): CloudSandbox {
         val r = call("POST", "/open", null, null, 60_000)
         val id = r.optString("id")
-        if (id.isBlank()) throw CloudException("The cloud machine did not start (${r.optString("error", "no reply")}).")
+        if (id.isBlank()) throw CloudException(r.optString("detail").ifBlank { "The cloud machine did not start (${r.optString("error", "no reply")})." })
         return ProxySandbox(id)
     }
 
@@ -47,7 +47,7 @@ class ProxyCloudProvider(private val baseUrl: String, private val token: String)
             val started = System.currentTimeMillis()
             val body = JSONObject().put("command", "cd \"\$HOME/work\" 2>/dev/null; $command").put("timeout", timeoutSec).toString().toByteArray()
             val r = call("POST", "/s/$id/exec", body, "application/json", (timeoutSec + 30) * 1000L)
-            if (r.has("error")) throw CloudException("Cloud command failed (${r.optString("error")}).")
+            if (r.has("error")) throw CloudException(r.optString("detail").ifBlank { "Cloud command failed (${r.optString("error")})." })
             val out = r.optString("output")
             out.lineSequence().forEach { if (it.isNotEmpty()) onLine(it) }
             return CloudExecResult(r.optInt("exit", -1), out, r.optBoolean("timedOut"), System.currentTimeMillis() - started)

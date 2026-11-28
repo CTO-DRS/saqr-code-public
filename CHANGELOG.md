@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.79] — 2026-11-28 — Automatic cloud computer · حاسوب سحابي تلقائي
+
+- The cloud computer now sets itself up like the Free AI: no pairing link, nothing to paste. Each install gets its own machine, and the service limits each install to about 20 free minutes and 3 machines a day (plus an overall daily cap). One install can never touch another's machine.
+- الحاسوب السحابي يُعدّ نفسه تلقائيًا كالذكاء المجاني: بلا رابط ربط ولا لصق. لكل تثبيت جهازه الخاص وحدّ نحو 20 دقيقة مجانية و3 أجهزة يوميًا (مع سقف يومي عام)، ولا يستطيع تثبيت لمس جهاز آخر.
+
 ## [0.1.78] — 2026-11-28 — Cloud secrets · أسرار السحابة
 
 - Settings, Cloud computer: save named secrets once. They reach only your own cloud machine as environment variables, are never uploaded with the project, the AI sees only the names, and values are hidden from output.

@@ -1281,7 +1281,7 @@ class AgentSession(
         if (!settings.cloudEnabled) return "Error: the cloud workspace is off. Tell the user it can be turned on in Settings, and continue with run_command and run_tests on the phone."
         val limits = com.ctodrs.saqrcode.cloud.CloudLimits(dailyMinutes = settings.cloudDailyMinutes)
         val ws = cloud ?: run {
-            com.ctodrs.saqrcode.cloud.CloudProviders.token = settings.cloudProxyToken
+            com.ctodrs.saqrcode.cloud.CloudProviders.token = settings.cloudToken
             val provider = com.ctodrs.saqrcode.cloud.CloudProviders.create(settings.cloudProxyUrl)
                 ?: return "Error: the cloud workspace is turned on but not connected yet (no cloud service address or token set). Continue on the phone."
             val cloudLedger = com.ctodrs.saqrcode.cloud.CloudLedger(cloudUsageFile)

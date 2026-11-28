@@ -109,7 +109,7 @@ class AutonomyUi(
                 maxSteps = settings.maxSteps, maxMinutes = settings.maxMinutes, maxCostUsd = settings.maxCostUsd,
                 onBudgets = { s, m, c -> settings.maxSteps = s; settings.maxMinutes = m; settings.maxCostUsd = c },
                 cloudEnabled = settings.cloudEnabled, onCloudEnabled = { settings.cloudEnabled = it },
-                cloudTokenSet = settings.cloudProxyToken.isNotBlank(), onCloudToken = { settings.cloudProxyToken = it },
+                cloudTokenSet = settings.cloudToken.isNotBlank(), onCloudToken = { settings.cloudProxyToken = it },
             )
         }
     }
