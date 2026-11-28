@@ -430,7 +430,7 @@ The owner's spec (14:24, wamid ...QTUyQzBB...) adapted to Saqr's real stack: one
 | 3 Root | Magisk/KernelSU detection, user-approved root session, never the default engine | planned |
 | 4 Remote ADB | Wireless Debugging pairing and connect through a maintained ADB protocol library (dadb 2.0.0 is on Maven Central; pairing support must be checked first), multi-device registry, stored credentials encrypted | planned, needs a real second device to verify |
 | 5 Device management | Apps (list, info, permissions), files, services, device info screens | planned |
-| 6 Intelligence | Logcat analyzer, crash finder, command risk explainer in plain words, agent tool `device_run` with approval cards | planned |
+| 6 Intelligence | Agent tool `device_run` with approval cards (0.1.75 done). Still: logcat analyzer, crash finder | partly done |
 | 7 Automation | Command sequences, schedules (WorkManager), plugin API, saved command files | planned |
 | 8 Release | Security tests, Android version matrix, APK | planned |
 

@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.75] — 2026-11-28 — Agent tool device_run · أداة device_run للوكيل
+
+- The agent can run one shell command on this phone. Read-only commands run at once; anything that changes the phone shows an approval card with the reason, asked fresh every time. Everything is audited.
+- يستطيع الوكيل تشغيل أمر على هذا الهاتف: الأوامر القرائية تعمل فورًا، وأي أمر يغيّر الهاتف يظهر له بطاقة موافقة مع السبب في كل مرة، ويُسجَّل كل شيء.
+
 ## [0.1.74] — 2026-11-28 — Shizuku engine · محرك شيزوكو
 
 - Device commands now run through Shizuku (shell user) when it is ready, falling back to the app's own shell. Every command still goes through the risk gate and the audit log first.

@@ -53,6 +53,7 @@ object ToolRegistry {
         Tools.MOVE to Meta(Risk.MEDIUM, false, 30, 0, ToolCategory.FILES),
         Tools.CLOUD_RUN to Meta(Risk.MEDIUM, false, 900, 0, ToolCategory.TERMINAL),
         Tools.CLOUD_TEST to Meta(Risk.MEDIUM, false, 900, 0, ToolCategory.QUALITY),
+        Tools.DEVICE_RUN to Meta(Risk.MEDIUM, false, 120, 0, ToolCategory.TERMINAL),
         Tools.CLOUD_SYNC to Meta(Risk.MEDIUM, false, 300, 0, ToolCategory.TERMINAL),
         Tools.RUN to Meta(Risk.MEDIUM, false, 600, 0, ToolCategory.TERMINAL),
         Tools.LINT to Meta(Risk.MEDIUM, false, 300, 0, ToolCategory.QUALITY),
