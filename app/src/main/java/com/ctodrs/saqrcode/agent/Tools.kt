@@ -15,6 +15,7 @@ object Tools {
     const val CLOUD_RUN = "cloud_run"
     const val CLOUD_TEST = "cloud_test"
     const val CLOUD_SYNC = "cloud_sync"
+    const val DEVICE_RUN = "device_run"
     const val DELETE = "delete_file"
     const val RUN = "run_command"
     const val SEARCH = "search"
@@ -82,6 +83,10 @@ object Tools {
             schema(JSONObject()
                 .put("command", p("string", "Shell command, run in the project root"))
                 .put("timeout_sec", p("integer", "Max seconds (default 300, cap 600)")), listOf("command"))),
+        ToolSpec(DEVICE_RUN, "Run one shell command on THIS Android phone through the device command engine (Shizuku shell when ready, else the app's own shell). Read-only commands (getprop, dumpsys, cat /proc/*, pm list) run at once. Anything that changes the phone shows the user an approval card with a plain-words risk reason and runs only if they tap yes. Every command is written to an audit log. Never try to get around a refusal.",
+            schema(JSONObject()
+                .put("command", p("string", "Shell command to run on the phone"))
+                .put("timeout_sec", p("integer", "Max seconds (default 30, cap 120)")), listOf("command"))),
         ToolSpec(CLOUD_TEST, "Detect the project's test command (gradlew, npm, pytest) and run it in the cloud workspace. Returns pass/fail output.",
             schema(JSONObject().put("timeout_sec", p("integer", "Max seconds (default 600)")), emptyList())),
         ToolSpec(CLOUD_SYNC, "Copy the current project to the cloud workspace now (cloud_run and cloud_test already do this automatically when files changed).",
@@ -281,6 +286,7 @@ object Tools {
         CLOUD_RUN -> args.optString("command")
         CLOUD_TEST -> "tests"
         CLOUD_SYNC -> "sync"
+        DEVICE_RUN -> args.optString("command")
         else -> args.optString("path")
     }
 }

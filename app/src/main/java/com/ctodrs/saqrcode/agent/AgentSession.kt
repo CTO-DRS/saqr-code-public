@@ -1176,6 +1176,7 @@ class AgentSession(
                 def == null -> { decision = AuditEntry.Decision.BLOCKED; ToolRegistry.unknownToolMessage(c.name) }
                 c.name == Tools.GIT_PUSH -> gitPush(args).also { decision = approvalDecision(it) }
                 c.name == Tools.GIT_COMMIT -> gitCommit(args).also { if (!it.startsWith("Error")) decision = approvalDecision(it) }
+                c.name == Tools.DEVICE_RUN -> runDevice(args).also { decision = if (it.startsWith("The user REJECTED")) AuditEntry.Decision.REJECTED else AuditEntry.Decision.AUTO }
                 c.name in Tools.CLOUD -> runCloud(c.name, args).also { decision = if (it.startsWith("The user REJECTED")) AuditEntry.Decision.REJECTED else AuditEntry.Decision.AUTO }
                 c.name == Tools.RUN -> {
                     val (o, d) = runCommandGated(args)
@@ -1306,6 +1307,27 @@ class AgentSession(
                 else -> ws.sync()
             }
         }
+    }
+
+    /** v0.1.75: device_run. SAFE commands run at once; the rest need the user's tap, asked fresh every time. */
+    private suspend fun runDevice(a: JSONObject): String {
+        val cmd = a.optString("command").trim()
+        if (cmd.isEmpty()) return "Error: command is empty."
+        val ctx = com.ctodrs.saqrcode.SaqrApp.instance.applicationContext
+        val audit = com.ctodrs.saqrcode.device.DeviceAuditLog(File(ctx.filesDir, "device-audit.jsonl"))
+        val engine = com.ctodrs.saqrcode.device.CommandEngine(
+            listOf(com.ctodrs.saqrcode.device.ShizukuEngine(ctx), com.ctodrs.saqrcode.device.LocalShellEngine()), audit,
+        ) { command, verdict ->
+            val card = ChatItem.Approval(emptyList(),
+                action = "Run on this phone (" + verdict.risk.name.lowercase() + "):\n" + command.take(300) + "\n" + verdict.reasons.joinToString("; "),
+                actionKind = ChatItem.Approval.ActionKind.COMMAND)
+            items += card
+            awaitApproval(card, RunWait.Kind.COMMAND, command.lineSequence().firstOrNull().orEmpty())
+        }
+        val r = withContext(Dispatchers.IO) { engine.run(cmd, null, a.optLong("timeout_sec", 30).coerceIn(1, 120) * 1000) }
+        r.refused?.let { return "The user REJECTED or the engine refused this command: $it. Nothing was run. Do not retry an equivalent command; explain what you need." }
+        val body = Redact.text((r.output + (if (r.error.isNotEmpty()) "\n" + r.error else "")).trim(), settings.githubToken).takeLast(8000)
+        return "[" + r.engine + " exit " + r.exitCode + (if (r.timedOut) " timed out" else "") + "]\n" + body
     }
 
     private suspend fun runCommandGated(a: JSONObject): Pair<String, AuditEntry.Decision> {
