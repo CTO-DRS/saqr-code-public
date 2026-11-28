@@ -1287,6 +1287,7 @@
     <string name="device_grant">منح إذن Shizuku</string>
     <string name="device_recheck">إعادة فحص المحركات</string>
     <string name="device_check_crashes">فحص الأعطال الأخيرة</string>
+    <string name="device_list_apps">عرض التطبيقات المثبتة</string>
     <string name="device_run_diag">تشغيل التشخيص للقراءة فقط</string>
     <string name="device_audit">آخر الأوامر</string>
 </resources>
