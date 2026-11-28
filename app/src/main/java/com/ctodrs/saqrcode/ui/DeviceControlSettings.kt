@@ -17,6 +17,7 @@ import com.ctodrs.saqrcode.R
 import com.ctodrs.saqrcode.device.CommandEngine
 import com.ctodrs.saqrcode.device.DeviceAuditLog
 import com.ctodrs.saqrcode.device.DeviceDiagnostics
+import com.ctodrs.saqrcode.device.ShizukuEngine
 import com.ctodrs.saqrcode.device.LocalShellEngine
 import com.ctodrs.saqrcode.device.RootEngine
 import com.ctodrs.saqrcode.device.ShizukuProbe
@@ -79,7 +80,7 @@ internal fun DeviceControlSection() {
             PrimaryButton(stringResource(R.string.device_run_diag), {
                 if (!busy) scope.launch {
                     busy = true
-                    val ce = CommandEngine(listOf(LocalShellEngine()), audit) { _, _ -> false } // diagnostics are SAFE only: nothing to confirm
+                    val ce = CommandEngine(listOf(ShizukuEngine(ctx), LocalShellEngine()), audit) { _, _ -> false } // diagnostics are SAFE only: nothing to confirm
                     lines = DeviceDiagnostics(ce).run()
                     recent = audit.entries(8)
                     busy = false

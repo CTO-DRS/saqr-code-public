@@ -24,3 +24,27 @@ object ShizukuProbe {
 
     fun requestPermission() { runCatching { rikka.shizuku.Shizuku.requestPermission(4711) } }
 }
+
+/**
+ * v0.1.74 · Runs commands as the Shizuku shell user (uid 2000) through Shizuku's own process API.
+ * That API is hidden in the library, so it is reached by reflection; any failure reads as "not available"
+ * and the command falls back to the next engine. Every command still passes the CommandEngine risk gate first.
+ */
+class ShizukuEngine(private val ctx: android.content.Context) : DeviceEngine {
+    override val id = "shizuku"
+    override suspend fun available(): Boolean = ShizukuProbe.state(ctx) == ShizukuState.READY
+    override suspend fun exec(command: String, timeoutMs: Long): CommandResult =
+        runStarted(id, command, timeoutMs) { newProcess(arrayOf("sh", "-c", command)) }
+
+    companion object {
+        fun newProcess(argv: Array<String>): Process {
+            val m = rikka.shizuku.Shizuku::class.java.getDeclaredMethod("newProcess", Array<String>::class.java, Array<String>::class.java, String::class.java)
+            m.isAccessible = true
+            return m.invoke(null, argv, null, null) as Process
+        }
+
+        /** Picks engines in order of how much they can do, only those that exist. */
+        fun order(state: ShizukuState, rooted: Boolean): List<String> =
+            buildList { if (state == ShizukuState.READY) add("shizuku"); if (rooted) add("root"); add("local") }
+    }
+}

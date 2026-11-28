@@ -30,10 +30,13 @@ class RootEngine : DeviceEngine {
     override suspend fun exec(command: String, timeoutMs: Long): CommandResult = runProcess(id, arrayOf("su", "-c", command), command, timeoutMs)
 }
 
-internal suspend fun runProcess(engine: String, argv: Array<String>, shown: String, timeoutMs: Long): CommandResult = withContext(Dispatchers.IO) {
+internal suspend fun runProcess(engine: String, argv: Array<String>, shown: String, timeoutMs: Long): CommandResult =
+    runStarted(engine, shown, timeoutMs) { ProcessBuilder(*argv).redirectErrorStream(false).start() }
+
+internal suspend fun runStarted(engine: String, shown: String, timeoutMs: Long, start: () -> Process): CommandResult = withContext(Dispatchers.IO) {
     val t0 = System.currentTimeMillis()
     try {
-        val p = ProcessBuilder(*argv).redirectErrorStream(false).start()
+        val p = start()
         val out = StringBuilder(); val err = StringBuilder()
         val ro = Thread { runCatching { p.inputStream.bufferedReader().forEachLine { if (out.length < 200_000) out.appendLine(it) } } }.also { it.start() }
         val re = Thread { runCatching { p.errorStream.bufferedReader().forEachLine { if (err.length < 50_000) err.appendLine(it) } } }.also { it.start() }
