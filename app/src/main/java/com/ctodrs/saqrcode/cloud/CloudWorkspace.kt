@@ -15,6 +15,8 @@ class CloudWorkspace(
     private val projectDir: File,
     private val redact: (String) -> String = { it },
     private val clock: () -> Long = System::currentTimeMillis,
+    /** v0.1.78: the user's saved cloud secrets, injected as environment variables for each command. */
+    private val env: () -> Map<String, String> = { emptyMap() },
 ) {
     private var sandbox: CloudSandbox? = null
     private var uploadedHash: String? = null
@@ -29,7 +31,8 @@ class CloudWorkspace(
     suspend fun run(command: String, timeoutSec: Int?, onLine: (String) -> Unit = {}): String = guarded { sb ->
         val note = syncInto(sb)
         val t = minOf(limits.commandTimeout(timeoutSec).toLong(), ledger.remainingSeconds(limits)).toInt().coerceAtLeast(1)
-        val r = if (t > 540) CloudLongRun.run(sb, command, t, onLine = onLine) else sb.exec(command, t, onLine)
+        val full = ProjectSecrets.envPrefix(env()) + command
+        val r = if (t > 540) CloudLongRun.run(sb, full, t, onLine = onLine) else sb.exec(full, t, onLine)
         format(r) + (if (note.startsWith("Note")) "\n$note" else "")
     }
 

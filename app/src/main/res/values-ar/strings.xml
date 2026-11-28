@@ -1208,6 +1208,10 @@
     <string name="conflict_apply">حلّ وجهّز</string>
     <string name="ci_watch">مراقبة بناء مستودع</string>
     <string name="ci_watch_desc">يفحص أحدث تشغيل لـ GitHub Actions كل نحو 30 دقيقة. هادئ افتراضيًا: لا ينبّه إلا عند فشل تشغيل أو عودته للنجاح. اتركه فارغًا للإيقاف</string>
+    <string name="cloud_secrets">أسرار السحابة</string>
+    <string name="cloud_secrets_desc">مفاتيح ورموز تحتاجها عمليات البناء. تذهب فقط إلى حاسوبك السحابي كمتغيرات بيئة، ولا تُرفع مع المشروع، ولا يرى الذكاء الاصطناعي إلا أسماءها، وتُخفى من المخرجات. تُخزَّن مشفّرة على هذا الهاتف</string>
+    <string name="cloud_secret_name">الاسم (أحرف كبيرة و _)</string>
+    <string name="cloud_secret_value">القيمة</string>
     <string name="sentinel_digest">ملخص الصباح</string>
     <string name="sentinel_digest_desc">كل صباح الساعة 8:00 إشعار قصير: المشاريع اللي فيها شغل غير محفوظ وصرف النماذج أمس. يُحسب على جوالك ويُتجاوز إذا ما فيه شي يستاهل</string>
     <string name="widget_desc">يعرض هل صقر شغال؛ اضغط للفتح</string>

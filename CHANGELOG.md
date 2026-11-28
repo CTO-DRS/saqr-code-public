@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.78] — 2026-11-28 — Cloud secrets · أسرار السحابة
+
+- Settings, Cloud computer: save named secrets once. They reach only your own cloud machine as environment variables, are never uploaded with the project, the AI sees only the names, and values are hidden from output.
+- الإعدادات، الحاسوب السحابي: احفظ أسرارًا مسمّاة مرة واحدة. تصل فقط إلى حاسوبك السحابي كمتغيرات بيئة، ولا تُرفع مع المشروع، ولا يرى الذكاء إلا الأسماء، وتُخفى القيم من المخرجات.
+
 ## [0.1.77] — 2026-11-28 — Quiet CI watch · مراقبة بناء هادئة
 
 - Settings, Agent: enter owner/repo and Saqr checks its newest GitHub Actions run about every 30 minutes. It notifies only when a run fails or turns green again.

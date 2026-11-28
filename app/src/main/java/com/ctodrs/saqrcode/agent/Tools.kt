@@ -79,7 +79,7 @@ object Tools {
             schema(JSONObject()
                 .put("path", p("string", "Existing file path relative to project root"))
                 .put("to", p("string", "New file path relative to project root")), listOf("path", "to"))),
-        ToolSpec(CLOUD_RUN, "Run a shell command in the user's CLOUD workspace (a fast Linux machine with Node, Python, Java and Gradle; it starts empty and gets a copy of the project first, never secrets). Use it for builds, installs and tests the phone terminal is too slow for. Results are text. Fails with a clear message if the cloud workspace is off or the daily limit is used.",
+        ToolSpec(CLOUD_RUN, "Run a shell command in the user's CLOUD workspace (a fast Linux machine with Node, Python, Java and Gradle; it starts empty and gets a copy of the project first, never secrets). Use it for builds, installs and tests the phone terminal is too slow for. Results are text. The user's saved cloud secrets are available there as environment variables (you never see their values; list the names with `env | cut -d= -f1`). Fails with a clear message if the cloud workspace is off or the daily limit is used.",
             schema(JSONObject()
                 .put("command", p("string", "Shell command, run in the project root"))
                 .put("timeout_sec", p("integer", "Max seconds (default 300, cap 600)")), listOf("command"))),

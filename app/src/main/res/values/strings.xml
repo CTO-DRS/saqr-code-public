@@ -1208,6 +1208,10 @@
     <string name="conflict_apply">Resolve and stage</string>
     <string name="ci_watch">Watch CI of a repo</string>
     <string name="ci_watch_desc">Checks the newest GitHub Actions run about every 30 minutes. Quiet by default: it speaks up only when a run fails or turns green again. Leave empty to turn off</string>
+    <string name="cloud_secrets">Cloud secrets</string>
+    <string name="cloud_secrets_desc">Keys and tokens your builds need. They go only to your own cloud machine as environment variables, are never uploaded with the project, the AI sees only their names, and they are hidden from output. They are stored encrypted on this phone</string>
+    <string name="cloud_secret_name">Name (CAPITALS and _)</string>
+    <string name="cloud_secret_value">Value</string>
     <string name="sentinel_digest">Morning digest</string>
     <string name="sentinel_digest_desc">Every morning at 8:00 a short notification: projects with uncommitted work and yesterday\'s model spend. Computed on your phone; skipped when there is nothing to report</string>
     <string name="widget_desc">Shows whether Saqr is running; tap to open</string>

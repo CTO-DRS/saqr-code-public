@@ -27,6 +27,7 @@ import com.ctodrs.saqrcode.agent.FallbackTarget
 import com.ctodrs.saqrcode.data.SettingsStore
 import com.ctodrs.saqrcode.ui.components.ListRow
 import com.ctodrs.saqrcode.ui.components.PrimaryButton
+import com.ctodrs.saqrcode.ui.components.SecondaryButton
 import com.ctodrs.saqrcode.ui.components.RowDivider
 import com.ctodrs.saqrcode.ui.components.SaqrField
 import com.ctodrs.saqrcode.ui.components.SaqrSwitch
@@ -138,6 +139,34 @@ internal fun CloudSection(ui: AutonomyUi) {
                     PrimaryButton(stringResource(R.string.save), { ui.onCloudToken(cloudToken); cloudToken = "" })
                 }
             }
+        }
+    }
+    CloudSecretsGroup()
+}
+
+@Composable
+private fun CloudSecretsGroup() {
+    val store = remember { com.ctodrs.saqrcode.cloud.ProjectSecretStore(com.ctodrs.saqrcode.SaqrApp.instance.secure) }
+    var names by remember { mutableStateOf(store.list()) }
+    var name by remember { mutableStateOf("") }
+    var value by remember { mutableStateOf("") }
+    val nameOk = name.isEmpty() || com.ctodrs.saqrcode.cloud.ProjectSecrets.validName(name)
+    Group {
+        Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+            Text(stringResource(R.string.cloud_secrets), style = Saqr.type.body.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = Saqr.colors.text1)
+            Text(stringResource(R.string.cloud_secrets_desc), style = Saqr.type.caption, color = Saqr.colors.text2)
+            names.forEach { n ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                    Text(n, style = Saqr.type.body, color = Saqr.colors.text1, modifier = Modifier.weight(1f))
+                    SecondaryButton(stringResource(R.string.delete), { store.remove(n); names = store.list() })
+                }
+            }
+            SaqrField(name, { name = it.uppercase().trim() }, label = stringResource(R.string.cloud_secret_name), placeholder = "NPM_TOKEN", mono = true, isError = !nameOk)
+            SaqrField(value, { value = it.trim() }, label = stringResource(R.string.cloud_secret_value), mono = true,
+                visual = androidx.compose.ui.text.input.PasswordVisualTransformation())
+            PrimaryButton(stringResource(R.string.save), {
+                if (store.put(name, value)) { name = ""; value = ""; names = store.list() }
+            })
         }
     }
 }
