@@ -23,11 +23,6 @@ data class ProviderDef(
 object Providers {
     val all = listOf(
         ProviderDef(
-            "saqr-free", "Saqr Free AI", ProviderKind.OPENAI_COMPAT,
-            "https://saqr-cloud.nexus-link.workers.dev/ai/v1", "auto",
-            listOf("auto"), keyOptional = true, baseUrlEditable = true,
-        ),
-        ProviderDef(
             "anthropic", "Anthropic (Claude)", ProviderKind.ANTHROPIC,
             "https://api.anthropic.com", "claude-sonnet-4-5",
             listOf("claude-sonnet-4-5", "claude-opus-4-1", "claude-haiku-4-5"),
@@ -56,6 +51,11 @@ object Providers {
             "https://api.deepseek.com/v1", "deepseek-chat",
             listOf("deepseek-chat", "deepseek-reasoner"),
             keyUrl = "https://platform.deepseek.com/api_keys",
+        ),
+        ProviderDef(
+            "saqr-free", "Saqr Free AI", ProviderKind.OPENAI_COMPAT,
+            "https://saqr-cloud.nexus-link.workers.dev/ai/v1", "auto",
+            emptyList(), baseUrlEditable = true,
         ),
         ProviderDef(
             "custom", "Custom (OpenAI-compatible)", ProviderKind.OPENAI_COMPAT,

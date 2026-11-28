@@ -12,7 +12,7 @@ class V0167FreeAiProviderTest {
         val p = Providers.byId("saqr-free")
         assertEquals("saqr-free", p.id)
         assertEquals(ProviderKind.OPENAI_COMPAT, p.kind)
-        assertTrue(p.keyOptional)
+        assertTrue(!p.keyOptional)
         assertTrue(p.defaultBaseUrl.endsWith("/ai/v1"))
     }
     @Test fun providerIdsAreUnique() {
