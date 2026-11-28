@@ -86,7 +86,7 @@ object LoopDetector {
      * exit or a timeout. A user's rejection is not a failure (the user decided).
      */
     fun isFailure(result: String): Boolean =
-        result.startsWith("Error") || result.startsWith("Blocked") ||
+        result.startsWith("Error") || result.startsWith("Blocked") || result.startsWith("No test runner") ||
             Regex("""^\[exit [1-9]""").containsMatchIn(result) || result.startsWith("[timed out]")
 
     /**

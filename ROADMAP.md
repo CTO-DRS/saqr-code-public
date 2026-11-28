@@ -397,3 +397,24 @@ Plan: provider interface + fake provider, then Daytona behind a free token proxy
 - هذه الوثيقة مصدر الاتجاه الوحيد؛ `docs/PLAN.md` يحمل تفاصيل تنفيذ الإصدار الجاري فقط ويُفتح من جديد عند كل شحن.
 - لا بند ينتقل بين الإصدارات دون مراجعة؛ ما يُقطع من النطاق يُعلن «خارج النطاق» ولا يُخفى.
 - علامة ✓ تُضاف أمام كل بند شُحن في نفس commit الإصدار، كما في سجل 0.7–0.11 السابق.
+
+## Autonomous agent track / مسار الوكيل المستقل (added 0.1.69)
+
+Question from the owner: can Saqr do everything the Instinct agent does? Honest answer, in priority order.
+
+**Already in Saqr:** coding loop (read, edit, diff, approve), run_command and run_tests on the phone, git and GitHub tools, MCP servers, skills and packs, memory, team mode, plan and self-fix loop, Sentinel digest, desert mode, budgets and caps, Free AI with failover, cloud computer (cloud_run, cloud_test, cloud_sync) with a one-tap owner pairing.
+
+**What the cloud computer, live desktop, vault and background tasks unlock (build in this order):**
+1. **Long runs that survive the phone (next).** Run a task on the cloud computer while the phone is off: start, poll, resume, push a notification on done or on a blocker. Needs: a job id in the Worker, a status route, a foreground-safe poller in the app. Limit: Daytona free credits, so each job has a hard time cap.
+2. **Scheduled and background tasks.** Recurring checks (CI status, price, inbox of a repo) as local WorkManager jobs with a trigger condition and a quiet default. Phone must allow background work.
+3. **Release pipeline tool.** One approved flow: commit, mirror, wait for CI, publish the APK, verify the download, report. The user taps approve once per release. Keys never leave the device or the vault.
+4. **Secrets vault (phase 3).** Per-project secrets stored encrypted on the phone, injected into cloud runs as environment variables, never uploaded to a repo, never shown to the model. Human approval for first use of each secret.
+5. **Live desktop (phase 2).** A cloud desktop the agent can see and drive (screenshots plus click and type), with the user able to watch and take over. Used for sites with no API. Needs the Daytona computer-use API; test that first.
+6. **Browser tool.** The agent opens pages in the cloud desktop, reads them, fills forms. Sign-in only with a vault login the user added, never by guessing or by asking for passwords in chat.
+7. **Accounts and API keys for free tiers.** The agent can sign up through the browser for services that need only an email or Google sign-in, store the key in the vault and report it. Stops at any card, phone code or captcha and asks the human.
+8. **GitHub management.** Branches, PRs, issues, releases and CI reads through the user's own token, with approval for anything that publishes or deletes.
+9. **Progress reporting.** A running status feed per task with commit ranges, test counts and the APK link.
+
+**Stays human or impossible (by design):** paying, adding a card, raising spending limits or enabling pay-as-you-go; phone or SMS codes and device taps; captchas; signing in to someone else's account or acting as another person; anything that needs the user's identity documents; publishing to stores under the owner's account without his approval each time; device QA on real hardware (the cloud machine is Linux, not his phone); and silent actions the user did not approve. Mistral and Cerebras free API access sits behind billing, so they stay out.
+
+**Guardrails for every item above:** approval card for the first use per chat, daily caps, a kill switch in Settings, audit log, no secrets in prompts, and an honest "I could not do this" instead of a guess.

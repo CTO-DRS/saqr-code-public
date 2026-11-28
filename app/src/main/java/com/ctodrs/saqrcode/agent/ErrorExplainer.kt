@@ -29,6 +29,7 @@ object ErrorExplainer {
         val m = (e.message ?: "").lowercase()
         val http = Regex("""http (\d{3})""").find(m)?.groupValues?.get(1)?.toIntOrNull()
         return when {
+            m.contains("all providers busy") -> Kind.RATE_LIMIT // Saqr Free AI: every free provider is at its limit for a minute
             m.contains("context length") || m.contains("context_length") || m.contains("maximum context") ||
                 m.contains("too many tokens") || m.contains("prompt is too long") || m.contains("context window") -> Kind.CONTEXT_TOO_LONG
             m.contains("model_not_found") || (http == 404 && m.contains("model")) ||
