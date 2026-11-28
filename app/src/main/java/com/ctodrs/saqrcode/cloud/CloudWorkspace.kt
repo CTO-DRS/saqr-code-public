@@ -29,7 +29,7 @@ class CloudWorkspace(
     suspend fun run(command: String, timeoutSec: Int?, onLine: (String) -> Unit = {}): String = guarded { sb ->
         val note = syncInto(sb)
         val t = minOf(limits.commandTimeout(timeoutSec).toLong(), ledger.remainingSeconds(limits)).toInt().coerceAtLeast(1)
-        val r = sb.exec(command, t, onLine)
+        val r = if (t > 540) CloudLongRun.run(sb, command, t, onLine = onLine) else sb.exec(command, t, onLine)
         format(r) + (if (note.startsWith("Note")) "\n$note" else "")
     }
 

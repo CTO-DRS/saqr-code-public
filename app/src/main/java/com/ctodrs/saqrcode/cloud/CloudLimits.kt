@@ -11,7 +11,7 @@ import java.time.LocalDate
  */
 data class CloudLimits(
     val dailyMinutes: Int = 30,
-    val maxCommandSec: Int = 600,
+    val maxCommandSec: Int = 2400,
     val idleKillSec: Int = 300,
 ) {
     fun commandTimeout(requested: Int?): Int = (requested ?: 300).coerceIn(5, maxCommandSec)
