@@ -45,7 +45,7 @@ object DesertMode {
     fun cloudTool(name: String): Feature? = when (name) {
         Tools.WEB_SEARCH, Tools.WEB_FETCH -> Feature.WEB_TOOLS
         Tools.GIT_PULL, Tools.GIT_PUSH -> Feature.GIT_REMOTE
-        Tools.CLOUD_RUN, Tools.CLOUD_TEST, Tools.CLOUD_SYNC -> Feature.CLOUD_WORKSPACE
+        Tools.CLOUD_RUN, Tools.CLOUD_TEST, Tools.CLOUD_SYNC, Tools.CLOUD_DESKTOP -> Feature.CLOUD_WORKSPACE
         else -> null
     }
 

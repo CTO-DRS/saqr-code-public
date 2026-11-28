@@ -36,6 +36,10 @@ class CloudWorkspace(
         format(r) + (if (note.startsWith("Note")) "\n$note" else "")
     }
 
+    suspend fun desktop(action: String, args: org.json.JSONObject): String = guarded { sb ->
+        (sb as? DesktopCapable)?.let { redact(it.desktop(action, args)) } ?: "Error: this cloud machine has no desktop."
+    }
+
     /** Detects the project's test command from its files and runs it. */
     suspend fun test(timeoutSec: Int?, onLine: (String) -> Unit = {}): String {
         val names = projectDir.walkTopDown().maxDepth(2).filter { it.isFile }.map { it.name }.toSet()

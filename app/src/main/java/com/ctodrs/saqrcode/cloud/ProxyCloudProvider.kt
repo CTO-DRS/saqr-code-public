@@ -25,7 +25,7 @@ class ProxyCloudProvider(private val baseUrl: String, private val token: String)
         return ProxySandbox(id)
     }
 
-    private inner class ProxySandbox(val id: String) : CloudSandbox {
+    private inner class ProxySandbox(val id: String) : CloudSandbox, DesktopCapable {
         private var closed = false
 
         override suspend fun upload(files: List<CloudFile>) {
@@ -51,6 +51,13 @@ class ProxyCloudProvider(private val baseUrl: String, private val token: String)
             val out = r.optString("output")
             out.lineSequence().forEach { if (it.isNotEmpty()) onLine(it) }
             return CloudExecResult(r.optInt("exit", -1), out, r.optBoolean("timedOut"), System.currentTimeMillis() - started)
+        }
+
+        override suspend fun desktop(action: String, args: org.json.JSONObject): String {
+            val (path, body) = CloudDesktop.build(action, args) ?: return "Error: bad arguments for $action (screen is ${CloudDesktop.W}x${CloudDesktop.H}; actions: ${CloudDesktop.ACTIONS.joinToString()})."
+            val r = if (path.endsWith("start") ) call("POST", "/s/$id/$path", null, null, 90_000)
+                else call("POST", "/s/$id/$path", body?.toByteArray(), "application/json", 90_000)
+            return CloudDesktop.describe(action, r)
         }
 
         override suspend fun close() {
