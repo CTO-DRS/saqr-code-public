@@ -39,7 +39,7 @@ class V0173LongRunTest {
         assertEquals(3, r.exitCode)
         assertEquals(listOf("l1", "l2", "l3"), seen)
         assertFalse(r.timedOut)
-        assertTrue(sb.cmds[2].contains("tail -n +3"))
+        assertTrue(sb.cmds[3].contains("tail -n +3"))
     }
 
     @Test fun timesOutAndKills() = runBlocking {

@@ -11,9 +11,8 @@ import kotlinx.coroutines.delay
  */
 object CloudLongRun {
     const val MAX_TOTAL_SEC = 40 * 60 // the sandbox itself lives 45 minutes
-    private val idRe = Regex("[^A-Za-z0-9_-]")
 
-    fun jobId(seed: Long): String = "j" + idRe.replace(seed.toString(), "")
+    fun jobId(seed: Long): String = "j" + kotlin.math.abs(seed).toString()
 
     fun startCommand(id: String, command: String): String {
         val q = "'" + command.replace("'", "'\\''") + "'"
