@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.63] — 2026-11-28 — Sharper edits for the agent · تعديلات أدق للوكيل
+
+- **New tool.** `multi_edit_file` applies several edits to one file in a single call, all or nothing. Fewer round trips on a phone connection, and a half-edited file is impossible: if edit 3 of 5 fails, nothing is written and the error names edit 3.
+- **Fewer failed edits.** When the model copies a snippet with the wrong indentation or trailing spaces, `edit_file` now matches whole lines ignoring indentation, but only if exactly one place matches, and re-indents the replacement to fit.
+- Both go through the same approval plan and diff as every file change.
+- versionName 0.1.63, versionCode 102.
+- أداة جديدة لتطبيق عدة تعديلات على ملف واحد دفعة واحدة (كلها أو لا شيء)، ومطابقة أذكى عند اختلاف المسافات البادئة.
+
 ## [0.1.62] — 2026-11-28 — Failures always say something · الفشل يقول شيئًا دائمًا
 
 - **Fix.** When creating a project failed with an error that had no message, the dialog showed nothing and it looked as if the tap did nothing. The same gap existed in the GitHub sign-in and device-code screens. Every one of these now shows the message, or the error type when there is none.

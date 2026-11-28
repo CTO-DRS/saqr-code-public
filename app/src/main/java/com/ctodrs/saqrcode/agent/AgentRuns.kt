@@ -21,6 +21,7 @@ data class RunActivity(val kind: Kind, val target: String = "") {
             Tools.READ -> RunActivity(Kind.READ, summary.substringAfterLast('/'))
             Tools.WRITE -> RunActivity(Kind.WRITE, summary.substringAfterLast('/'))
             Tools.EDIT -> RunActivity(Kind.EDIT, summary.substringAfterLast('/'))
+            Tools.MULTI_EDIT -> RunActivity(Kind.EDIT, summary.substringAfterLast('/'))
             Tools.DELETE -> RunActivity(Kind.DELETE, summary.substringAfterLast('/'))
             Tools.RUN -> RunActivity(Kind.RUN, summary)
             Tools.SEARCH -> RunActivity(Kind.SEARCH, summary)
