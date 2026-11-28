@@ -28,7 +28,7 @@ object Sources {
     }
 
     fun kindOf(tool: String): SourceRef.Kind? = when (tool) {
-        Tools.READ, Tools.LIST, Tools.WRITE, Tools.EDIT, Tools.MULTI_EDIT, Tools.DELETE -> SourceRef.Kind.FILE
+        Tools.READ, Tools.LIST, Tools.WRITE, Tools.EDIT, Tools.MULTI_EDIT, Tools.MOVE, Tools.DELETE -> SourceRef.Kind.FILE
         Tools.RUN -> SourceRef.Kind.TERMINAL
         Tools.SEARCH, Tools.PROJECT_SEARCH, Tools.WEB_SEARCH -> if (tool == Tools.WEB_SEARCH) SourceRef.Kind.WEB else SourceRef.Kind.SEARCH
         Tools.WEB_FETCH -> SourceRef.Kind.WEB

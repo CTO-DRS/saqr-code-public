@@ -11,6 +11,7 @@ object Tools {
     const val WRITE = "write_file"
     const val EDIT = "edit_file"
     const val MULTI_EDIT = "multi_edit_file"
+    const val MOVE = "move_file"
     const val DELETE = "delete_file"
     const val RUN = "run_command"
     const val SEARCH = "search"
@@ -33,7 +34,7 @@ object Tools {
 
     val GIT = setOf(GIT_STATUS, GIT_DIFF, GIT_LOG, GIT_COMMIT, GIT_BRANCH, GIT_PULL, GIT_PUSH)
 
-    val MUTATING = setOf(WRITE, EDIT, MULTI_EDIT, DELETE)
+    val MUTATING = setOf(WRITE, EDIT, MULTI_EDIT, MOVE, DELETE)
 
     private fun schema(props: JSONObject, required: List<String>) =
         JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(required))
@@ -68,6 +69,10 @@ object Tools {
                         .put("old_string", p("string", "Exact existing text to replace"))
                         .put("new_string", p("string", "Replacement text"))
                         .put("replace_all", p("boolean", "Replace every occurrence")), listOf("old_string", "new_string")))), listOf("path", "edits"))),
+        ToolSpec(MOVE, "Rename or move a text file inside the project (the destination must not exist). Shown to the user as a delete plus a create, so it goes through the same approval and undo.",
+            schema(JSONObject()
+                .put("path", p("string", "Existing file path relative to project root"))
+                .put("to", p("string", "New file path relative to project root")), listOf("path", "to"))),
         ToolSpec(DELETE, "Delete a file in the project.",
             schema(JSONObject().put("path", p("string", "File path relative to project root")), listOf("path"))),
         ToolSpec(RUN, "Run a shell command in the project's Linux terminal (Alpine via proot, cwd=/workspace = project root). Use `apk add <pkg>` to install tools. Non-interactive only; servers must listen on 127.0.0.1. Dangerous commands are blocked.",
@@ -199,6 +204,14 @@ object Tools {
             if (l.isBlank()) l else if (shift > 0) indent.take(shift) + l else l.drop(minOf(-shift, l.takeWhile { it == ' ' }.length))
         }
         return (lines.subList(0, at) + repl + lines.subList(at + want.size, lines.size)).joinToString("\n")
+    }
+
+    /** v0.1.64: pure checks for a move; returns an error text or null. */
+    fun moveProblem(srcRel: String, dstRel: String, srcExists: Boolean, dstExists: Boolean): String? = when {
+        srcRel == dstRel -> "Source and destination are the same path."
+        !srcExists -> "File does not exist: $srcRel"
+        dstExists -> "Destination already exists: $dstRel. Pick another name or delete it first."
+        else -> null
     }
 
     /** v0.1.63: ordered edits on one file, all or nothing; the error names the failing edit. */

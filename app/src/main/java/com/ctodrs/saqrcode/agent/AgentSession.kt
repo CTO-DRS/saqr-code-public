@@ -1026,6 +1026,7 @@ class AgentSession(
         // 1) Prepare all mutating calls of this turn as one batch.
         val changes = LinkedHashMap<String, FileChange>() // path -> cumulative change
         val changeCallIds = HashMap<String, String>()      // callId -> path
+        val moveFrom = HashMap<String, String>()           // callId -> source path of a move_file
         withContext(Dispatchers.IO) {
             for ((c, a) in parsed) {
                 if (c.name !in Tools.MUTATING) continue
@@ -1033,6 +1034,18 @@ class AgentSession(
                 try {
                     val f = Tools.resolve(projectDir, a.optString("path"))
                     val rel = Tools.rel(projectDir, f)
+                    if (c.name == Tools.MOVE) {
+                        val dst = Tools.resolve(projectDir, a.optString("to"))
+                        val dstRel = Tools.rel(projectDir, dst)
+                        val srcNow = changes[rel]?.after ?: if (f.isFile && changes[rel] == null) f.readText() else null
+                        val dstTaken = changes[dstRel]?.let { it.after != null } ?: dst.exists()
+                        Tools.moveProblem(rel, dstRel, srcNow != null, dstTaken)?.let { throw IllegalArgumentException(it) }
+                        changes[rel] = FileChange(rel, changes[rel]?.before ?: srcNow, null)
+                        changes[dstRel] = FileChange(dstRel, changes[dstRel]?.before, srcNow)
+                        changeCallIds[c.id] = dstRel
+                        moveFrom[c.id] = rel
+                        continue
+                    }
                     val prev = changes[rel]
                     val current = if (prev != null) prev.after else if (f.isFile) f.readText() else null
                     val after: String? = when (c.name) {
@@ -1093,6 +1106,7 @@ class AgentSession(
                 changeCallIds.forEach { (id, path) ->
                     val ch = changes[path]!!
                     results[id] = when {
+                        id in moveFrom -> "Moved ${moveFrom[id]} to $path."
                         ch.after == null -> "Deleted $path."
                         else -> "OK: $path saved (${ch.after.lines().size} lines)."
                     }
@@ -2219,7 +2233,7 @@ You operate on the user's project through tools. The project root is the current
 
 # How to work
 - Explore first when the request depends on existing code (list_files, search, read_file). Don't guess file contents.
-- Make changes with write_file (new files / full rewrites), edit_file (one targeted edit) or multi_edit_file (several edits to one file in one call). Always put `path` first in arguments.
+- Make changes with write_file (new files / full rewrites), edit_file (one targeted edit) or multi_edit_file (several edits to one file in one call). Rename or move a file with move_file. Always put `path` first in arguments.
 - ZERO LAZY CODE: never write placeholders such as "// ...rest unchanged" or "TODO: implement". Write complete, working files. Split very large files into several smaller files.
 - Group related file changes in the same turn: changes touching 2+ files are shown to the user as one plan for approval. If the user rejects, stop and ask what they want.
 - Verify when practical by running commands (tests, linters, `node file.js`, `python3 file.py`).
