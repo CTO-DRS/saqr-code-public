@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.76] — 2026-11-28 — Crash finder · كاشف الأعطال
+
+- Device page: "Check recent crashes" reads the recent log (read-only) and lists crashes and freezes by app. Without Shizuku it sees only Saqr's own log.
+- صفحة الجهاز: زر «فحص الأعطال الأخيرة» يقرأ السجل (للقراءة فقط) ويعرض الأعطال والتجمّد حسب التطبيق. بدون شيزوكو يرى سجل صقر فقط.
+
 ## [0.1.75] — 2026-11-28 — Agent tool device_run · أداة device_run للوكيل
 
 - The agent can run one shell command on this phone. Read-only commands run at once; anything that changes the phone shows an approval card with the reason, asked fresh every time. Everything is audited.
