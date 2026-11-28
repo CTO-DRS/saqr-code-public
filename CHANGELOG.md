@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.80] — 2026-11-28 — Installed apps list · قائمة التطبيقات
+
+- Device page: "List installed apps" shows how many user apps are installed and their names (read-only; Android may hide other apps without Shizuku).
+- صفحة الجهاز: «عرض التطبيقات المثبتة» تعرض عددها وأسماءها (للقراءة فقط، وقد يخفي أندرويد بعضها بدون شيزوكو).
+
 ## [0.1.79] — 2026-11-28 — Automatic cloud computer · حاسوب سحابي تلقائي
 
 - The cloud computer now sets itself up like the Free AI: no pairing link, nothing to paste. Each install gets its own machine, and the service limits each install to about 20 free minutes and 3 machines a day (plus an overall daily cap). One install can never touch another's machine.
