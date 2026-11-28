@@ -1273,6 +1273,7 @@ class AgentSession(
      */
     private var cloud: com.ctodrs.saqrcode.cloud.CloudWorkspace? = null
     private var cloudApproved = false
+    private fun cloudSecrets(): Map<String, String> = runCatching { com.ctodrs.saqrcode.cloud.ProjectSecretStore(com.ctodrs.saqrcode.SaqrApp.instance.secure).all() }.getOrDefault(emptyMap())
 
     /** v0.1.65: cloud_run / cloud_test / cloud_sync. Off by default; the first use in a chat needs the user's OK. */
     private suspend fun runCloud(name: String, a: JSONObject): String {
@@ -1284,7 +1285,8 @@ class AgentSession(
             val provider = com.ctodrs.saqrcode.cloud.CloudProviders.create(settings.cloudProxyUrl)
                 ?: return "Error: the cloud workspace is turned on but not connected yet (no cloud service address or token set). Continue on the phone."
             val cloudLedger = com.ctodrs.saqrcode.cloud.CloudLedger(cloudUsageFile)
-            com.ctodrs.saqrcode.cloud.CloudWorkspace(provider, cloudLedger, limits, projectDir, { Redact.text(it, settings.githubToken) }).also { cloud = it }
+            com.ctodrs.saqrcode.cloud.CloudWorkspace(provider, cloudLedger, limits, projectDir, { com.ctodrs.saqrcode.cloud.ProjectSecrets.redact(Redact.text(it, settings.githubToken), cloudSecrets()) },
+                env = { cloudSecrets() }).also { cloud = it }
         }
         if (!cloudApproved) {
             val what = when (name) {
