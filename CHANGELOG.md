@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.70] — 2026-11-28 — Free AI holds up under agent prompts · الذكاء المجاني يتحمل الطلبات الكبيرة
+
+- Fix: "HTTP 503: all providers busy" on real agent prompts. Cause: Groq's free tier allows about 8,000 tokens a minute per model, one agent step used it all, and the fallback (Workers AI) dropped the tool definitions. The proxy now sizes each request, skips providers that cannot take it, uses three Groq models, passes tools through Workers AI, flattens tool history for Gemini, adds Gemini fallbacks and retries once on a rate limit.
+- This message now reads as "busy, wait a minute" instead of a provider fault.
+- Fix: run_tests showed a green check when no test runner was found; it now shows as failed.
+- ثبّتنا الخطأ 503: كل المزودين مشغولون، وصار فحص الاختبارات يظهر فشلًا حين لا يوجد مشغّل اختبارات.
+
 ## [0.1.69] — 2026-11-28 — Settings reorganised · إعدادات مرتبة
 
 - **Cloud computer** now has its own page (status line, switch, access token) and a drawer entry in every project. It turns itself on once an access token is saved.

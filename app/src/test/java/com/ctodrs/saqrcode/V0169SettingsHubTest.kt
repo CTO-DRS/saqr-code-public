@@ -45,3 +45,14 @@ class V0169PairTest {
         assertEquals(null, com.ctodrs.saqrcode.cloud.FreeAi.parsePairCode("https://evil.example/pair?code=p1.1.a"))
     }
 }
+
+class V0170FreeAiBusyTest {
+    @Test fun allProvidersBusyIsARateLimitNotAServerFault() {
+        val k = com.ctodrs.saqrcode.agent.ErrorExplainer.classify(RuntimeException("HTTP 503: all providers busy"))
+        assertEquals(com.ctodrs.saqrcode.agent.ErrorExplainer.Kind.RATE_LIMIT, k)
+    }
+
+    @Test fun noTestRunnerCountsAsFailure() {
+        assertTrue(com.ctodrs.saqrcode.agent.LoopDetector.isFailure("No test runner detected (no package.json test script)."))
+    }
+}
