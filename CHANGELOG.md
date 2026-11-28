@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.71] — 2026-11-28 — Device control foundation · أساس التحكم بالجهاز
+
+- New device command engine (phase 1 of the ADB Control Center track): every command is classified SAFE, SENSITIVE or DANGEROUS, anything above SAFE needs a fresh yes from the user, engines are picked least-privileged first (Root only when asked for), a timeout and a parallel cap apply, and every command goes to an audit log with secrets redacted.
+- أساس محرك أوامر الجهاز: تصنيف آمن/حساس/خطير، تأكيد مستقل لكل أمر غير آمن، وسجل تدقيق.
+
 ## [0.1.70] — 2026-11-28 — Free AI holds up under agent prompts · الذكاء المجاني يتحمل الطلبات الكبيرة
 
 - Fix: "HTTP 503: all providers busy" on real agent prompts. Cause: Groq's free tier allows about 8,000 tokens a minute per model, one agent step used it all, and the fallback (Workers AI) dropped the tool definitions. The proxy now sizes each request, skips providers that cannot take it, uses three Groq models, passes tools through Workers AI, flattens tool history for Gemini, adds Gemini fallbacks and retries once on a rate limit.
