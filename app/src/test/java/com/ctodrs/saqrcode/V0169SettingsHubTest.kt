@@ -32,3 +32,16 @@ class V0169SettingsHubTest {
         assertEquals("tools", settingsCatOf("mcp_section"))
     }
 }
+
+class V0169PairTest {
+    @Test fun parsesPairLink() {
+        assertEquals("p1.1795863257000.Ab_-9", com.ctodrs.saqrcode.cloud.FreeAi.parsePairCode("saqr://pair?code=p1.1795863257000.Ab_-9"))
+        assertEquals("p1.17.x", com.ctodrs.saqrcode.cloud.FreeAi.parsePairCode("saqr://pair?a=b&code=p1.17.x"))
+    }
+
+    @Test fun rejectsOtherLinks() {
+        assertEquals(null, com.ctodrs.saqrcode.cloud.FreeAi.parsePairCode("saqr://oauth/callback?code=abc"))
+        assertEquals(null, com.ctodrs.saqrcode.cloud.FreeAi.parsePairCode("saqr://pair?code=i1.abc.def"))
+        assertEquals(null, com.ctodrs.saqrcode.cloud.FreeAi.parsePairCode("https://evil.example/pair?code=p1.1.a"))
+    }
+}
