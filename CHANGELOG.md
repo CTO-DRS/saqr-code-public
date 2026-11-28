@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.77] — 2026-11-28 — Quiet CI watch · مراقبة بناء هادئة
+
+- Settings, Agent: enter owner/repo and Saqr checks its newest GitHub Actions run about every 30 minutes. It notifies only when a run fails or turns green again.
+- الإعدادات، الوكيل: أدخل owner/repo ويفحص صقر أحدث تشغيل كل نحو 30 دقيقة، ولا ينبّه إلا عند الفشل أو العودة للنجاح.
+
 ## [0.1.76] — 2026-11-28 — Crash finder · كاشف الأعطال
 
 - Device page: "Check recent crashes" reads the recent log (read-only) and lists crashes and freezes by app. Without Shizuku it sees only Saqr's own log.

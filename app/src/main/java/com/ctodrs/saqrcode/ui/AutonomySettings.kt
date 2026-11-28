@@ -48,6 +48,8 @@ class AutonomyUi(
     val onLearningMode: (Boolean) -> Unit = {},
     val sentinelDigest: Boolean = false,
     val onSentinelDigest: (Boolean) -> Unit = {},
+    val ciWatchRepo: String = "",
+    val onCiWatchRepo: (String) -> Unit = {},
     val confirmRiskyCommands: Boolean = true,
     val onConfirmRiskyCommands: (Boolean) -> Unit = {},
     val smartLoopGuard: Boolean = true,
@@ -90,6 +92,11 @@ class AutonomyUi(
                 learningMode = settings.learningMode, onLearningMode = { settings.learningMode = it },
                 sentinelDigest = settings.sentinelDigest,
                 onSentinelDigest = { settings.sentinelDigest = it; com.ctodrs.saqrcode.service.SentinelReceiver.schedule(com.ctodrs.saqrcode.SaqrApp.instance, it) },
+                ciWatchRepo = settings.ciWatchRepo,
+                onCiWatchRepo = {
+                    settings.ciWatchRepo = it
+                    com.ctodrs.saqrcode.service.CiWatchReceiver.schedule(com.ctodrs.saqrcode.SaqrApp.instance, com.ctodrs.saqrcode.watch.CiWatch.validRepo(it))
+                },
                 confirmRiskyCommands = settings.confirmRiskyCommands, onConfirmRiskyCommands = { settings.confirmRiskyCommands = it },
                 smartLoopGuard = settings.smartLoopGuard, onSmartLoopGuard = { settings.smartLoopGuard = it },
                 verifyBeforeDone = settings.verifyBeforeDone, onVerifyBeforeDone = { settings.verifyBeforeDone = it },
@@ -148,6 +155,14 @@ internal fun AutonomySection(ui: AutonomyUi, teamMode: Boolean) {
             RowDivider()
             ListRow(stringResource(R.string.sentinel_digest), stringResource(R.string.sentinel_digest_desc), icon = Lucide.Bell,
                 trailing = { SaqrSwitch(ui.sentinelDigest, ui.onSentinelDigest) })
+            RowDivider()
+            var ciRepo by remember { mutableStateOf(ui.ciWatchRepo) }
+            Column(Modifier.padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
+                SaqrField(ciRepo, { ciRepo = it; if (it.isBlank() || com.ctodrs.saqrcode.watch.CiWatch.validRepo(it)) ui.onCiWatchRepo(it) },
+                    label = stringResource(R.string.ci_watch), placeholder = "owner/repo", mono = true,
+                    isError = ciRepo.isNotBlank() && !com.ctodrs.saqrcode.watch.CiWatch.validRepo(ciRepo))
+                Text(stringResource(R.string.ci_watch_desc), style = Saqr.type.caption, color = Saqr.colors.text2)
+            }
             RowDivider()
             ListRow(stringResource(R.string.confirm_risky_commands), stringResource(R.string.confirm_risky_commands_desc), icon = Lucide.ShieldCheck,
                 trailing = { SaqrSwitch(ui.confirmRiskyCommands, ui.onConfirmRiskyCommands) })

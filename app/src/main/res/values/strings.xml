@@ -1206,6 +1206,8 @@
     <string name="conflict_theirs">Theirs</string>
     <string name="conflict_both">Both</string>
     <string name="conflict_apply">Resolve and stage</string>
+    <string name="ci_watch">Watch CI of a repo</string>
+    <string name="ci_watch_desc">Checks the newest GitHub Actions run about every 30 minutes. Quiet by default: it speaks up only when a run fails or turns green again. Leave empty to turn off</string>
     <string name="sentinel_digest">Morning digest</string>
     <string name="sentinel_digest_desc">Every morning at 8:00 a short notification: projects with uncommitted work and yesterday\'s model spend. Computed on your phone; skipped when there is nothing to report</string>
     <string name="widget_desc">Shows whether Saqr is running; tap to open</string>
