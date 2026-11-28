@@ -6,7 +6,7 @@ object AppList {
 
     fun parse(out: String): List<String> =
         out.lineSequence().map { it.trim() }.filter { it.startsWith("package:") }
-            .map { it.removePrefix("package:").substringBefore('=').trim() }
+            .map { it.removePrefix("package:").substringAfterLast('=').trim() }
             .filter { it.isNotEmpty() }.distinct().sorted().toList()
 
     /** Short text: the count and the first [max] names. */
