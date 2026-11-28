@@ -38,5 +38,5 @@ object FollowUps {
 
     private val RUNNERS = setOf(Tools.RUN, Tools.TESTS, Tools.LINT)
     private val CHECKERS = setOf(Tools.TESTS, Tools.LINT)
-    private val WRITERS = setOf(Tools.WRITE, Tools.EDIT, Tools.DELETE)
+    private val WRITERS = setOf(Tools.WRITE, Tools.EDIT, Tools.MULTI_EDIT, Tools.DELETE)
 }

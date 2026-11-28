@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import kotlin.coroutines.cancellation.CancellationException
@@ -1039,6 +1040,10 @@ class AgentSession(
                         Tools.EDIT -> {
                             requireNotNull(current) { "File does not exist: $rel" }
                             Tools.applyEdit(current, a.optString("old_string"), a.optString("new_string"), a.optBoolean("replace_all"))
+                        }
+                        Tools.MULTI_EDIT -> {
+                            requireNotNull(current) { "File does not exist: $rel" }
+                            Tools.applyEdits(current, a.optJSONArray("edits") ?: JSONArray())
                         }
                         else -> { requireNotNull(current) { "File does not exist: $rel" }; null }
                     }
@@ -2214,7 +2219,7 @@ You operate on the user's project through tools. The project root is the current
 
 # How to work
 - Explore first when the request depends on existing code (list_files, search, read_file). Don't guess file contents.
-- Make changes with write_file (new files / full rewrites) or edit_file (targeted edits). Always put `path` first in arguments.
+- Make changes with write_file (new files / full rewrites), edit_file (one targeted edit) or multi_edit_file (several edits to one file in one call). Always put `path` first in arguments.
 - ZERO LAZY CODE: never write placeholders such as "// ...rest unchanged" or "TODO: implement". Write complete, working files. Split very large files into several smaller files.
 - Group related file changes in the same turn: changes touching 2+ files are shown to the user as one plan for approval. If the user rejects, stop and ask what they want.
 - Verify when practical by running commands (tests, linters, `node file.js`, `python3 file.py`).

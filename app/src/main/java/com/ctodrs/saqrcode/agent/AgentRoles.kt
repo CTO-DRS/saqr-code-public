@@ -20,7 +20,7 @@ enum class ModelTier { CHEAP, STRONG, INDEPENDENT_REVIEW }
 private val READ = setOf(Tools.LIST, Tools.READ, Tools.SEARCH, Tools.PROJECT_SEARCH)
 private val GIT_READ = setOf(Tools.GIT_STATUS, Tools.GIT_DIFF, Tools.GIT_LOG)
 private val WEB = setOf(Tools.WEB_SEARCH, Tools.WEB_FETCH)
-private val EDIT = setOf(Tools.WRITE, Tools.EDIT)
+private val EDIT = setOf(Tools.WRITE, Tools.EDIT, Tools.MULTI_EDIT)
 private val QUALITY = setOf(Tools.LINT, Tools.TESTS)
 
 enum class AgentRole(

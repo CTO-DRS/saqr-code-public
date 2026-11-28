@@ -10,6 +10,7 @@ object Tools {
     const val READ = "read_file"
     const val WRITE = "write_file"
     const val EDIT = "edit_file"
+    const val MULTI_EDIT = "multi_edit_file"
     const val DELETE = "delete_file"
     const val RUN = "run_command"
     const val SEARCH = "search"
@@ -32,7 +33,7 @@ object Tools {
 
     val GIT = setOf(GIT_STATUS, GIT_DIFF, GIT_LOG, GIT_COMMIT, GIT_BRANCH, GIT_PULL, GIT_PUSH)
 
-    val MUTATING = setOf(WRITE, EDIT, DELETE)
+    val MUTATING = setOf(WRITE, EDIT, MULTI_EDIT, DELETE)
 
     private fun schema(props: JSONObject, required: List<String>) =
         JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(required))
@@ -59,6 +60,14 @@ object Tools {
                 .put("old_string", p("string", "Exact existing text to replace"))
                 .put("new_string", p("string", "Replacement text"))
                 .put("replace_all", p("boolean", "Replace every occurrence")), listOf("path", "old_string", "new_string"))),
+        ToolSpec(MULTI_EDIT, "Apply several exact replacements to ONE existing file in order, all or nothing. Use it instead of many edit_file calls on the same file; each old_string is matched against the result of the previous edit.",
+            schema(JSONObject()
+                .put("path", p("string", "File path relative to project root"))
+                .put("edits", JSONObject().put("type", "array").put("description", "Ordered edits")
+                    .put("items", schema(JSONObject()
+                        .put("old_string", p("string", "Exact existing text to replace"))
+                        .put("new_string", p("string", "Replacement text"))
+                        .put("replace_all", p("boolean", "Replace every occurrence")), listOf("old_string", "new_string")))), listOf("path", "edits"))),
         ToolSpec(DELETE, "Delete a file in the project.",
             schema(JSONObject().put("path", p("string", "File path relative to project root")), listOf("path"))),
         ToolSpec(RUN, "Run a shell command in the project's Linux terminal (Alpine via proot, cwd=/workspace = project root). Use `apk add <pkg>` to install tools. Non-interactive only; servers must listen on 127.0.0.1. Dangerous commands are blocked.",
@@ -165,10 +174,46 @@ object Tools {
             // tolerate CRLF / trailing-whitespace differences
             val norm = old.replace("\r\n", "\n")
             if (norm != old && content.contains(norm)) return applyEdit(content, norm, new, replaceAll)
+            lineTolerant(content, old, new)?.let { return it }
             throw IllegalArgumentException("old_string not found. Re-read the file and copy the exact text.")
         }
         if (count > 1 && !replaceAll) throw IllegalArgumentException("old_string matches $count times; add more context or set replace_all.")
         return if (replaceAll) content.replace(old, new) else content.replaceFirst(old, new)
+    }
+
+    /** v0.1.63: when the exact text is missing, match whole lines ignoring indentation and trailing spaces; only when exactly one place matches. */
+    fun lineTolerant(content: String, old: String, new: String): String? {
+        val want = old.replace("\r\n", "\n").trim('\n').split("\n").map { it.trim() }
+        if (want.all { it.isEmpty() }) return null
+        val lines = content.split("\n")
+        val hits = ArrayList<Int>()
+        for (i in 0..lines.size - want.size) {
+            if (want.indices.all { lines[i + it].trim() == want[it] }) hits += i
+        }
+        if (hits.size != 1) return null
+        val at = hits[0]
+        val indent = lines[at].takeWhile { it == ' ' || it == '\t' }
+        val firstWant = old.trim('\n').lines().first()
+        val shift = indent.length - firstWant.takeWhile { it == ' ' || it == '\t' }.length
+        val repl = new.trim('\n').split("\n").map { l ->
+            if (l.isBlank()) l else if (shift > 0) indent.take(shift) + l else l.drop(minOf(-shift, l.takeWhile { it == ' ' }.length))
+        }
+        return (lines.subList(0, at) + repl + lines.subList(at + want.size, lines.size)).joinToString("\n")
+    }
+
+    /** v0.1.63: ordered edits on one file, all or nothing; the error names the failing edit. */
+    fun applyEdits(content: String, edits: JSONArray): String {
+        require(edits.length() > 0) { "edits is empty" }
+        var cur = content
+        for (i in 0 until edits.length()) {
+            val e = edits.optJSONObject(i) ?: throw IllegalArgumentException("edit #${i + 1} is not an object")
+            cur = try {
+                applyEdit(cur, e.optString("old_string"), e.optString("new_string"), e.optBoolean("replace_all"))
+            } catch (x: IllegalArgumentException) {
+                throw IllegalArgumentException("edit #${i + 1} of ${edits.length()} failed (nothing was changed): ${x.message}")
+            }
+        }
+        return cur
     }
 
     private fun String.windowedCount(sub: String): Int {

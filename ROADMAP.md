@@ -127,6 +127,14 @@ Audit basis: grep of every user-visible `message` use in ui/. Only null-message 
 
 ---
 
+### الموجة م · أدوات تحرير أقوى / Wave M: sharper agent edits (autonomous, from the 0.1.62 review of the tool set)
+Basis: the agent has one-snippet edit_file only; on weak connections and small models, failed matches and repeated calls are the main cost.
+1. **(0.1.63, shipped) `multi_edit_file`** (atomic, ordered) and indentation-tolerant unique matching in `edit_file`.
+2. **(next) `rename_file` / `move_file` tool** with the same approval plan, so refactors stop needing delete + write.
+3. **(next) read_file with symbol outline** for large files so the agent reads the part it needs.
+
+---
+
 ## 1 · الرؤية والمبادئ الحاكمة
 
 صقر كود ليس «تطبيق محادثة مع ذكاء اصطناعي»؛ هو **استوديو برمجة متنقل كامل**: وكيل يخطط ويبرمج ويراجع، يبني APK موقّعًا على الجهاز، ينشر على المستودعات، ويحترم مفاتيح المستخدم وبياناته. هذه الخارطة — مرسومة من جديد بالكامل — تجعله خلال أربعة إصدارات **أجمل مظهرًا، أعمق ذكاءً، أوسع تكاملًا، ومتجرًا حقيقيًا على Play**.
