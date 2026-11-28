@@ -1242,4 +1242,18 @@
     <string name="cloud_token_saved">محفوظ. الصق رمزًا جديدًا لاستبداله</string>
     <string name="cloud_token_hint">يُخزَّن مشفرًا على هذا الهاتف فقط.</string>
     <string name="free_ai_privacy">الذكاء الاصطناعي المجاني يستخدم عدة مزودين مجانيين ويتبدل تلقائيًا عند انشغال أحدهم. بعض المزودين (Google Gemini وMistral) قد يستخدمون مطالبات الباقة المجانية لتدريب نماذجهم، فلا ترسل أسرارًا أو شيفرة خاصة عبره. اختر مزودًا آخر للأعمال الحساسة.</string>
+    <string name="cat_models">النماذج والاستخدام</string>
+    <string name="cat_models_d">صقر المجاني، المزودون، المفاتيح، الميزانية والأسعار</string>
+    <string name="cat_agent">الوكيل</string>
+    <string name="cat_agent_d">الموافقات، وضع الفريق، الذاكرة، الاستقلالية، وضع الصحراء، الأوامر</string>
+    <string name="cat_tools">الأدوات والمهارات</string>
+    <string name="cat_tools_d">خوادم MCP، حزم المهارات، المعرض، المهارات</string>
+    <string name="cat_project">البناء والمزامنة</string>
+    <string name="cat_project_d">البناء على الجهاز، العمل بالخلفية، مزامنة المستودع</string>
+    <string name="cat_interface">المظهر والإدخال</string>
+    <string name="cat_interface_d">السمة، اللغة، المحرر، الصوت</string>
+    <string name="cat_account">الحساب والخطة</string>
+    <string name="cat_account_d">GitHub والفوترة والترخيص</string>
+    <string name="cat_help">المساعدة وحول</string>
+    <string name="cat_help_d">المدرب، دليل الاستخدام، تقرير الأعطال، حول التطبيق</string>
 </resources>

@@ -1242,4 +1242,18 @@
     <string name="cloud_token_saved">Saved. Paste a new one to replace it</string>
     <string name="cloud_token_hint">Stored encrypted on this phone only.</string>
     <string name="free_ai_privacy">Free AI uses several free providers and switches automatically when one is busy. Some providers (Google Gemini, Mistral) may use free-tier prompts to train their models, so do not send secrets or private code through it. Choose another provider for sensitive work.</string>
+    <string name="cat_models">Models &amp; usage</string>
+    <string name="cat_models_d">Saqr Free AI, providers, keys, budget, prices</string>
+    <string name="cat_agent">Agent</string>
+    <string name="cat_agent_d">Approvals, team mode, memory, autonomy, desert mode, slash commands</string>
+    <string name="cat_tools">Tools &amp; skills</string>
+    <string name="cat_tools_d">MCP servers, skill packs, gallery, skills</string>
+    <string name="cat_project">Build &amp; sync</string>
+    <string name="cat_project_d">On-device build, background work, repository sync</string>
+    <string name="cat_interface">Appearance &amp; input</string>
+    <string name="cat_interface_d">Theme, language, editor, voice</string>
+    <string name="cat_account">Account &amp; plan</string>
+    <string name="cat_account_d">GitHub, billing and licence</string>
+    <string name="cat_help">Help &amp; about</string>
+    <string name="cat_help_d">Coach, user guide, crash report, about</string>
 </resources>

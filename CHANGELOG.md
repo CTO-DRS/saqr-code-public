@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.69] — 2026-11-28 — Settings reorganised · إعدادات مرتبة
+
+- Settings is now a short hub with 7 pages: Models & usage, Agent, Tools & skills, Build & sync, Appearance & input, Account & plan, Help & about. Each old section sits in exactly one page. Search still finds every row and jumps to its page. Back returns to the hub.
+- الإعدادات صارت شاشة رئيسية قصيرة بسبع صفحات: النماذج والاستخدام، الوكيل، الأدوات والمهارات، البناء والمزامنة، المظهر والإدخال، الحساب والخطة، المساعدة وحول. البحث يعمل كما كان.
+
 ## [0.1.68] — 2026-11-28 — Chat works on first launch · الدردشة تعمل من أول تشغيل
 
 - **No setup.** A fresh install (or an update with no model connected) switches to Saqr Free AI by itself and gets its own token from the proxy in the background. No key to paste, no empty "connect a model" screen. It never overrides a provider you already set up.
