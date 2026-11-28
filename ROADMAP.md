@@ -418,3 +418,20 @@ Question from the owner: can Saqr do everything the Instinct agent does? Honest 
 **Stays human or impossible (by design):** paying, adding a card, raising spending limits or enabling pay-as-you-go; phone or SMS codes and device taps; captchas; signing in to someone else's account or acting as another person; anything that needs the user's identity documents; publishing to stores under the owner's account without his approval each time; device QA on real hardware (the cloud machine is Linux, not his phone); and silent actions the user did not approve. Mistral and Cerebras free API access sits behind billing, so they stay out.
 
 **Guardrails for every item above:** approval card for the first use per chat, daily caps, a kill switch in Settings, audit log, no secrets in prompts, and an honest "I could not do this" instead of a guess.
+
+## ADB Control Center track / مركز التحكم ADB (inside Saqr, added 0.1.71)
+
+The owner's spec (14:24, wamid ...QTUyQzBB...) adapted to Saqr's real stack: one Gradle module, Kotlin, Compose, SettingsStore and SecureStore instead of Room, CI-only builds (no local compile, no device). Package `device/`; screens live under a new "Device control" entry.
+
+| Phase | Scope | Status |
+|---|---|---|
+| 1 Core | Command engine, risk classes (safe, sensitive, dangerous), audit log, engine interface, local shell and Root engines, tests | 0.1.71 (this commit) |
+| 2 Local ADB | Shizuku engine through a UserService (the old `Shizuku.newProcess` is not public API on current Shizuku), permission and binder status screen, read-only diagnostics set | next |
+| 3 Root | Magisk/KernelSU detection, user-approved root session, never the default engine | planned |
+| 4 Remote ADB | Wireless Debugging pairing and connect through a maintained ADB protocol library (dadb 2.0.0 is on Maven Central; pairing support must be checked first), multi-device registry, stored credentials encrypted | planned, needs a real second device to verify |
+| 5 Device management | Apps (list, info, permissions), files, services, device info screens | planned |
+| 6 Intelligence | Logcat analyzer, crash finder, command risk explainer in plain words, agent tool `device_run` with approval cards | planned |
+| 7 Automation | Command sequences, schedules (WorkManager), plugin API, saved command files | planned |
+| 8 Release | Security tests, Android version matrix, APK | planned |
+
+Feasibility notes: Shizuku itself is on Maven Central (dev.rikka.shizuku 13.1.5) and fits. It controls only the local phone; each remote phone needs its own ADB session. Root exists only on rooted devices. USB ADB needs USB host mode and a second device. None of the Shizuku, Root or wireless parts can be tested in CI: they compile and unit-test the logic, and the real behaviour needs a device (owner QA). The spec's module tree (core/, engines/, features/) becomes packages inside the one app module to keep CI fast; splitting into Gradle modules is possible later.
