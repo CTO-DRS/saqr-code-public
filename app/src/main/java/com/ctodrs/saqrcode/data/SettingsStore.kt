@@ -125,7 +125,7 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
 
     /** v0.1.65 cloud workspace: off by default; the proxy URL is ours, never a vendor key. */
     var cloudEnabled: Boolean
-        get() = prefs.getBoolean("cloud_enabled", false)
+        get() = prefs.getBoolean("cloud_enabled", cloudProxyToken.isNotBlank())
         set(v) { prefs.edit().putBoolean("cloud_enabled", v).apply(); bump() }
     var cloudProxyUrl: String
         get() = prefs.getString("cloud_proxy_url", "https://saqr-cloud.nexus-link.workers.dev") ?: ""

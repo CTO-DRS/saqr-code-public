@@ -67,6 +67,20 @@
             </intent-filter>
         </activity>
 
+        <!-- v0.1.69: one-tap owner pairing for the cloud computer (saqr://pair?code=...). -->
+        <activity
+            android:name=".PairActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.SaqrCode">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="saqr" android:host="pair" />
+            </intent-filter>
+        </activity>
+
         <!-- v0.1.25: home-screen widget (run state, tap to open). -->
         <receiver
             android:name=".service.AgentWidget"

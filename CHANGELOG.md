@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.69] — 2026-11-28 — Settings reorganised · إعدادات مرتبة
+
+- **Cloud computer** now has its own page (status line, switch, access token) and a drawer entry in every project. It turns itself on once an access token is saved.
+- **One-tap pairing:** the owner opens a 15-minute link (saqr://pair) and this install gets its own cloud-capable token. Tokens are signed and revocable; the cloud machine is never opened by the free-AI registration.
+- Settings is now a short hub with 8 pages: Models & usage, Cloud computer, Agent, Tools & skills, Build & sync, Appearance & input, Account & plan, Help & about. Each old section sits in exactly one page. Search still finds every row and jumps to its page. Back returns to the hub.
+- الإعدادات صارت شاشة رئيسية قصيرة بثماني صفحات: النماذج والاستخدام، الحاسوب السحابي، الوكيل، الأدوات والمهارات، البناء والمزامنة، المظهر والإدخال، الحساب والخطة، المساعدة وحول. البحث يعمل كما كان.
+
 ## [0.1.68] — 2026-11-28 — Chat works on first launch · الدردشة تعمل من أول تشغيل
 
 - **No setup.** A fresh install (or an update with no model connected) switches to Saqr Free AI by itself and gets its own token from the proxy in the background. No key to paste, no empty "connect a model" screen. It never overrides a provider you already set up.

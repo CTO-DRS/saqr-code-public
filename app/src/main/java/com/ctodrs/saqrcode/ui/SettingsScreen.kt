@@ -454,19 +454,21 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit = {}, onPaywall: (
 @Composable
 fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: String? = null) {
     val c = Saqr.colors
+    var page by remember { mutableStateOf(if (initiallyExpanded != null) "models" else SettingsNav.startPage.also { SettingsNav.startPage = null }.orEmpty()) }
+    androidx.activity.compose.BackHandler(enabled = page.isNotEmpty()) { page = "" }
     Column(Modifier.fillMaxSize().background(c.bg)) {
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = Sp.md, vertical = Sp.md), verticalAlignment = Alignment.CenterVertically) {
-            GlassIconButton(Lucide.ArrowLeft, stringResource(R.string.back), onBack)
+            GlassIconButton(Lucide.ArrowLeft, stringResource(R.string.back), { if (page.isNotEmpty()) page = "" else onBack() })
             Spacer(Modifier.width(Sp.md))
-            Text(stringResource(R.string.settings), style = Saqr.type.title1, color = c.text1)
+            Text(stringResource(if (page.isEmpty()) R.string.settings else settingsCatTitle(page)), style = Saqr.type.title1, color = c.text1)
         }
         var query by remember { mutableStateOf("") }
         var pending by remember { mutableStateOf<String?>(null) }
         val jump = remember { SectionJump() }
         val sections = settingsSectionIndex()
-        LaunchedEffect(pending, query.isBlank()) {
+        LaunchedEffect(pending, query.isBlank(), page) {
             val k = pending
-            if (k != null && query.isBlank()) {
+            if (k != null && query.isBlank() && page == settingsCatOf(k)) {
                 androidx.compose.runtime.withFrameNanos { }
                 jump.reqs[k]?.bringIntoView()
                 pending = null
@@ -484,7 +486,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     Column {
                         results.forEachIndexed { i, k ->
                             if (i > 0) RowDivider()
-                            ListRow(title = sections.first { it.key == k }.title, icon = Lucide.Search, onClick = { pending = k; query = "" })
+                            ListRow(title = sections.first { it.key == k }.title, icon = Lucide.Search, onClick = { pending = k; page = settingsCatOf(k); query = "" })
                         }
                     }
                 }
@@ -495,6 +497,18 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Sp.lg).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(Sp.sm),
         ) {
+            if (page == "interface") {
+            if (page == "") {
+                SETTINGS_CATS.forEach { (key, ic) ->
+                    Group {
+                        ListRow(
+                            title = stringResource(settingsCatTitle(key)), subtitle = stringResource(settingsCatDesc(key)), icon = ic,
+                            onClick = { page = key },
+                            trailing = { SIcon(Lucide.ChevronRight, size = 18.dp, tint = c.text3) },
+                        )
+                    }
+                }
+            }
             // ---- appearance
             JumpLabel(jump, "appearance", stringResource(R.string.appearance), Modifier.padding(top = Sp.xs))
             Group {
@@ -521,6 +535,8 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 }
             }
 
+            }
+            if (page == "interface") {
             // ---- editor (v0.12)
             JumpLabel(jump, "editor_section", stringResource(R.string.editor_section), Modifier.padding(top = Sp.md))
             Group {
@@ -536,6 +552,8 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 }
             }
 
+            }
+            if (page == "models") {
             // ---- providers
             JumpLabel(jump, "providers", stringResource(R.string.providers), Modifier.padding(top = Sp.md))
             Group {
@@ -552,6 +570,12 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 Text(stringResource(R.string.keys_secure_note), style = Saqr.type.caption, color = c.text3)
             }
 
+            }
+            if (page == "agent") {
+            if (page == "cloud") {
+                JumpLabel(jump, "cloud_section", stringResource(R.string.cat_cloud), Modifier.padding(top = Sp.xs))
+                CloudSection(ui.autonomy)
+            }
             // ---- agent
             JumpLabel(jump, "agent_section", stringResource(R.string.agent_section), Modifier.padding(top = Sp.md))
             Group {
@@ -597,6 +621,8 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             AutonomySection(ui.autonomy, ui.teamMode)
             // ---- v0.17 Memory engine & smart router
             MemoryRouterSection(ui.memoryRouter)
+            }
+            if (page == "tools") {
             // ---- v0.8/v0.9 MCP servers
             JumpLabel(jump, "mcp_section", stringResource(R.string.mcp_section), Modifier.padding(top = Sp.md))
             var browsingServer by remember { mutableStateOf<com.ctodrs.saqrcode.agent.Mcp.Server?>(null) }
@@ -658,6 +684,8 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     onDismiss = { browsingServer = null },
                 )
             }
+            }
+            if (page == "project") {
             // ---- v0.8 on-device build
             JumpLabel(jump, "build_section", stringResource(R.string.build_section), Modifier.padding(top = Sp.md))
             Group { Aapt2MirrorEditor(ui) }
@@ -683,6 +711,8 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 }
             }
 
+            }
+            if (page == "interface") {
             // ---- voice
             JumpLabel(jump, "voice_section", stringResource(R.string.voice_section), Modifier.padding(top = Sp.md))
             Group {
@@ -711,6 +741,8 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 }
             }
 
+            }
+            if (page == "agent") {
             // ---- desert mode (v0.13.5): offline-first rationing with a live status line
             JumpLabel(jump, "desert_section", stringResource(R.string.desert_section), Modifier.padding(top = Sp.md))
             Group {
@@ -735,32 +767,46 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 }
             }
 
+            }
+            if (page == "agent") {
             // ---- slash commands
             JumpLabel(jump, "slash_section", stringResource(R.string.slash_section), Modifier.padding(top = Sp.md))
             Group { SlashCommandsEditor(ui) }
 
+            }
+            if (page == "tools") {
             // ---- v0.14 skill packs: one-tap .saqrpack install
             JumpLabel(jump, "pack_section", stringResource(R.string.pack_section), Modifier.padding(top = Sp.md))
             Group { SaqrPacksCard(ui) }
 
+            }
+            if (page == "tools") {
             // ---- v0.14.3 community gallery: browse + one-tap install from the public repo
             JumpLabel(jump, "gallery_section", stringResource(R.string.gallery_section), Modifier.padding(top = Sp.md))
             Group { GallerySection(ui) }
 
+            }
+            if (page == "tools") {
             // ---- v0.18 agent skills: switches + the skills manager (list, search, details, update, export)
             JumpLabel(jump, "skills_section", stringResource(R.string.skills_section), Modifier.padding(top = Sp.md))
             Group { SkillsSection(ui.skills) }
 
+            }
+            if (page == "project") {
             // ---- v0.14.4 repository sync: encrypted snapshot → the user's own private repo or a file
             JumpLabel(jump, "sync_section", stringResource(R.string.sync_section), Modifier.padding(top = Sp.md))
             Group { SyncSection(ui) }
 
+            }
+            if (page == "models") {
             // ---- usage & budget
             JumpLabel(jump, "usage_section", stringResource(R.string.usage_section), Modifier.padding(top = Sp.md))
             Group { BudgetEditor(ui) }
             Group { FalconSavingsRow() }
             Group { PricesEditor(ui) }
 
+            }
+            if (page == "account") {
             // ---- accounts
             JumpLabel(jump, "accounts", stringResource(R.string.accounts), Modifier.padding(top = Sp.md))
             Group {
@@ -779,6 +825,8 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 )
             }
 
+            }
+            if (page == "account") {
             // ---- v0.11 billing & licensing
             JumpLabel(jump, "billing_section", stringResource(R.string.billing_section), Modifier.padding(top = Sp.md))
             Group {
@@ -805,6 +853,8 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
             }
             Group { com.ctodrs.saqrcode.billing.MerchantToolsCard(settings = SaqrApp.instance.settings) }
 
+            }
+            if (page == "help") {
             // ---- v0.13.3 Saqr Coach
             JumpLabel(jump, "coach_title", stringResource(R.string.coach_title), Modifier.padding(top = Sp.md))
             Group {
@@ -825,10 +875,14 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 )
             }
 
+            }
+            if (page == "help") {
             // ---- v0.1.46 user guide
             JumpLabel(jump, "guide_section", stringResource(R.string.guide_section), Modifier.padding(top = Sp.md))
             Group { GuideList() }
 
+            }
+            if (page == "help") {
             // ---- about
             JumpLabel(jump, "about", stringResource(R.string.about), Modifier.padding(top = Sp.md))
             Group {
@@ -876,15 +930,47 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                     }
                 }
             }
+            }
+            if (page == "help") {
             JumpLabel(jump, "about_developer", stringResource(R.string.about_developer), Modifier.padding(top = Sp.md))
             val dctx = androidx.compose.ui.platform.LocalContext.current
             val ver = remember { runCatching { dctx.packageManager.getPackageInfo(dctx.packageName, 0).versionName }.getOrNull().orEmpty() }
             val banners = remember { DeveloperBanners.load(dctx) }
             DeveloperBannerCarousel(banners, Modifier.padding(bottom = Sp.md)) { url -> runCatching { dctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))) } }
             DeveloperCard(versionName = ver)
+            }
             Spacer(Modifier.height(Sp.xxl))
         }
     }
+}
+
+internal val SETTINGS_CATS: List<Pair<String, androidx.compose.ui.graphics.vector.ImageVector>> = listOf(
+    "models" to Lucide.Cpu, "cloud" to Lucide.CloudUpload, "agent" to Lucide.Bot, "tools" to Lucide.Plug, "project" to Lucide.Hammer,
+    "interface" to Lucide.Palette, "account" to Lucide.User, "help" to Lucide.Info,
+)
+
+/** Where Settings opens next (set by shortcuts such as the drawer's "Cloud computer"). */
+object SettingsNav { @Volatile var startPage: String? = null }
+
+internal fun settingsCatOf(key: String): String = when (key) {
+    "appearance", "editor_section", "voice_section" -> "interface"
+    "providers", "usage_section" -> "models"
+    "cloud_section" -> "cloud"
+    "agent_section", "desert_section", "slash_section" -> "agent"
+    "mcp_section", "pack_section", "gallery_section", "skills_section" -> "tools"
+    "build_section", "sync_section" -> "project"
+    "accounts", "billing_section" -> "account"
+    else -> "help"
+}
+
+internal fun settingsCatTitle(cat: String): Int = when (cat) {
+    "models" -> R.string.cat_models; "cloud" -> R.string.cat_cloud; "agent" -> R.string.cat_agent; "tools" -> R.string.cat_tools; "project" -> R.string.cat_project
+    "interface" -> R.string.cat_interface; "account" -> R.string.cat_account; else -> R.string.cat_help
+}
+
+internal fun settingsCatDesc(cat: String): Int = when (cat) {
+    "models" -> R.string.cat_models_d; "cloud" -> R.string.cat_cloud_d; "agent" -> R.string.cat_agent_d; "tools" -> R.string.cat_tools_d; "project" -> R.string.cat_project_d
+    "interface" -> R.string.cat_interface_d; "account" -> R.string.cat_account_d; else -> R.string.cat_help_d
 }
 
 @Composable
@@ -2280,6 +2366,7 @@ private fun settingsSectionIndex(): List<SettingsSearch.Entry> {
         e("appearance", R.string.appearance, R.string.theme, R.string.language),
         e("editor_section", R.string.editor_section, R.string.editor_font, R.string.editor_wrap),
         e("providers", R.string.providers, R.string.keys_secure_note),
+        e("cloud_section", R.string.cat_cloud, R.string.cloud_workspace, R.string.cloud_token),
         e("agent_section", R.string.agent_section, R.string.approval_mode, R.string.team_mode, R.string.auto_compact, R.string.review_auto_tests, R.string.falcon_router),
         e("mcp_section", R.string.mcp_section),
         e("build_section", R.string.build_section, R.string.keep_last_apk, R.string.keep_background, R.string.battery_title),

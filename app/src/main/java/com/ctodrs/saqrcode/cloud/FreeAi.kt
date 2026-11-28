@@ -22,6 +22,26 @@ object FreeAi {
         JSONObject(body).optString("token").takeIf { it.startsWith("i1.") && it.length > 20 }
     } catch (e: Exception) { null }
 
+    /** Pure: the pairing code inside a saqr://pair?code=... link (null when it is not one). */
+    fun parsePairCode(uri: String): String? {
+        val m = Regex("^saqr://pair\\?(?:.*&)?code=(p1\\.[0-9]+\\.[A-Za-z0-9_-]+)").find(uri.trim())
+        return m?.groupValues?.get(1)
+    }
+
+    /** v0.1.69: trade the owner's 15-minute pairing code for this install's own cloud-capable token. */
+    suspend fun pair(baseUrl: String, code: String, installId: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val c = URL(baseUrl.trimEnd('/') + "/pair").openConnection() as HttpURLConnection
+            c.requestMethod = "POST"
+            c.connectTimeout = 15_000; c.readTimeout = 20_000
+            c.doOutput = true
+            c.setRequestProperty("content-type", "application/json")
+            c.outputStream.use { it.write(JSONObject().put("code", code).put("install", installId).toString().toByteArray()) }
+            if (c.responseCode !in 200..299) return@withContext null
+            parseToken(c.inputStream.bufferedReader().readText())?.takeIf { it.startsWith("c1.") }
+        } catch (e: Exception) { null }
+    }
+
     /** Ask the proxy for a token for [installId]. Null on any failure (offline, proxy down); the caller retries later. */
     suspend fun register(baseUrl: String, installId: String): String? = withContext(Dispatchers.IO) {
         try {
