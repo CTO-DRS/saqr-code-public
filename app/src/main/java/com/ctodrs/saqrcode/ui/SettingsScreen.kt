@@ -576,6 +576,10 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
                 JumpLabel(jump, "cloud_section", stringResource(R.string.cat_cloud), Modifier.padding(top = Sp.xs))
                 CloudSection(ui.autonomy)
             }
+            if (page == "device") {
+                JumpLabel(jump, "device_section", stringResource(R.string.cat_device), Modifier.padding(top = Sp.xs))
+                DeviceControlSection()
+            }
             // ---- agent
             JumpLabel(jump, "agent_section", stringResource(R.string.agent_section), Modifier.padding(top = Sp.md))
             Group {
@@ -945,7 +949,7 @@ fun SettingsContent(ui: SettingsUi, onBack: () -> Unit, initiallyExpanded: Strin
 }
 
 internal val SETTINGS_CATS: List<Pair<String, androidx.compose.ui.graphics.vector.ImageVector>> = listOf(
-    "models" to Lucide.Cpu, "cloud" to Lucide.CloudUpload, "agent" to Lucide.Bot, "tools" to Lucide.Plug, "project" to Lucide.Hammer,
+    "models" to Lucide.Cpu, "cloud" to Lucide.CloudUpload, "device" to Lucide.Smartphone, "agent" to Lucide.Bot, "tools" to Lucide.Plug, "project" to Lucide.Hammer,
     "interface" to Lucide.Palette, "account" to Lucide.User, "help" to Lucide.Info,
 )
 
@@ -956,6 +960,7 @@ internal fun settingsCatOf(key: String): String = when (key) {
     "appearance", "editor_section", "voice_section" -> "interface"
     "providers", "usage_section" -> "models"
     "cloud_section" -> "cloud"
+    "device_section" -> "device"
     "agent_section", "desert_section", "slash_section" -> "agent"
     "mcp_section", "pack_section", "gallery_section", "skills_section" -> "tools"
     "build_section", "sync_section" -> "project"
@@ -964,12 +969,12 @@ internal fun settingsCatOf(key: String): String = when (key) {
 }
 
 internal fun settingsCatTitle(cat: String): Int = when (cat) {
-    "models" -> R.string.cat_models; "cloud" -> R.string.cat_cloud; "agent" -> R.string.cat_agent; "tools" -> R.string.cat_tools; "project" -> R.string.cat_project
+    "models" -> R.string.cat_models; "cloud" -> R.string.cat_cloud; "device" -> R.string.cat_device; "agent" -> R.string.cat_agent; "tools" -> R.string.cat_tools; "project" -> R.string.cat_project
     "interface" -> R.string.cat_interface; "account" -> R.string.cat_account; else -> R.string.cat_help
 }
 
 internal fun settingsCatDesc(cat: String): Int = when (cat) {
-    "models" -> R.string.cat_models_d; "cloud" -> R.string.cat_cloud_d; "agent" -> R.string.cat_agent_d; "tools" -> R.string.cat_tools_d; "project" -> R.string.cat_project_d
+    "models" -> R.string.cat_models_d; "cloud" -> R.string.cat_cloud_d; "device" -> R.string.cat_device_d; "agent" -> R.string.cat_agent_d; "tools" -> R.string.cat_tools_d; "project" -> R.string.cat_project_d
     "interface" -> R.string.cat_interface_d; "account" -> R.string.cat_account_d; else -> R.string.cat_help_d
 }
 
@@ -2367,6 +2372,7 @@ private fun settingsSectionIndex(): List<SettingsSearch.Entry> {
         e("editor_section", R.string.editor_section, R.string.editor_font, R.string.editor_wrap),
         e("providers", R.string.providers, R.string.keys_secure_note),
         e("cloud_section", R.string.cat_cloud, R.string.cloud_workspace, R.string.cloud_token),
+        e("device_section", R.string.cat_device, R.string.device_engine_shizuku, R.string.device_engine_root),
         e("agent_section", R.string.agent_section, R.string.approval_mode, R.string.team_mode, R.string.auto_compact, R.string.review_auto_tests, R.string.falcon_router),
         e("mcp_section", R.string.mcp_section),
         e("build_section", R.string.build_section, R.string.keep_last_apk, R.string.keep_background, R.string.battery_title),

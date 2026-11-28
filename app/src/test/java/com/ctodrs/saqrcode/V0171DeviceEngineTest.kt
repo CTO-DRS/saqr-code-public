@@ -93,3 +93,29 @@ class V0171DeviceEngineTest {
         assertNull(slow.refused)
     }
 }
+
+class V0172DeviceControlTest {
+    @Test fun shizukuStateMapping() {
+        assertEquals(com.ctodrs.saqrcode.device.ShizukuState.NOT_INSTALLED, com.ctodrs.saqrcode.device.ShizukuStatus.state(false, false, false))
+        assertEquals(com.ctodrs.saqrcode.device.ShizukuState.NOT_RUNNING, com.ctodrs.saqrcode.device.ShizukuStatus.state(true, false, false))
+        assertEquals(com.ctodrs.saqrcode.device.ShizukuState.NEEDS_PERMISSION, com.ctodrs.saqrcode.device.ShizukuStatus.state(true, true, false))
+        assertEquals(com.ctodrs.saqrcode.device.ShizukuState.READY, com.ctodrs.saqrcode.device.ShizukuStatus.state(true, true, true))
+    }
+
+    private fun res(out: String) = CommandResult("x", "local", out, "", 0, 1)
+
+    @Test fun summarizesDiagnostics() {
+        val d = com.ctodrs.saqrcode.device.DeviceDiagnostics
+        assertEquals("87%", d.summarize("Battery", res("Current Battery Service state:\n  level: 87\n  scale: 100")))
+        assertEquals("1 MB free of 2 MB", d.summarize("Memory", res("MemTotal:  2048 kB\nMemFree: 100 kB\nMemAvailable: 1024 kB")))
+        assertEquals("2.0 h", d.summarize("Uptime", res("7200.55 12345.00")))
+        assertEquals("14", d.summarize("Android", res("14\n")))
+        assertEquals("the user declined", d.summarize("Model", CommandResult("x", "local", "", "", -1, 0, refused = "the user declined")))
+    }
+
+    @Test fun diagnosticsAreAllSafe() {
+        com.ctodrs.saqrcode.device.DeviceDiagnostics(CommandEngine(emptyList(), DeviceAuditLog(File.createTempFile("aud", ".j"))) { _, _ -> false }).items.forEach {
+            assertEquals(it.command, AdbRisk.SAFE, AdbRiskClassifier.classify(it.command).risk)
+        }
+    }
+}

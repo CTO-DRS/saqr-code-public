@@ -26,8 +26,8 @@ android {
         applicationId = "com.ctodrs.saqrcode"
         minSdk = 26
         targetSdk = 35
-        versionCode = 110
-        versionName = "0.1.71"
+        versionCode = 111
+        versionName = "0.1.72"
         ndk { abiFilters += "arm64-v8a" }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += listOf("en", "ar")
@@ -115,6 +115,9 @@ dependencies {
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    // v0.1.72: Shizuku status and permission (the privileged-execution service comes in a later phase).
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
     implementation("org.eclipse.jgit:org.eclipse.jgit:5.13.3.202401111512-r")
     implementation("org.slf4j:slf4j-nop:1.7.36")
     implementation("com.github.termux.termux-app:terminal-emulator:v0.118.1")

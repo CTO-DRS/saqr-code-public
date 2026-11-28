@@ -1264,4 +1264,22 @@
     <string name="cloud_computer_about">The agent runs heavy builds and tests on a cloud machine instead of your phone. It asks your OK on first use in a chat. Project files are copied; secrets never are.</string>
     <string name="pair_done">Cloud computer connected.</string>
     <string name="pair_failed">Pairing failed or the code expired. Ask for a new link.</string>
+    <string name="cat_device">Device control</string>
+    <string name="cat_device_d">Engines (Shizuku, Root), read-only diagnostics, audit log</string>
+    <string name="device_about">Run commands on this phone through the safest engine that works. Every command is rated safe, sensitive or dangerous, anything above safe asks you first, and each one is logged.</string>
+    <string name="device_engine_local">Local shell</string>
+    <string name="device_engine_local_d">This app\'s own shell. Always available, read-only in practice.</string>
+    <string name="device_engine_shizuku">Shizuku</string>
+    <string name="device_shizuku_missing">Not installed. Install Shizuku to run ADB-level commands on this phone.</string>
+    <string name="device_shizuku_stopped">Installed but not running. Start it from the Shizuku app.</string>
+    <string name="device_shizuku_perm">Running. Saqr needs your permission.</string>
+    <string name="device_shizuku_ready">Ready.</string>
+    <string name="device_engine_root">Root</string>
+    <string name="device_root_unknown">Not checked yet. Tap Re-check; your root manager will ask.</string>
+    <string name="device_root_yes">Available. Used only when you ask for it.</string>
+    <string name="device_root_no">Not available on this phone.</string>
+    <string name="device_grant">Grant Shizuku permission</string>
+    <string name="device_recheck">Re-check engines</string>
+    <string name="device_run_diag">Run read-only diagnostics</string>
+    <string name="device_audit">Recent commands</string>
 </resources>

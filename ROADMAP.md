@@ -426,7 +426,7 @@ The owner's spec (14:24, wamid ...QTUyQzBB...) adapted to Saqr's real stack: one
 | Phase | Scope | Status |
 |---|---|---|
 | 1 Core | Command engine, risk classes (safe, sensitive, dangerous), audit log, engine interface, local shell and Root engines, tests | 0.1.71 (this commit) |
-| 2 Local ADB | Shizuku engine through a UserService (the old `Shizuku.newProcess` is not public API on current Shizuku), permission and binder status screen, read-only diagnostics set | next |
+| 2 Local ADB | Shizuku status, permission and read-only diagnostics page (0.1.72). Still to do: the Shizuku UserService engine that actually runs commands (`Shizuku.newProcess` is not public API on current Shizuku) | status page 0.1.72, engine next |
 | 3 Root | Magisk/KernelSU detection, user-approved root session, never the default engine | planned |
 | 4 Remote ADB | Wireless Debugging pairing and connect through a maintained ADB protocol library (dadb 2.0.0 is on Maven Central; pairing support must be checked first), multi-device registry, stored credentials encrypted | planned, needs a real second device to verify |
 | 5 Device management | Apps (list, info, permissions), files, services, device info screens | planned |
