@@ -164,6 +164,14 @@ class SettingsStore(context: Context, private val secure: SecureStore) {
         get() = prefs.getBoolean("parallel_tools", true)
         set(v) { prefs.edit().putBoolean("parallel_tools", v).apply(); bump() }
 
+    /** v0.1.77: "owner/repo" whose newest CI run is checked in the background. Empty = off. */
+    var ciWatchRepo: String
+        get() = prefs.getString("ci_watch_repo", "") ?: ""
+        set(v) { prefs.edit().putString("ci_watch_repo", v.trim()).putString("ci_watch_state", "").apply(); bump() }
+    var ciWatchState: String
+        get() = prefs.getString("ci_watch_state", "") ?: ""
+        set(v) { prefs.edit().putString("ci_watch_state", v).apply() }
+
     /** v0.1.22 Sentinel: a daily 08:00 local digest notification (uncommitted work and spend). Off by default. */
     var sentinelDigest: Boolean
         get() = prefs.getBoolean("sentinel_digest", false)
