@@ -11,7 +11,7 @@ object CloudSnapshot {
     const val MAX_TOTAL_BYTES = 20L * 1024 * 1024
     const val MAX_FILE_BYTES = 2L * 1024 * 1024
 
-    private val SKIP_DIRS = setOf(".git", "node_modules", "build", ".gradle", ".idea", "dist", "__pycache__", ".dart_tool", ".venv", "venv", "target", "secrets", "keystore")
+    private val SKIP_DIRS = setOf(".git", "node_modules", "build", ".gradle", ".idea", "dist", "__pycache__", ".dart_tool", ".venv", "venv", "target", "secrets", "keystore", ".saqr")
     private val SKIP_NAMES = setOf("local.properties", "keystore.properties", "google-services.json", "id_rsa", "id_ed25519", ".npmrc", ".netrc", ".pypirc", ".git-credentials")
     private val SKIP_EXT = setOf("jks", "keystore", "p12", "pfx", "pem", "key", "apk", "aab", "zip", "jar", "so")
 

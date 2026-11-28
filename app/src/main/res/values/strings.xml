@@ -1236,4 +1236,9 @@
     <string name="guide_6_title">Working offline</string>
     <string name="guide_6_body">The editor, files, git and terminal work without internet. The agent needs a connection to reach your model. Desert mode pauses cloud turns and tells you why.</string>
     <string name="history_heading">Commits that changed this file</string>
+    <string name="cloud_workspace">Cloud workspace</string>
+    <string name="cloud_workspace_desc">Lets the agent run builds and tests on a cloud machine, with your OK on first use. Project files are copied; secrets never are. Capped per day.</string>
+    <string name="cloud_token">Cloud access token</string>
+    <string name="cloud_token_saved">Saved. Paste a new one to replace it</string>
+    <string name="cloud_token_hint">Stored encrypted on this phone only.</string>
 </resources>

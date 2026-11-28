@@ -6,6 +6,8 @@ package com.ctodrs.saqrcode.cloud
  * Tests replace [factory] with a fake.
  */
 object CloudProviders {
-    @Volatile var factory: (String) -> CloudProvider? = { _ -> null }
+    /** The shared token for the proxy; set by the session before [create]. */
+    @Volatile var token: String = ""
+    @Volatile var factory: (String) -> CloudProvider? = { url -> if (url.isBlank() || token.isBlank()) null else ProxyCloudProvider(url, token) }
     fun create(proxyUrl: String): CloudProvider? = factory(proxyUrl)
 }

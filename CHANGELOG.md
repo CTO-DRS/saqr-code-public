@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.66] — 2026-11-28 — Cloud workspace connected · الحاسوب السحابي متصل
+
+- **Connected.** The cloud workspace now talks to a free token proxy (a Cloudflare Worker) in front of Daytona. The cloud service key never reaches the phone; the app holds only an access token, stored encrypted.
+- **Settings:** a Cloud workspace switch (off by default) and a field for the access token.
+- Project files go up as one zip; secrets and build output are excluded. The sandbox is deleted at the end of every turn. Package registries are the only allowed outbound sites where the plan supports it.
+- versionName 0.1.66, versionCode 105.
+- الحاسوب السحابي صار متصلًا عبر وسيط مجاني؛ مفتاح الخدمة لا يصل إلى الهاتف. مفتاح في الإعدادات وزر تشغيل، وهو مطفأ افتراضيًا.
+
 ## [0.1.65] — 2026-11-28 — Cloud workspace, first layer · مساحة العمل السحابية، الطبقة الأولى
 
 - **New (off by default, not connected yet).** The agent gets three tools, `cloud_run`, `cloud_test` and `cloud_sync`, that run builds and tests on a cloud machine instead of the phone. The first use in a chat asks for your OK. Project files are copied; secrets (.env, keystores, local.properties, google-services.json, keys) and build output never are.

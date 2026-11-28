@@ -138,8 +138,8 @@ Basis: the agent has one-snippet edit_file only; on weak connections and small m
 ### الموجة ن · الحاسوب السحابي / Wave N: cloud workspace (owner request, 28 Nov)
 Plan: provider interface + fake provider, then Daytona behind a free token proxy (Cloudflare Workers free tier). Provider key never in the APK. No card, no paid plan.
 1. **(0.1.65, shipped) Core:** `cloud_run` / `cloud_test` / `cloud_sync`, snapshot with secret filter, daily cap, per-command timeout, kill at turn end, approval on first use, off by default.
-2. **(next) Daytona provider + token proxy**, blocked on the Daytona account (phone verification in progress).
-3. **(next) Settings card:** on/off, daily minutes, live meter; result card with log tail.
+2. **(0.1.66, shipped) Daytona provider + token proxy:** Cloudflare Worker (free tier) in front of Daytona; key stays in the Worker.
+3. **(0.1.66 partial) Settings:** switch + token field. **Next:** live meter, daily minutes field, result card with log tail.
 4. **(later) Preview URLs, APK artifact download, persistent workspaces.**
 
 ---
