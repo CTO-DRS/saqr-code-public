@@ -12,6 +12,9 @@ object Tools {
     const val EDIT = "edit_file"
     const val MULTI_EDIT = "multi_edit_file"
     const val MOVE = "move_file"
+    const val CLOUD_RUN = "cloud_run"
+    const val CLOUD_TEST = "cloud_test"
+    const val CLOUD_SYNC = "cloud_sync"
     const val DELETE = "delete_file"
     const val RUN = "run_command"
     const val SEARCH = "search"
@@ -33,6 +36,8 @@ object Tools {
     const val TESTS = "run_tests"
 
     val GIT = setOf(GIT_STATUS, GIT_DIFF, GIT_LOG, GIT_COMMIT, GIT_BRANCH, GIT_PULL, GIT_PUSH)
+
+    val CLOUD = setOf(CLOUD_RUN, CLOUD_TEST, CLOUD_SYNC)
 
     val MUTATING = setOf(WRITE, EDIT, MULTI_EDIT, MOVE, DELETE)
 
@@ -73,6 +78,14 @@ object Tools {
             schema(JSONObject()
                 .put("path", p("string", "Existing file path relative to project root"))
                 .put("to", p("string", "New file path relative to project root")), listOf("path", "to"))),
+        ToolSpec(CLOUD_RUN, "Run a shell command in the user's CLOUD workspace (a fast Linux machine with Node, Python, Java and Gradle; it starts empty and gets a copy of the project first, never secrets). Use it for builds, installs and tests the phone terminal is too slow for. Results are text. Fails with a clear message if the cloud workspace is off or the daily limit is used.",
+            schema(JSONObject()
+                .put("command", p("string", "Shell command, run in the project root"))
+                .put("timeout_sec", p("integer", "Max seconds (default 300, cap 600)")), listOf("command"))),
+        ToolSpec(CLOUD_TEST, "Detect the project's test command (gradlew, npm, pytest) and run it in the cloud workspace. Returns pass/fail output.",
+            schema(JSONObject().put("timeout_sec", p("integer", "Max seconds (default 600)")), emptyList())),
+        ToolSpec(CLOUD_SYNC, "Copy the current project to the cloud workspace now (cloud_run and cloud_test already do this automatically when files changed).",
+            schema(JSONObject(), emptyList())),
         ToolSpec(DELETE, "Delete a file in the project.",
             schema(JSONObject().put("path", p("string", "File path relative to project root")), listOf("path"))),
         ToolSpec(RUN, "Run a shell command in the project's Linux terminal (Alpine via proot, cwd=/workspace = project root). Use `apk add <pkg>` to install tools. Non-interactive only; servers must listen on 127.0.0.1. Dangerous commands are blocked.",
@@ -265,6 +278,9 @@ object Tools {
         WEB_SEARCH -> "\"" + args.optString("query") + "\""
         WEB_FETCH -> args.optString("url").take(60)
         LINT, TESTS -> "auto"
+        CLOUD_RUN -> args.optString("command")
+        CLOUD_TEST -> "tests"
+        CLOUD_SYNC -> "sync"
         else -> args.optString("path")
     }
 }

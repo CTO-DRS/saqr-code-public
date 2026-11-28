@@ -31,7 +31,7 @@ object DesertMode {
     }
 
     /** The cloud-bound feature classes a refusal can name. */
-    enum class Feature { CHAT, WEB_TOOLS, MCP_REMOTE, GIT_REMOTE, SDK_DOWNLOAD, LOCAL }
+    enum class Feature { CHAT, WEB_TOOLS, MCP_REMOTE, GIT_REMOTE, SDK_DOWNLOAD, CLOUD_WORKSPACE, LOCAL }
 
     /** [AUTO] follows the network; [ALWAYS] is unconditional; [OFF] never rations. */
     fun active(mode: Mode, online: Boolean): Boolean =
@@ -45,6 +45,7 @@ object DesertMode {
     fun cloudTool(name: String): Feature? = when (name) {
         Tools.WEB_SEARCH, Tools.WEB_FETCH -> Feature.WEB_TOOLS
         Tools.GIT_PULL, Tools.GIT_PUSH -> Feature.GIT_REMOTE
+        Tools.CLOUD_RUN, Tools.CLOUD_TEST, Tools.CLOUD_SYNC -> Feature.CLOUD_WORKSPACE
         else -> null
     }
 
@@ -63,6 +64,8 @@ object DesertMode {
             "Error: desert mode is active (no network): the model provider is unreachable."
         Feature.SDK_DOWNLOAD ->
             "Error: desert mode is active (no network): this step needs a download that is not cached yet."
+        Feature.CLOUD_WORKSPACE ->
+            "Error: desert mode is active (no network): the cloud workspace is offline. Use run_command and run_tests on the phone instead."
         Feature.LOCAL -> ""
     }
 

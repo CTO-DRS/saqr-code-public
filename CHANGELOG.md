@@ -1,5 +1,13 @@
 # Changelog · سجل التغييرات
 
+## [0.1.65] — 2026-11-28 — Cloud workspace, first layer · مساحة العمل السحابية، الطبقة الأولى
+
+- **New (off by default, not connected yet).** The agent gets three tools, `cloud_run`, `cloud_test` and `cloud_sync`, that run builds and tests on a cloud machine instead of the phone. The first use in a chat asks for your OK. Project files are copied; secrets (.env, keystores, local.properties, google-services.json, keys) and build output never are.
+- Guard rails: a daily minutes cap (default 30), a per-command timeout, the sandbox is closed when the turn ends, and a visible usage meter with a cost estimate.
+- This build contains the engine and its tests. The cloud service itself is connected in the next build, so the tools answer "not connected yet" until then.
+- versionName 0.1.65, versionCode 104.
+- أدوات جديدة لتشغيل البناء والاختبار على جهاز سحابي مع موافقتك، وحدود يومية، ولا تُرفع الأسرار أبدًا. الخدمة نفسها تُوصَل في الإصدار القادم.
+
 ## [0.1.64] — 2026-11-28 — Rename and move files · إعادة تسمية ونقل الملفات
 
 - **New tool.** `move_file` renames or moves a text file. It shows in the approval plan as one delete plus one create, so you see it, approve it and can undo it from the checkpoint like any other change. It refuses when the destination already exists.

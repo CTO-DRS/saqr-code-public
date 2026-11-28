@@ -22,6 +22,7 @@ private val GIT_READ = setOf(Tools.GIT_STATUS, Tools.GIT_DIFF, Tools.GIT_LOG)
 private val WEB = setOf(Tools.WEB_SEARCH, Tools.WEB_FETCH)
 private val EDIT = setOf(Tools.WRITE, Tools.EDIT, Tools.MULTI_EDIT, Tools.MOVE)
 private val QUALITY = setOf(Tools.LINT, Tools.TESTS)
+private val CLOUD = Tools.CLOUD
 
 enum class AgentRole(
     val id: String,
@@ -48,7 +49,7 @@ enum class AgentRole(
         "You design the solution before code is written: files to add or change, data flow, interfaces, risks. Read-only. " +
             "Report a concise design (≤ 15 lines) the Developer can follow."),
     DEVELOPER("developer", "Developer", "المطوِّر", Kind.WORKER, ModelTier.STRONG, 25,
-        READ + GIT_READ + EDIT + QUALITY + setOf(Tools.RUN, Tools.DELETE, Tools.ASK, Tools.MEMORY_SAVE), true,
+        READ + GIT_READ + EDIT + QUALITY + CLOUD + setOf(Tools.RUN, Tools.DELETE, Tools.ASK, Tools.MEMORY_SAVE), true,
         "You implement your subtask completely (no placeholders), following the design and research you were given. " +
             "Change only what the subtask needs."),
     DEBUGGER("debugger", "Debugger", "المصحِّح", Kind.WORKER, ModelTier.STRONG, 20,
