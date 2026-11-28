@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.72] — 2026-11-28 — Device control page · صفحة التحكم بالجهاز
+
+- New "Device control" page in Settings: engine status for the local shell, Shizuku and Root, a one-tap Shizuku permission request, a read-only diagnostics run (Android version, model, battery, memory, uptime) and the recent audit log.
+- صفحة جديدة «التحكم بالجهاز»: حالة المحركات، طلب إذن Shizuku، تشخيص للقراءة فقط، وآخر الأوامر المسجلة.
+
 ## [0.1.71] — 2026-11-28 — Device control foundation · أساس التحكم بالجهاز
 
 - New device command engine (phase 1 of the ADB Control Center track): every command is classified SAFE, SENSITIVE or DANGEROUS, anything above SAFE needs a fresh yes from the user, engines are picked least-privileged first (Root only when asked for), a timeout and a parallel cap apply, and every command goes to an audit log with secrets redacted.
