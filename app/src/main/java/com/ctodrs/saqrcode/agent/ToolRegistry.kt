@@ -50,6 +50,7 @@ object ToolRegistry {
         Tools.WRITE to Meta(Risk.MEDIUM, false, 30, 0, ToolCategory.FILES),
         Tools.EDIT to Meta(Risk.MEDIUM, false, 30, 0, ToolCategory.FILES),
         Tools.MULTI_EDIT to Meta(Risk.MEDIUM, false, 30, 0, ToolCategory.FILES),
+        Tools.MOVE to Meta(Risk.MEDIUM, false, 30, 0, ToolCategory.FILES),
         Tools.RUN to Meta(Risk.MEDIUM, false, 600, 0, ToolCategory.TERMINAL),
         Tools.LINT to Meta(Risk.MEDIUM, false, 300, 0, ToolCategory.QUALITY),
         Tools.TESTS to Meta(Risk.MEDIUM, false, 600, 0, ToolCategory.QUALITY),

@@ -1,5 +1,12 @@
 # Changelog · سجل التغييرات
 
+## [0.1.64] — 2026-11-28 — Rename and move files · إعادة تسمية ونقل الملفات
+
+- **New tool.** `move_file` renames or moves a text file. It shows in the approval plan as one delete plus one create, so you see it, approve it and can undo it from the checkpoint like any other change. It refuses when the destination already exists.
+- Before this, the agent had to delete a file and rewrite it by hand, which cost a full copy of the content and risked typos.
+- versionName 0.1.64, versionCode 103.
+- أداة جديدة لإعادة تسمية الملف أو نقله، تظهر في خطة الموافقة كحذف وإنشاء ويمكن التراجع عنها.
+
 ## [0.1.63] — 2026-11-28 — Sharper edits for the agent · تعديلات أدق للوكيل
 
 - **New tool.** `multi_edit_file` applies several edits to one file in a single call, all or nothing. Fewer round trips on a phone connection, and a half-edited file is impossible: if edit 3 of 5 fails, nothing is written and the error names edit 3.
