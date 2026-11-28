@@ -1,5 +1,10 @@
 # Changelog · سجل التغييرات
 
+## [0.1.74] — 2026-11-28 — Shizuku engine · محرك شيزوكو
+
+- Device commands now run through Shizuku (shell user) when it is ready, falling back to the app's own shell. Every command still goes through the risk gate and the audit log first.
+- أوامر الجهاز تعمل الآن عبر شيزوكو عند جاهزيته، وإلا عبر صدفة التطبيق نفسه، مع بقاء فحص الخطورة وسجل التدقيق.
+
 ## [0.1.73] — 2026-11-28 — Long cloud runs · تشغيلات سحابية طويلة
 
 - Cloud commands can now run up to 40 minutes: the job starts in the background on the cloud machine and the app polls it, streaming output, so a long build survives a sleeping phone.
